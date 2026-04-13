@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Оқушы панелі{% else %}Дашборд ученика{% endif %} — PsyConnect{% endblock %}
+{% block nav_student %}active{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section-title">{% if lang == 'kz' %}БАСТЫ МӘЗІР{% else %}МЕНЮ{% endif %}</div>
+    <a href="{% url 'student_dashboard' %}" class="sidebar-link active">
+      <div class="icon"></div>
+      {% if lang == 'kz' %}Бақылау тақтасы{% else %}Дашборд{% endif %}
+    </a>
+    <a href="{% url 'emotion_diary' %}" class="sidebar-link">
+      <div class="icon"></div>
+      {% if lang == 'kz' %}Эмоция күнделігі{% else %}Дневник эмоций{% endif %}
+    </a>
+    <a href="{% url 'test_center' %}" class="sidebar-link">
+      <div class="icon"></div>
+      {% if lang == 'kz' %}Тест орталығы{% else %}Тест центр{% endif %}
+    </a>
+    <a href="{% url 'ai_chat' %}" class="sidebar-link">
+      <div class="icon"></div>AI-чат
+    </a>
+    <a href="{% url 'anonymous_support' %}" class="sidebar-link">
+      <div class="icon"></div>
+      {% if lang == 'kz' %}Анонимді арна{% else %}Анонимно{% endif %}
+    </a>
+
+    <div class="user-card">
+      <div class="user-avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+      <div class="user-info">
+        <div class="name">{{ user.get_full_name|default:user.username }}</div>
+        <div class="role">{% if lang == 'kz' %}Оқушы{% else %}Ученик{% endif %}</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">
+        {% if lang == 'kz' %}Сәлем, {{ user.first_name|default:user.username }}! {% else %}Привет, {{ user.first_name|default:user.username }}! {% endif %}
+      </h1>
+      <p class="page-subtitle">{% if lang == 'kz' %}Бүгін қалайсың?{% else %}Как дела сегодня?{% endif %}</p>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon gold"></div>
+        <div>
+          <div class="stat-value">{{ emotions|length }}</div>
+          <div class="stat-label">{% if lang == 'kz' %}Жазба{% else %}Записей{% endif %}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon teal"></div>
+        <div>
+          <div class="stat-value">{{ recent_results|length }}</div>
+          <div class="stat-label">{% if lang == 'kz' %}Тест нәтижесі{% else %}Результатов{% endif %}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon navy"></div>
+        <div>
+          <div class="stat-value">{{ chat_messages|length }}</div>
+          <div class="stat-label">{% if lang == 'kz' %}Хабарлама{% else %}Сообщений{% endif %}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon coral"></div>
+        <div>
+          <div class="stat-value">7</div>
+          <div class="stat-label">{% if lang == 'kz' %}Күн қатарынан{% else %}Дней подряд{% endif %}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="grid-2" style="margin-bottom: 2rem;">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">{% if lang == 'kz' %}Жылдам әрекеттер{% else %}Быстрые действия{% endif %}</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+          <a href="{% url 'emotion_diary' %}" class="btn btn-primary">
+            {% if lang == 'kz' %}Эмоция жаз{% else %}Записать эмоцию{% endif %}
+          </a>
+          <a href="{% url 'test_center' %}" class="btn btn-navy">
+            {% if lang == 'kz' %}Тест өту{% else %}Пройти тест{% endif %}
+          </a>
+          <a href="{% url 'ai_chat' %}" class="btn btn-teal">
+            {% if lang == 'kz' %}AI-чат{% else %}AI-чат{% endif %}
+          </a>
+          <a href="{% url 'anonymous_support' %}" class="btn btn-outline" style="border-color:var(--border);color:var(--text);">
+            {% if lang == 'kz' %}Анонимді{% else %}Анонимно{% endif %}
+          </a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">{% if lang == 'kz' %}Соңғы тест нәтижелері{% else %}Последние результаты{% endif %}</span>
+          <a href="{% url 'test_center' %}" style="font-size:0.8rem; color:var(--sage); font-weight:700; text-decoration:none;">{% if lang == 'kz' %}Барлығы →{% else %}Все →{% endif %}</a>
+        </div>
+        {% if recent_results %}
+          {% for result in recent_results %}
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem 0; border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-weight:700; font-size:0.9rem; color:var(--text);">{{ result.category }}</div>
+              <div style="font-size:0.75rem; color:var(--text-2);">{{ result.created_at|date:"d.m.Y" }}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:900; font-size:1.2rem; color:var(--text);">{{ result.score }}/{{ result.max_score }}</div>
+              <div class="progress-bar" style="width:80px; margin-top:4px;">
+                <div class="progress-fill" style="width:{% widthratio result.score result.max_score 100 %}%;"></div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="text-align:center; padding:2rem; color:var(--text-2);">
+            <div style="font-size:2rem; margin-bottom:0.5rem;"></div>
+            {% if lang == 'kz' %}Тест нәтижелері жоқ{% else %}Нет результатов тестов{% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- MOOD LAST 7 DAYS -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">{% if lang == 'kz' %}Соңғы эмоциялар{% else %}Последние эмоции{% endif %}</span>
+        <a href="{% url 'emotion_diary' %}" style="font-size:0.8rem; color:var(--sage); font-weight:700; text-decoration:none;">{% if lang == 'kz' %}Барлығы →{% else %}Все →{% endif %}</a>
+      </div>
+      {% if emotions %}
+        {% for entry in emotions %}
+        <div class="emotion-entry">
+          <span class="emoji">
+            {% emotion_icon entry.emotion %}
+          </span>
+          <div>
+            <div style="font-weight:700; font-size:0.9rem;">{{ entry.get_emotion_display }}</div>
+            {% if entry.note %}<div style="color:var(--text-2); font-size:0.85rem; margin-top:2px;">{{ entry.note }}</div>{% endif %}
+            <div class="meta">{{ entry.created_at|date:"d.m.Y H:i" }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center; padding:2rem; color:var(--text-2);">
+          <div style="font-size:2rem; margin-bottom:0.5rem;"></div>
+          {% if lang == 'kz' %}Жазба жоқ. Алғашқы эмоцияны жазыңыз!{% else %}Нет записей. Запишите первую эмоцию!{% endif %}
+          <br><a href="{% url 'emotion_diary' %}" class="btn btn-primary" style="margin-top:1rem; display:inline-flex;">{% if lang == 'kz' %}Жазу{% else %}Записать{% endif %}</a>
+        </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}

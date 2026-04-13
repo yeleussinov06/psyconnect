@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Психологқа жазылу{% else %}Запись к психологу{% endif %} — PsyConnect{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "core/student/sidebar.html" with active="appointments" %}
+
+  <main class="main-content">
+    <div class="page-header">
+      <a href="{% url 'my_appointments' %}" style="color:var(--sage);font-weight:700;text-decoration:none;font-size:.9rem;">← {% if lang == 'kz' %}Артқа{% else %}Назад{% endif %}</a>
+      <h1 class="page-title" style="margin-top:.5rem;">{% if lang == 'kz' %}Психологқа жазылу{% else %}Запись к психологу{% endif %}</h1>
+      <p class="page-subtitle">
+        {% if reason == 'test' %}{% if lang == 'kz' %}Тест нәтижесі бойынша ұсынылады{% else %}Рекомендовано по результату теста{% endif %}
+        {% elif reason == 'chat' %}{% if lang == 'kz' %}AI-чат арқылы ұсынылады{% else %}Рекомендовано через AI-чат{% endif %}
+        {% else %}{% if lang == 'kz' %}Ыңғайлы уақытты таңдаңыз{% else %}Выберите удобное время{% endif %}{% endif %}
+      </p>
+    </div>
+
+    {% if slots_by_date %}
+    <form method="post" id="bookForm">
+      {% csrf_token %}
+      <input type="hidden" name="slot_key" id="selectedSlotKey" value="">
+
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header"><span class="card-title">{% if lang == 'kz' %}Өтінім себебі{% else %}Причина обращения{% endif %} <span style="font-weight:400;color:var(--text-3);font-size:.8rem;">({% if lang == 'kz' %}міндетті емес{% else %}необязательно{% endif %})</span></span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.25rem;">
+          <label class="reason-pill">
+            <input type="radio" name="reason" value="" checked style="display:none;">
+            <span>— {% if lang == 'kz' %}Жоқ{% else %}Не указано{% endif %}</span>
+          </label>
+          <label class="reason-pill">
+            <input type="radio" name="reason" value="anxiety" style="display:none;">
+            <span>😰 {% if lang == 'kz' %}Мазасыздану{% else %}Тревога{% endif %}</span>
+          </label>
+          <label class="reason-pill">
+            <input type="radio" name="reason" value="bullying" style="display:none;">
+            <span>🔴 {% if lang == 'kz' %}Буллинг{% else %}Буллинг{% endif %}</span>
+          </label>
+          <label class="reason-pill">
+            <input type="radio" name="reason" value="family" style="display:none;">
+            <span>👨‍👩‍👧 {% if lang == 'kz' %}Отбасы{% else %}Семья{% endif %}</span>
+          </label>
+          <label class="reason-pill">
+            <input type="radio" name="reason" value="study" style="display:none;">
+            <span>📚 {% if lang == 'kz' %}Оқу{% else %}Учёба{% endif %}</span>
+          </label>
+          <label class="reason-pill">
+            <input type="radio" name="reason" value="behavior" style="display:none;">
+            <span>⚡ {% if lang == 'kz' %}Мінез{% else %}Поведение{% endif %}</span>
+          </label>
+          <label class="reason-pill">
+            <input type="radio" name="reason" value="other" style="display:none;">
+            <span>✏️ {% if lang == 'kz' %}Басқа{% else %}Другое{% endif %}</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header"><span class="card-title">{% if lang == 'kz' %}Ескертпе{% else %}Заметка{% endif %} <span style="font-weight:400;color:var(--text-3);font-size:.8rem;">({% if lang == 'kz' %}міндетті емес{% else %}необязательно{% endif %})</span></span></div>
+        <textarea name="note" class="form-control" rows="3"
+          placeholder="{% if lang == 'kz' %}Не туралы сөйлескіңіз келеді?{% else %}О чём хотите поговорить? Психолог увидит это заранее.{% endif %}"></textarea>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🕐 {% if lang == 'kz' %}Бос уақыттар (2 апта){% else %}Свободное время (2 недели){% endif %}</span>
+        </div>
+
+        {% for date, day_slots in slots_by_date.items %}
+        <div style="margin-bottom:1.5rem;">
+          <div style="font-weight:800;color:var(--text);font-size:.875rem;margin-bottom:.75rem;padding:.5rem .875rem;background:var(--cream-dark);border-radius:var(--r-sm);display:flex;align-items:center;gap:.5rem;">
+            {{ date|date:"l, d F Y" }}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.6rem;">
+            {% for slot in day_slots %}
+            <div class="slot-card" onclick="selectSlot(this, '{{ slot.slot_key }}')">
+              <div style="font-weight:800;color:var(--sage);font-size:.95rem;">
+                {{ slot.time_start|time:"H:i" }} — {{ slot.time_end|time:"H:i" }}
+              </div>
+              <div style="font-size:.75rem;color:var(--text-2);margin-top:3px;">
+                {{ slot.psychologist.get_full_name }}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div style="margin-top:1.5rem;display:flex;gap:1rem;">
+        <button type="submit" class="btn btn-primary btn-lg" id="bookBtn" disabled>
+          {% if lang == 'kz' %}Жазылу{% else %}Записаться{% endif %}
+        </button>
+        <a href="{% url 'student_dashboard' %}" class="btn btn-outline btn-lg">
+          {% if lang == 'kz' %}Болдырмау{% else %}Отмена{% endif %}
+        </a>
+      </div>
+    </form>
+
+    {% else %}
+    <div class="card" style="text-align:center;padding:3rem;">
+      <div style="font-size:3rem;margin-bottom:1rem;"></div>
+      <h3 style="font-family:'Inter',sans-serif;font-weight:800;margin-bottom:.75rem;color:var(--text);">
+        {% if lang == 'kz' %}Бос уақыт жоқ{% else %}Нет свободного времени{% endif %}
+      </h3>
+      <p style="color:var(--text-2);font-size:.9rem;margin-bottom:1.5rem;">
+        {% if lang == 'kz' %}Платформада психолог тіркелмеген немесе барлық уақыт бос емес.{% else %}На платформе нет психологов или всё время занято.{% endif %}
+      </p>
+      <a href="{% url 'anonymous_support' %}" class="btn btn-primary">
+        {% if lang == 'kz' %}Анонимді жазу{% else %}Написать анонимно{% endif %}
+      </a>
+    </div>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.slot-card {
+  background: var(--cream-dark);
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  padding: .875rem 1rem;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.slot-card:hover { border-color: var(--sage); background: var(--sage-pale); }
+.slot-card.selected { border-color: var(--sage); background: var(--sage-pale); box-shadow: 0 0 0 3px rgba(74,124,89,0.12); }
+
+.reason-pill {
+  cursor: pointer;
+  display: inline-block;
+}
+.reason-pill span {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 99px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-2);
+  transition: all .18s;
+}
+.reason-pill input:checked + span {
+  background: var(--sage);
+  color: white;
+  border-color: var(--sage);
+  box-shadow: 0 2px 6px rgba(74,124,89,.2);
+}
+.reason-pill:hover span { border-color: var(--sage); color: var(--sage); }
+</style>
+<script>
+function selectSlot(el, key) {
+  document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('selectedSlotKey').value = key;
+  document.getElementById('bookBtn').disabled = false;
+}
+</script>
+{% endblock %}

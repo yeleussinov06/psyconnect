@@ -1,0 +1,65 @@
+{% load icons %}
+<aside class="sidebar" id="appSidebar">
+
+  <!-- Collapse toggle -->
+  <button class="sb-toggle" onclick="toggleSidebar()" title="Свернуть/развернуть">
+    <svg id="sbIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 18l-6-6 6-6"/>
+    </svg>
+  </button>
+
+  <div class="sidebar-section-title">ПСИХОЛОГ</div>
+
+  <!-- Обзор -->
+  <a href="{% url 'psychologist_dashboard' %}" class="sidebar-link {% if active == 'overview' %}active{% endif %}">
+    <div class="icon">{% icon 'home' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Шолу{% else %}Обзор{% endif %}</span>
+  </a>
+
+  <!-- Заявки на приём -->
+  <a href="{% url 'psychologist_appointments' %}" class="sidebar-link {% if active == 'appointments' %}active{% endif %}">
+    <div class="icon">{% icon 'inbox' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Жазылымдар{% else %}Заявки на приём{% endif %}</span>
+    {% if pending_count %}<span class="badge badge-peach" style="margin-left:auto;font-size:.65rem;">{{ pending_count }}</span>{% endif %}
+  </a>
+
+  <!-- Расписание (аккордеон) -->
+  <button class="acc-btn {% if active == 'schedule' %}acc-active{% endif %}" onclick="toggleAccordion('scheduleMenu')">
+    <div class="icon">{% icon 'calendar-days' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Расписание{% else %}Расписание{% endif %}</span>
+    <svg class="acc-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="acc-sub {% if active == 'schedule' %}acc-open{% endif %}" id="scheduleMenu">
+    <a href="{% url 'manage_schedule' %}" class="acc-sub-link {% if active == 'schedule' %}active{% endif %}">
+      {% if lang == 'kz' %}Менің расписаниям{% else %}Моё расписание{% endif %}
+    </a>
+  </div>
+
+  <!-- Ученики и мониторинг (аккордеон) -->
+  <button class="acc-btn {% if active == 'students' or active == 'emotions' %}acc-active{% endif %}" onclick="toggleAccordion('studentsMenu')">
+    <div class="icon">{% icon 'users' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Оқушылар{% else %}Ученики{% endif %}</span>
+    <svg class="acc-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="acc-sub {% if active == 'students' or active == 'emotions' %}acc-open{% endif %}" id="studentsMenu">
+    <a href="{% url 'psychologist_dashboard' %}?panel=students" class="acc-sub-link {% if active == 'students' %}active{% endif %}">
+      {% if lang == 'kz' %}Тізім{% else %}Список учеников{% endif %}
+    </a>
+    <a href="{% url 'psychologist_dashboard' %}?panel=emotions" class="acc-sub-link {% if active == 'emotions' %}active{% endif %}">
+      {% if lang == 'kz' %}Эмоция мониторинг{% else %}Мониторинг эмоций{% endif %}
+    </a>
+  </div>
+
+  <!-- Анонимные запросы (аккордеон) -->
+  <button class="acc-btn {% if active == 'requests' %}acc-active{% endif %}" onclick="toggleAccordion('requestsMenu')">
+    <div class="icon">{% icon 'eye-slash' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Анонимді{% else %}Анонимные запросы{% endif %}</span>
+    <svg class="acc-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="acc-sub {% if active == 'requests' %}acc-open{% endif %}" id="requestsMenu">
+    <a href="{% url 'psychologist_dashboard' %}?panel=requests" class="acc-sub-link {% if active == 'requests' %}active{% endif %}">
+      {% if lang == 'kz' %}Барлық сұраулар{% else %}Все запросы{% endif %}
+    </a>
+  </div>
+
+</aside>

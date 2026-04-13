@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang == 'kz' %}Тіркелу{% else %}Регистрация{% endif %} — PsyConnect{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="icon"></div>
+    </div>
+    <h1 class="auth-title">{% if lang == 'kz' %}Тіркелу{% else %}Регистрация{% endif %}</h1>
+    <p class="auth-subtitle">{% if lang == 'kz' %}Рөліңізді таңдап, тіркеліңіз{% else %}Выберите роль и зарегистрируйтесь{% endif %}</p>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label">{% if lang == 'kz' %}Рөліңіз{% else %}Ваша роль{% endif %}</label>
+        <div class="role-selector">
+          <input type="radio" name="role" id="role_student" value="student" class="role-option" checked>
+          <label for="role_student" class="role-label">
+            <span class="emoji"></span>
+            <span class="text">{% if lang == 'kz' %}Оқушы{% else %}Ученик{% endif %}</span>
+          </label>
+          <input type="radio" name="role" id="role_parent" value="parent" class="role-option">
+          <label for="role_parent" class="role-label">
+            <span class="emoji"></span>
+            <span class="text">{% if lang == 'kz' %}Ата-ана{% else %}Родитель{% endif %}</span>
+          </label>
+          <input type="radio" name="role" id="role_teacher" value="teacher" class="role-option">
+          <label for="role_teacher" class="role-label">
+            <span class="emoji"></span>
+            <span class="text">{% if lang == 'kz' %}Мұғалім{% else %}Учитель{% endif %}</span>
+          </label>
+          <input type="radio" name="role" id="role_psychologist" value="psychologist" class="role-option">
+          <label for="role_psychologist" class="role-label">
+            <span class="emoji"></span>
+            <span class="text">{% if lang == 'kz' %}Психолог{% else %}Психолог{% endif %}</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">{% if lang == 'kz' %}Аты{% else %}Имя{% endif %}</label>
+          <input type="text" name="first_name" class="form-control" placeholder="{% if lang == 'kz' %}Атыңыз{% else %}Ваше имя{% endif %}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">{% if lang == 'kz' %}Тегі{% else %}Фамилия{% endif %}</label>
+          <input type="text" name="last_name" class="form-control" placeholder="{% if lang == 'kz' %}Тегіңіз{% else %}Ваша фамилия{% endif %}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{% if lang == 'kz' %}Логин{% else %}Логин{% endif %}</label>
+        <input type="text" name="username" class="form-control" placeholder="{% if lang == 'kz' %}Логин ойлап табыңыз{% else %}Придумайте логин{% endif %}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{% if lang == 'kz' %}Құпия сөз{% else %}Пароль{% endif %}</label>
+        <input type="password" name="password" class="form-control" placeholder="{% if lang == 'kz' %}Кемінде 6 таңба{% else %}Минимум 6 символов{% endif %}" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:0.5rem;">
+        {% if lang == 'kz' %}Тіркелу{% else %}Зарегистрироваться{% endif %} →
+      </button>
+    </form>
+
+    <div class="divider"><span>{% if lang == 'kz' %}тіркелгі бар ма?{% else %}уже есть аккаунт?{% endif %}</span></div>
+
+    <a href="{% url 'login' %}" class="btn btn-outline btn-block" style="border-color:var(--border); color:var(--text);">
+      {% if lang == 'kz' %}Кіру{% else %}Войти{% endif %}
+    </a>
+  </div>
+</div>
+{% endblock %}

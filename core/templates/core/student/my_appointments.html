@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Менің жазылымдарым{% else %}Мои записи{% endif %} — PsyConnect{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "core/student/sidebar.html" with active="appointments" %}
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">{% if lang == 'kz' %}Менің жазылымдарым{% else %}Мои записи{% endif %}</h1>
+      <p class="page-subtitle">{% if lang == 'kz' %}Психологқа жазылымдар тарихы{% else %}История записей к психологу{% endif %}</p>
+    </div>
+
+    <div style="margin-bottom:1.5rem;">
+      <a href="{% url 'book_appointment' %}" class="btn btn-primary">
+        {% if lang == 'kz' %}Жаңа жазылым{% else %}Новая запись{% endif %}
+      </a>
+    </div>
+
+    {% if appointments %}
+      {% for apt in appointments %}
+      <div class="card" style="margin-bottom:1rem;border-left:4px solid {% if apt.status == 'confirmed' %}var(--sage){% elif apt.status == 'pending' %}var(--amber){% elif apt.status == 'rejected' %}var(--peach){% else %}var(--border-2){% endif %};">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;">
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;flex-wrap:wrap;">
+              <span style="font-family:'Inter',sans-serif;font-weight:800;font-size:1.1rem;color:var(--text);font-weight:700;">
+                {{ apt.slot.date|date:"d F Y" }}
+              </span>
+              <span style="font-weight:700;color:var(--sage);">{{ apt.slot.time_start|time:"H:i" }} — {{ apt.slot.time_end|time:"H:i" }}</span>
+              <span class="badge {% if apt.status == 'confirmed' %}badge-sage{% elif apt.status == 'pending' %}badge-amber{% elif apt.status == 'rejected' %}badge-peach{% else %}badge-navy{% endif %}">
+                {% if apt.status == 'confirmed' %}{% if lang == 'kz' %}Расталды{% else %}Подтверждено{% endif %}
+                {% elif apt.status == 'pending' %}{% if lang == 'kz' %}Күтуде{% else %}Ожидает{% endif %}
+                {% elif apt.status == 'rejected' %}{% if lang == 'kz' %}Қабылданбады{% else %}Отклонено{% endif %}
+                {% else %}{% if lang == 'kz' %}Болдырылмады{% else %}Отменено{% endif %}{% endif %}
+              </span>
+            </div>
+            <div style="font-size:.875rem;color:var(--text-2);margin-bottom:.5rem;">
+              {{ apt.slot.psychologist.get_full_name }}
+            </div>
+            {% if apt.student_note %}
+            <div style="font-size:.83rem;color:var(--text-2);background:var(--cream);padding:.75rem;border-radius:var(--r-sm);margin-top:.5rem;">
+              {{ apt.student_note }}
+            </div>
+            {% endif %}
+            {% if apt.psychologist_note %}
+            <div style="font-size:.83rem;color:var(--sage);background:var(--sage-pale);padding:.75rem;border-radius:var(--r-sm);margin-top:.5rem;border-left:3px solid var(--sage);">
+              <strong>{% if lang == 'kz' %}Психолог жауабы:{% else %}Ответ психолога:{% endif %}</strong> {{ apt.psychologist_note }}
+            </div>
+            {% endif %}
+            <div style="font-size:.72rem;color:var(--text-3);margin-top:.5rem;">
+              {% if lang == 'kz' %}Жазылым себебі:{% else %}Причина записи:{% endif %}
+              {% if apt.reason == 'test' %}{% if lang == 'kz' %}Тест нәтижесі бойынша{% else %}По результату теста{% endif %}
+              {% elif apt.reason == 'chat' %}{% if lang == 'kz' %}AI-чат арқылы{% else %}Через AI-чат{% endif %}
+              {% else %}✋ {% if lang == 'kz' %}Өз бастамасымен{% else %}Самостоятельно{% endif %}{% endif %}
+            </div>
+          </div>
+          {% if apt.status == 'pending' %}
+          <form method="post" onsubmit="return confirm('{% if lang == "kz" %}Жазылымды болдырмау?{% else %}Отменить запись?{% endif %}');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="cancel">
+            <input type="hidden" name="appointment_id" value="{{ apt.id }}">
+            <button type="submit" class="btn btn-sm" style="background:var(--peach-pale);color:#C4614F;border:none;white-space:nowrap;">
+              ✕ {% if lang == 'kz' %}Болдырмау{% else %}Отменить{% endif %}
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="card" style="text-align:center;padding:3rem;">
+        <div style="font-size:3rem;margin-bottom:1rem;"></div>
+        <h3 style="font-family:'Inter',sans-serif;font-weight:800;margin-bottom:.75rem;color:var(--text);">
+          {% if lang == 'kz' %}Жазылым жоқ{% else %}Нет записей{% endif %}
+        </h3>
+        <p style="color:var(--text-2);font-size:.9rem;margin-bottom:1.5rem;">
+          {% if lang == 'kz' %}Психологқа жазылу үшін төмендегі батырманы басыңыз{% else %}Нажмите кнопку ниже чтобы записаться к психологу{% endif %}
+        </p>
+        <a href="{% url 'book_appointment' %}" class="btn btn-primary">
+          {% if lang == 'kz' %}Жазылу{% else %}Записаться{% endif %}
+        </a>
+      </div>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

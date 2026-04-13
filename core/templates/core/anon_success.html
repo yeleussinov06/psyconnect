@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang == 'kz' %}Жіберілді{% else %}Отправлено{% endif %} — PsyConnect{% endblock %}
+{% block content %}
+<div style="min-height:calc(100vh - 68px - 60px); display:flex; align-items:center; justify-content:center; padding:2rem;">
+  <div style="text-align:center; max-width:480px;">
+    <div style="font-size:5rem; margin-bottom:1.5rem; animation: fadeInUp 0.5s ease;"></div>
+    <h1 style="font-family:'Inter',sans-serif; color:var(--text); font-size:2rem; margin-bottom:1rem;">
+      {% if lang == 'kz' %}Хабарлама жіберілді!{% else %}Сообщение отправлено!{% endif %}
+    </h1>
+    <p style="color:var(--text-2); font-size:1rem; line-height:1.7; margin-bottom:2rem;">
+      {% if lang == 'kz' %}
+        Психолог сіздің хабарламаңызды алды. Жақын арада жауап береді.
+      {% else %}
+        Психолог получил ваше сообщение и скоро ответит.
+      {% endif %}
+    </p>
+    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+      <a href="{% url 'home' %}" class="btn btn-navy">{% if lang == 'kz' %}Басты бет{% else %}На главную{% endif %}</a>
+      <a href="{% url 'ai_chat' %}" class="btn btn-primary">AI-чат</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

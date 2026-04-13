@@ -1,0 +1,1311 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+import json, random
+from datetime import timedelta
+from django.utils import timezone
+from collections import Counter
+from .models import UserProfile, EmotionEntry, TestResult, ChatMessage, AnonymousRequest, Article, PsychologistSchedule, Appointment, Notification
+
+
+def create_notification(user, notif_type, text, link=''):
+    """Создаёт уведомление для пользователя"""
+    Notification.objects.create(
+        user=user, notif_type=notif_type, text=text, link=link
+    )
+
+def get_lang(r): return r.session.get('lang', 'ru')
+def set_language(request, lang):
+    request.session['lang'] = lang
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+def get_role(user):
+    try: return user.profile.role
+    except: return 'student'
+def role_redirect(user):
+    r = get_role(user)
+    if r == 'psychologist': return redirect('psychologist_dashboard')
+    if r == 'parent': return redirect('parent_dashboard')
+    if r == 'teacher': return redirect('teacher_dashboard')
+    return redirect('student_dashboard')
+
+def landing(request):
+    return render(request, 'core/home.html', {'lang': get_lang(request)})
+def home(request):
+    if request.user.is_authenticated: return role_redirect(request.user)
+    return landing(request)
+
+def login_view(request):
+    lang = get_lang(request); error = None
+    if request.user.is_authenticated: return role_redirect(request.user)
+    if request.method == 'POST':
+        u = authenticate(request, username=request.POST.get('username','').strip(), password=request.POST.get('password',''))
+        if u:
+            login(request, u); UserProfile.objects.get_or_create(user=u); return role_redirect(u)
+        error = 'Неверный логин или пароль / Қате логин немесе пароль'
+    return render(request, 'core/login.html', {'lang': lang, 'error': error})
+
+def register_view(request):
+    lang = get_lang(request); error = None
+    if request.user.is_authenticated: return role_redirect(request.user)
+    if request.method == 'POST':
+        uname = request.POST.get('username','').strip()
+        pwd   = request.POST.get('password','')
+        role  = request.POST.get('role','student')
+        if not uname or not pwd: error = 'Заполните все поля'
+        elif User.objects.filter(username=uname).exists(): error = 'Логин занят / Логин бос емес'
+        else:
+            u = User.objects.create_user(username=uname, password=pwd,
+                first_name=request.POST.get('first_name','').strip(),
+                last_name=request.POST.get('last_name','').strip())
+            UserProfile.objects.create(user=u, role=role)
+            login(request, u); return role_redirect(u)
+    return render(request, 'core/register.html', {'lang': lang, 'error': error})
+
+def logout_view(request):
+    logout(request); return redirect('landing')
+
+# ── STUDENT ──────────────────────────────────────────────────
+@login_required
+def student_dashboard(request):
+    lang = get_lang(request)
+    emotions = EmotionEntry.objects.filter(user=request.user)[:7]
+    recent_results = TestResult.objects.filter(user=request.user)[:3]
+    return render(request, 'core/student/dashboard.html', {
+        'lang': lang, 'emotions': emotions, 'recent_results': recent_results,
+        'emotion_count': EmotionEntry.objects.filter(user=request.user).count(),
+        'test_count': TestResult.objects.filter(user=request.user).count(),
+        'chat_count': ChatMessage.objects.filter(user=request.user).count(),
+    })
+
+@login_required
+def emotion_diary(request):
+    lang = get_lang(request)
+    if request.method == 'POST':
+        em = request.POST.get('emotion','').strip()
+        if em: EmotionEntry.objects.create(user=request.user, emotion=em, event_type=request.POST.get('event_type',''), note=request.POST.get('note','').strip())
+        return redirect('emotion_diary')
+    entries = EmotionEntry.objects.filter(user=request.user)[:30]
+    today = timezone.now().date()
+    labels, h, c, a, s = [], [], [], [], []
+    for i in range(13,-1,-1):
+        day = today - timedelta(days=i)
+        labels.append(day.strftime('%d.%m'))
+        day_qs = EmotionEntry.objects.filter(user=request.user, created_at__date=day)
+        ct = Counter(e.emotion for e in day_qs)
+        h.append(ct.get('happy',0)); c.append(ct.get('calm',0))
+        a.append(ct.get('anxious',0)); s.append(ct.get('sad',0))
+    return render(request, 'core/student/emotion_diary.html', {
+        'lang': lang, 'entries': entries,
+        'chart_labels': json.dumps(labels),
+        'chart_happy': json.dumps(h), 'chart_calm': json.dumps(c),
+        'chart_anxious': json.dumps(a), 'chart_sad': json.dumps(s),
+    })
+
+@login_required
+def test_center(request):
+    lang = get_lang(request)
+    cats = [
+        {'key':'anxiety','name_ru':'Тревожность','name_kz':'Мазасыздық','icon':'🧠','desc_ru':'Оцени уровень тревоги','desc_kz':'Мазасыздық деңгейін бағала'},
+        {'key':'stress','name_ru':'Стресс','name_kz':'Стресс','icon':'⚡','desc_ru':'Как справляешься со стрессом?','desc_kz':'Стресске қалай төтеп бересің?'},
+        {'key':'motivation','name_ru':'Мотивация','name_kz':'Мотивация','icon':'🚀','desc_ru':'Уровень мотивации к учёбе','desc_kz':'Оқуға деген мотивация деңгейің'},
+        {'key':'social','name_ru':'Социальный','name_kz':'Әлеуметтік','icon':'🤝','desc_ru':'Комфортно ли в коллективе?','desc_kz':'Ұжымда ыңғайлы ма?'},
+    ]
+    return render(request, 'core/student/test_center.html', {
+        'lang': lang, 'categories': cats,
+        'recent_results': TestResult.objects.filter(user=request.user)[:5],
+    })
+
+QS = {
+    'anxiety': [
+        {'ru':'Я часто беспокоюсь без причины','kz':'Жиі себепсіз алаңдаймын'},
+        {'ru':'Мне трудно расслабиться','kz':'Демалу қиын'},
+        {'ru':'Учащённое сердцебиение от волнения','kz':'Толқудан жүрек жиі соғады'},
+        {'ru':'Избегаю сложных ситуаций','kz':'Күрделі жағдайлардан аулақ жүремін'},
+        {'ru':'Сложно сосредоточиться из-за тревоги','kz':'Алаңдаушылықтан шоғырлану қиын'},
+    ],
+    'stress': [
+        {'ru':'Чувствую себя перегруженным задачами','kz':'Тапсырмалармен шамадан тыс жүктелгенмін'},
+        {'ru':'Не хватает времени на отдых','kz':'Демалуға уақытым жетпейді'},
+        {'ru':'Раздражаюсь из-за мелочей','kz':'Ұсақ-түйектерге ашуланамын'},
+        {'ru':'Головные боли от напряжения','kz':'Кернеуден бас ауырады'},
+        {'ru':'Плохо сплю из-за переживаний','kz':'Алаңдаушылықтан нашар ұйықтаймын'},
+    ],
+    'motivation': [
+        {'ru':'Мне интересно учиться','kz':'Оқуды ұнатамын'},
+        {'ru':'Ставлю цели и достигаю их','kz':'Мақсат қоямын және оған жетемін'},
+        {'ru':'Неудачи не останавливают меня','kz':'Сәтсіздіктер тоқтатпайды'},
+        {'ru':'Верю в свои силы','kz':'Өз күшіме сенемін'},
+        {'ru':'Нравится узнавать новое','kz':'Жаңа нәрсе үйрену ұнайды'},
+    ],
+    'social': [
+        {'ru':'Легко нахожу общий язык с людьми','kz':'Адамдармен тіл табысамын'},
+        {'ru':'Комфортно работать в группе','kz':'Топта жұмыс жасауға жайлы'},
+        {'ru':'Могу попросить о помощи','kz':'Көмек сұрай аламын'},
+        {'ru':'Есть близкие друзья','kz':'Жақын достарым бар'},
+        {'ru':'Умею слушать других','kz':'Басқаларды тыңдай аламын'},
+    ],
+}
+
+@login_required
+def take_test(request, category):
+    lang = get_lang(request)
+    if request.method == 'POST':
+        score = sum(int(request.POST.get(f'q{i}',0)) for i in range(5))
+        mx = 20
+        if score<=5: ru,kz='Отличный результат! Всё в норме.','Тамаша нәтиже! Бәрі қалыпты.'
+        elif score<=10: ru,kz='Умеренный уровень. Стоит обратить внимание.','Орташа деңгей. Назар аудару керек.'
+        elif score<=15: ru,kz='Повышенный уровень. Рекомендуем психолога.','Жоғары деңгей. Психолог ұсынылады.'
+        else: ru,kz='Высокий уровень. Обратитесь к специалисту.','Өте жоғары. Маманға барыңыз.'
+        TestResult.objects.create(user=request.user, category=category, score=score, max_score=mx,
+                                  interpretation=ru if lang=='ru' else kz)
+        # Если балл высокий — предлагаем запись к психологу
+        suggest_appointment = score >= 12
+        return render(request, 'core/student/test_result.html',
+                      {'lang':lang,'score':score,'max_score':mx,'interp_ru':ru,'interp_kz':kz,
+                       'category':category,'suggest_appointment':suggest_appointment})
+    return render(request, 'core/student/take_test.html',
+                  {'lang':lang,'questions':QS.get(category,QS['anxiety']),'category':category})
+
+@login_required
+def ai_chat_view(request):
+    return render(request, 'core/student/ai_chat.html', {'lang': get_lang(request)})
+
+@require_POST
+def ai_chat_api(request):
+    try: data = json.loads(request.body); msg = data.get('message','')
+    except: data={}; msg=''
+    lang = request.session.get('lang','ru')
+
+    # Ключевые слова для определения тревожного состояния
+    concern_keywords_ru = ['стресс','тревог','страшно','боюсь','плохо','не могу','помоги','устал','грустно','плачу','злюсь','не хочу','тяжело','паника','депресси']
+    concern_keywords_kz = ['стресс','алаңда','қорқам','жаман','мүмкін емес','көмек','шаршадым','қайғылы','жылаймын','ашулы','қиын','паника']
+
+    msg_lower = msg.lower()
+    is_concerning = any(kw in msg_lower for kw in (concern_keywords_kz if lang=='kz' else concern_keywords_ru))
+
+    if is_concerning:
+        resp = ('Мен сенің жағдайыңды сезінемін. Психологпен сөйлессең жақсы болар еді. Жазылғың келе ме?' if lang=='kz'
+                else 'Я слышу тебя — звучит непросто. Думаю, разговор с психологом поможет. Хочешь записаться?')
+        suggest = True
+    else:
+        pool_ru = ["Я понимаю тебя. Расскажи подробнее — что тебя беспокоит?",
+                   "Это непросто. Как давно ты так себя чувствуешь?",
+                   "Я здесь, чтобы выслушать. Ты не один/одна в этом.",
+                   "Попробуй пройти тест на тревожность — это поможет разобраться.",
+                   "Расскажи мне больше — что происходит?"]
+        pool_kz = ["Мен сені түсінемін. Толығырақ айт — не алаңдатады?",
+                   "Бұл оңай емес. Бұл сезімді қашаннан сезінесің?",
+                   "Мен сені тыңдаймын. Сен жалғыз емессің.",
+                   "Мазасыздық тестін өту — жағдайды түсінуге көмектеседі.",
+                   "Маған көбірек айт — не болып жатыр?"]
+        resp = random.choice(pool_kz if lang=='kz' else pool_ru)
+        suggest = False
+
+    if request.user.is_authenticated:
+        ChatMessage.objects.create(user=request.user, message=msg, is_bot=False)
+        ChatMessage.objects.create(user=request.user, message=resp, is_bot=True)
+
+    return JsonResponse({'response': resp, 'suggest_appointment': suggest})
+
+# ── PARENT ───────────────────────────────────────────────────
+@login_required
+def parent_dashboard(request):
+    lang = get_lang(request)
+    if get_role(request.user) != 'parent': return role_redirect(request.user)
+
+    from .models import ParentStudent
+    import json as json_mod
+
+    def build_children_data(children):
+        data = []
+        today = timezone.now().date()
+        for child in children:
+            last_emotions = EmotionEntry.objects.filter(user=child).order_by('-created_at')[:5]
+            last_test     = TestResult.objects.filter(user=child).order_by('-created_at').first()
+            last_emotion  = last_emotions.first()
+
+            # Sparkline — настроение за 7 дней (1=плохо, 5=хорошо)
+            score_map = {'happy':5,'calm':4,'tired':3,'sad':2,'anxious':1,'angry':1}
+            sparkline = []
+            for i in range(6, -1, -1):
+                day = today - timedelta(days=i)
+                e = EmotionEntry.objects.filter(
+                    user=child, created_at__date=day
+                ).order_by('-created_at').first()
+                sparkline.append(score_map.get(e.emotion, 3) if e else None)
+
+            data.append({
+                'user': child,
+                'last_emotion': last_emotion,
+                'last_emotions': last_emotions,
+                'last_test': last_test,
+                'sparkline': json_mod.dumps(sparkline),
+                'has_alert': last_emotion and last_emotion.emotion in ['anxious','sad','angry'],
+            })
+        return data
+
+    children_links = ParentStudent.objects.filter(parent=request.user).select_related('student')
+    children = [link.student for link in children_links]
+    children_data = build_children_data(children)
+    articles = Article.objects.filter(audience='parent')[:6]
+
+    link_error = link_success = None
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add_child':
+            child_username = request.POST.get('child_username', '').strip()
+            try:
+                child_user = User.objects.get(username=child_username)
+                if get_role(child_user) != 'student':
+                    link_error = 'Этот пользователь не является учеником / Бұл пайдаланушы оқушы емес'
+                elif ParentStudent.objects.filter(parent=request.user, student=child_user).exists():
+                    link_error = 'Этот ученик уже привязан / Бұл оқушы бұрыннан қосылған'
+                else:
+                    ParentStudent.objects.create(parent=request.user, student=child_user)
+                    link_success = f'Ученик {child_user.get_full_name() or child_user.username} успешно добавлен!'
+                    children_links = ParentStudent.objects.filter(parent=request.user).select_related('student')
+                    children = [link.student for link in children_links]
+                    children_data = build_children_data(children)
+            except User.DoesNotExist:
+                link_error = 'Пользователь не найден / Пайдаланушы табылмады'
+        elif action == 'remove_child':
+            child_id = request.POST.get('child_id')
+            ParentStudent.objects.filter(parent=request.user, student_id=child_id).delete()
+            return redirect('parent_dashboard')
+
+    return render(request, 'core/parent/dashboard.html', {
+        'lang': lang,
+        'children_data': children_data,
+        'articles': articles,
+        'link_error': link_error,
+        'link_success': link_success,
+        'has_children': bool(children_data),
+        'notifications_count': Notification.objects.filter(user=request.user, is_read=False).count(),
+    })
+
+def articles_view(request):
+    lang = get_lang(request)
+    audience = request.GET.get('audience', 'parent')
+
+    audience_tabs = [
+        ('parent',  'Родителям' if lang != 'kz' else 'Ата-аналарға',  '👨‍👩‍👧'),
+        ('student', 'Ученикам'  if lang != 'kz' else 'Оқушыларға',    '🎒'),
+        ('teacher', 'Учителям'  if lang != 'kz' else 'Мұғалімдерге',  '👩‍🏫'),
+    ]
+
+    static_articles = {
+        'parent': [
+            {'emoji':'🧠','bg':'linear-gradient(135deg,#FEF3C7,#FDE68A)','title':'Как распознать стресс у ребёнка?','time':5},
+            {'emoji':'💬','bg':'linear-gradient(135deg,#EDE9FE,#DDD6FE)','title':'Как говорить с ребёнком о чувствах','time':7},
+            {'emoji':'🛡️','bg':'linear-gradient(135deg,#FEE2E2,#FECACA)','title':'Буллинг — что делать родителям?','time':10},
+            {'emoji':'📚','bg':'linear-gradient(135deg,#DBEAFE,#BFDBFE)','title':'Как повысить мотивацию к учёбе?','time':6},
+            {'emoji':'🌱','bg':'linear-gradient(135deg,#D1FAE5,#A7F3D0)','title':'Техники дыхания — как научить ребёнка','time':4},
+            {'emoji':'❤️','bg':'linear-gradient(135deg,#FDF3E8,#FDE3BC)','title':'Как выстроить доверительные отношения','time':8},
+        ],
+        'student': [
+            {'emoji':'😌','bg':'linear-gradient(135deg,#EDE9FE,#DDD6FE)','title':'Как справляться с тревогой','time':5},
+            {'emoji':'🎯','bg':'linear-gradient(135deg,#DBEAFE,#BFDBFE)','title':'Тайм-менеджмент для школьника','time':6},
+            {'emoji':'💪','bg':'linear-gradient(135deg,#D1FAE5,#A7F3D0)','title':'Как поверить в себя','time':4},
+        ],
+        'teacher': [
+            {'emoji':'👁️','bg':'linear-gradient(135deg,#FEF3C7,#FDE68A)','title':'Как заметить тревогу у ученика','time':7},
+            {'emoji':'🤝','bg':'linear-gradient(135deg,#EDE9FE,#DDD6FE)','title':'Создание безопасной среды в классе','time':9},
+            {'emoji':'📊','bg':'linear-gradient(135deg,#DBEAFE,#BFDBFE)','title':'Работа с групповой динамикой','time':8},
+        ],
+    }
+
+    return render(request, 'core/parent/articles.html', {
+        'lang': lang,
+        'articles': Article.objects.filter(audience=audience),
+        'audience': audience,
+        'audience_tabs': audience_tabs,
+        'static_articles': static_articles.get(audience, []),
+    })
+
+# ── PSYCHOLOGIST ──────────────────────────────────────────────
+@login_required
+def psychologist_dashboard(request):
+    lang = get_lang(request)
+    if get_role(request.user) != 'psychologist': return role_redirect(request.user)
+
+    from django.db.models import Q
+    from .models import SchoolClass
+
+    search       = request.GET.get('search', '').strip()
+    class_filter = request.GET.get('class', '').strip()
+    active_panel = request.GET.get('panel', 'overview')
+
+    all_classes = sorted(SchoolClass.objects.all(), key=lambda c: _class_sort_key(c.name))
+
+    # Базовый queryset учеников
+    students_qs = User.objects.filter(profile__role='student').select_related('profile__school_class')
+
+    if class_filter:
+        students_qs = students_qs.filter(profile__school_class__name=class_filter)
+    if search:
+        students_qs = students_qs.filter(
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(username__icontains=search)
+        )
+
+    students = sorted(students_qs, key=lambda u: (
+        _class_sort_key(u.profile.school_class.name if u.profile.school_class else 'ЯЯ'),
+        u.last_name, u.first_name
+    ))
+
+    student_ids = [u.id for u in students]
+
+    # Динамическая статистика по выбранным ученикам
+    today = timezone.now().date()
+    em_keys = ['happy','calm','anxious','sad','angry','tired']
+    em_stats = {k: EmotionEntry.objects.filter(
+        emotion=k,
+        user__id__in=student_ids,
+        created_at__date__gte=today - timedelta(days=7)
+    ).count() for k in em_keys}
+
+    filtered_emotion_count = EmotionEntry.objects.filter(user__id__in=student_ids).count()
+    filtered_test_count    = TestResult.objects.filter(user__id__in=student_ids).count()
+
+    anon_requests = AnonymousRequest.objects.all().order_by('-created_at')[:30]
+    # Для regroup нужна сортировка по user, потом по дате
+    all_emotions  = EmotionEntry.objects.filter(
+        user__id__in=student_ids
+    ).select_related('user').order_by('user__id', '-created_at')[:100]
+
+    # ── emotion_stats как объект для шаблона ──
+    from types import SimpleNamespace
+    emotion_stats_obj = SimpleNamespace(**em_stats)
+    total_emotion_week = sum(em_stats.values())
+
+    # ── Группа риска + телефон родителя для каждого ученика ───
+    risk_filter = request.GET.get('risk', '').strip()
+    students_with_risk = []
+    for s in students:
+        # Считаем тревожные эмоции за последние 7 дней
+        bad_emotions = EmotionEntry.objects.filter(
+            user=s,
+            emotion__in=['anxious','sad','angry'],
+            created_at__date__gte=today - timedelta(days=7)
+        ).count()
+        total_emotions = EmotionEntry.objects.filter(
+            user=s,
+            created_at__date__gte=today - timedelta(days=7)
+        ).count()
+
+        if bad_emotions >= 3 or (total_emotions > 0 and bad_emotions / total_emotions >= 0.6):
+            risk = 'high'
+        elif bad_emotions >= 1:
+            risk = 'medium'
+        else:
+            risk = 'low'
+
+        # Телефон родителя
+        parent_link = s.parent_links.select_related('parent__profile').first()
+        parent_phone = parent_link.parent.profile.phone if parent_link else ''
+
+        students_with_risk.append({
+            'user': s,
+            'risk': risk,
+            'parent_phone': parent_phone,
+        })
+
+    # Фильтр по риску
+    if risk_filter:
+        students_with_risk = [x for x in students_with_risk if x['risk'] == risk_filter]
+
+    return render(request, 'core/psychologist/dashboard.html', {
+        'lang': lang,
+        'students': students,
+        'students_with_risk': students_with_risk,
+        'anon_requests': anon_requests,
+        'all_emotions': all_emotions,
+        'emotion_stats': json.dumps(em_stats),
+        'student_count': len(students_with_risk) if risk_filter else len(students),
+        'class_count': SchoolClass.objects.count(),
+        'request_count': AnonymousRequest.objects.count(),
+        'new_request_count': AnonymousRequest.objects.filter(status='new').count(),
+        'emotion_count': filtered_emotion_count,
+        'test_count': filtered_test_count,
+        'active_panel': active_panel,
+        'pending_count': Appointment.objects.filter(slot__psychologist=request.user, status='pending').count(),
+        'all_classes': all_classes,
+        'search': search,
+        'class_filter': class_filter,
+        'risk_filter': risk_filter,
+        'emotion_stats_obj': emotion_stats_obj,
+        'total_emotion_week': total_emotion_week,
+        'total_students': User.objects.filter(profile__role='student').count(),
+    })
+
+
+def _class_sort_key(name):
+    import re
+    if not name:
+        return (99, '')
+    m = re.match(r'^(\d+)\s*([А-ЯA-Z]*)$', name.strip().upper())
+    if m:
+        return (int(m.group(1)), m.group(2))
+    return (99, name)
+
+
+@login_required
+def respond_to_request(request, req_id):
+    if get_role(request.user) != 'psychologist': return redirect('landing')
+    anon = get_object_or_404(AnonymousRequest, id=req_id)
+    if request.method == 'POST':
+        resp = request.POST.get('response','').strip()
+        if resp: anon.response=resp; anon.status='closed'; anon.save()
+    return redirect('psychologist_dashboard')
+    """Умная сортировка: '1А'→(1,'А'), '11Б'→(11,'Б'), '9А'→(9,'А')"""
+    import re
+    if not name:
+        return (99, '')
+    m = re.match(r'^(\d+)\s*([А-ЯA-Z]*)$', name.strip().upper())
+    if m:
+        return (int(m.group(1)), m.group(2))
+    return (99, name)
+
+
+# ── TEACHER ──────────────────────────────────────────────────
+@login_required
+def teacher_dashboard(request):
+    lang = get_lang(request)
+    if get_role(request.user) != 'teacher': return role_redirect(request.user)
+
+    from django.db.models import Q
+    from .models import SchoolClass
+
+    teacher_class = getattr(request.user.profile, 'school_class', None)
+
+    # ── Фильтры ─────────────────────────────────────────────────
+    search       = request.GET.get('search', '').strip()
+    class_filter = request.GET.get('class', '').strip()
+
+    # ── Классы доступные учителю ─────────────────────────────────
+    if teacher_class:
+        # Учитель видит только свой класс
+        available_classes = [teacher_class]
+    else:
+        available_classes = sorted(
+            SchoolClass.objects.all(),
+            key=lambda c: _class_sort_key(c.name)
+        )
+
+    # ── Ученики ──────────────────────────────────────────────────
+    if teacher_class:
+        students = User.objects.filter(
+            profile__role='student',
+            profile__school_class=teacher_class
+        ).select_related('profile__school_class')
+    else:
+        students = User.objects.filter(
+            profile__role='student'
+        ).select_related('profile__school_class')
+
+    if class_filter:
+        students = students.filter(profile__school_class__name=class_filter)
+
+    if search:
+        students = students.filter(
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(username__icontains=search)
+        )
+
+    students = sorted(students, key=lambda u: (
+        _class_sort_key(u.profile.school_class.name if u.profile.school_class else 'ЯЯ'),
+        u.last_name, u.first_name
+    ))
+
+    student_ids = [u.id for u in students]
+    all_emotions = EmotionEntry.objects.filter(user__id__in=student_ids).select_related('user').order_by('-created_at')[:50]
+    all_results  = TestResult.objects.filter(user__id__in=student_ids).select_related('user').order_by('-created_at')[:30]
+    articles = Article.objects.all()[:6]
+
+    today = timezone.now().date()
+    em_keys = ['happy','calm','anxious','sad','angry','tired']
+    em_stats = {k: EmotionEntry.objects.filter(
+        emotion=k, user__id__in=student_ids,
+        created_at__date__gte=today - timedelta(days=7)
+    ).count() for k in em_keys}
+
+    return render(request, 'core/teacher/dashboard.html', {
+        'lang': lang,
+        'students': students,
+        'all_emotions': all_emotions,
+        'all_results': all_results,
+        'articles': articles,
+        'emotion_stats': json.dumps(em_stats),
+        'student_count': len(students),
+        'class_count': len(available_classes),
+        'emotion_count': len(all_emotions),
+        'test_count': len(all_results),
+        'teacher_class': teacher_class,
+        'available_classes': available_classes,
+        'search': search,
+        'class_filter': class_filter,
+    })
+
+# ── PUBLIC ANON ───────────────────────────────────────────────
+def anonymous_support(request):
+    lang = get_lang(request)
+    if not request.session.session_key: request.session.create()
+    if request.method == 'POST':
+        msg = request.POST.get('message','').strip()
+        if msg:
+            AnonymousRequest.objects.create(session_key=request.session.session_key, message=msg, reason=request.POST.get('category',''))
+            # Уведомляем всех психологов
+            psychologists = User.objects.filter(profile__role='psychologist')
+            for psych in psychologists:
+                create_notification(
+                    psych,
+                    'anonymous_new',
+                    f'Новый анонимный запрос: "{msg[:60]}{"..." if len(msg)>60 else ""}" 🔒',
+                    '/psychologist/'
+                )
+        return render(request, 'core/anon_success.html', {'lang':lang})
+    return render(request, 'core/anonymous_support.html', {'lang':lang})
+
+# ── PROFILE ──────────────────────────────────────────────────
+@login_required
+def profile_view(request):
+    lang = get_lang(request)
+    profile = request.user.profile
+    success = None
+    error = None
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'update_info':
+            first_name = request.POST.get('first_name', '').strip()
+            last_name  = request.POST.get('last_name', '').strip()
+            email      = request.POST.get('email', '').strip()
+            phone      = request.POST.get('phone', '').strip()
+            new_username = request.POST.get('username', '').strip()
+
+            if not new_username:
+                error = 'Логин не может быть пустым'
+            elif new_username != request.user.username and User.objects.filter(username=new_username).exists():
+                error = 'Этот логин уже занят / Бұл логин бос емес'
+            else:
+                request.user.first_name = first_name
+                request.user.last_name  = last_name
+                request.user.email      = email
+                request.user.username   = new_username
+                request.user.save()
+                profile.phone = phone
+                profile.save()
+                success = 'info'
+
+        elif action == 'change_password':
+            old_pwd  = request.POST.get('old_password', '')
+            new_pwd  = request.POST.get('new_password', '')
+            new_pwd2 = request.POST.get('new_password2', '')
+
+            if not request.user.check_password(old_pwd):
+                error = 'Текущий пароль неверный / Ағымдағы құпия сөз қате'
+            elif len(new_pwd) < 6:
+                error = 'Новый пароль минимум 6 символов / Жаңа құпия сөз кемінде 6 таңба'
+            elif new_pwd != new_pwd2:
+                error = 'Пароли не совпадают / Құпия сөздер сәйкес емес'
+            else:
+                request.user.set_password(new_pwd)
+                request.user.save()
+                # re-login after password change
+                from django.contrib.auth import update_session_auth_hash
+                update_session_auth_hash(request, request.user)
+                success = 'password'
+
+    return render(request, 'core/profile.html', {
+        'lang': lang,
+        'profile': profile,
+        'success': success,
+        'error': error,
+    })
+
+# ── APPOINTMENTS ─────────────────────────────────────────────
+from .models import PsychologistSchedule, Appointment
+from django.utils import timezone as tz
+
+@login_required
+def book_appointment(request):
+    """Страница записи к психологу — автослоты пн-пт 09-18"""
+    from datetime import date, timedelta, datetime, time as dtime
+    lang = get_lang(request)
+    reason = request.GET.get('reason', '')
+
+    today = tz.now().date()
+
+    # Получаем всех психологов
+    psychologists = User.objects.filter(profile__role='psychologist')
+
+    # Генерируем свободные слоты на ближайшие 2 недели (пн-пт 09-18)
+    free_slots = []
+    for offset in range(0, 15):
+        day = today + timedelta(days=offset)
+        if day.weekday() >= 5:  # Пропускаем выходные
+            continue
+        for hour in range(9, 18):
+            time_start = dtime(hour, 0)
+            time_end   = dtime(hour + 1, 0)
+            for psych in psychologists:
+                # Проверяем не заблокирован ли слот психологом
+                is_blocked = PsychologistSchedule.objects.filter(
+                    psychologist=psych,
+                    date=day,
+                    time_start=time_start,
+                    is_available=False
+                ).exists()
+                # Проверяем нет ли уже записи
+                is_booked = Appointment.objects.filter(
+                    slot__psychologist=psych,
+                    slot__date=day,
+                    slot__time_start=time_start,
+                    status__in=['pending','confirmed']
+                ).exists()
+
+                if not is_blocked and not is_booked:
+                    free_slots.append({
+                        'psychologist': psych,
+                        'date': day,
+                        'time_start': time_start,
+                        'time_end': time_end,
+                        'slot_key': f"{psych.id}_{day}_{hour}",
+                    })
+
+    # Группируем по дате
+    from itertools import groupby
+    from operator import itemgetter
+    slots_by_date = {}
+    for slot in free_slots:
+        d = slot['date']
+        if d not in slots_by_date:
+            slots_by_date[d] = []
+        slots_by_date[d].append(slot)
+
+    if request.method == 'POST':
+        # slot_key: psych_id_date_hour
+        slot_key = request.POST.get('slot_key', '')
+        note = request.POST.get('note', '').strip()
+        reason = request.POST.get('reason', '')  # берём из формы, не из GET
+        try:
+            parts = slot_key.split('_')
+            psych_id = int(parts[0])
+            slot_date = date.fromisoformat(parts[1])
+            slot_hour = int(parts[2])
+            time_start = dtime(slot_hour, 0)
+            time_end   = dtime(slot_hour + 1, 0)
+            psych = User.objects.get(id=psych_id, profile__role='psychologist')
+
+            # Создаём или получаем слот в PsychologistSchedule
+            slot_obj, _ = PsychologistSchedule.objects.get_or_create(
+                psychologist=psych,
+                date=slot_date,
+                time_start=time_start,
+                defaults={'time_end': time_end, 'is_available': True}
+            )
+
+            # Создаём запись
+            Appointment.objects.create(
+                student=request.user,
+                slot=slot_obj,
+                reason=reason,
+                student_note=note,
+            )
+            # Уведомляем психолога
+            create_notification(
+                psych,
+                'appointment_new',
+                f'Новая заявка на приём от {request.user.get_full_name() or request.user.username} на {slot_date.strftime("%d.%m.%Y")} в {time_start.strftime("%H:%M")} 📬',
+                '/psychologist/appointments/'
+            )
+            return redirect('my_appointments')
+        except Exception as e:
+            pass
+
+    return render(request, 'core/student/book_appointment.html', {
+        'lang': lang,
+        'slots_by_date': slots_by_date,
+        'reason': reason,
+    })
+
+
+@login_required
+def my_appointments(request):
+    """Мои записи — для ученика"""
+    lang = get_lang(request)
+    appointments = Appointment.objects.filter(
+        student=request.user
+    ).select_related('slot', 'slot__psychologist').order_by('-created_at')
+
+    if request.method == 'POST' and request.POST.get('action') == 'cancel':
+        apt_id = request.POST.get('appointment_id')
+        try:
+            apt = Appointment.objects.get(id=apt_id, student=request.user, status='pending')
+            apt.status = 'cancelled'
+            apt.save()
+            # Освобождаем слот
+            apt.slot.is_available = True
+            apt.slot.save()
+        except Appointment.DoesNotExist:
+            pass
+        return redirect('my_appointments')
+
+    return render(request, 'core/student/my_appointments.html', {
+        'lang': lang,
+        'appointments': appointments,
+    })
+
+
+@login_required
+def psychologist_appointments(request):
+    """Управление записями — для психолога"""
+    lang = get_lang(request)
+    if get_role(request.user) != 'psychologist':
+        return role_redirect(request.user)
+
+    today = tz.now().date()
+
+    # Входящие заявки (ожидают)
+    pending = Appointment.objects.filter(
+        slot__psychologist=request.user,
+        status='pending'
+    ).select_related('student', 'slot').order_by('slot__date', 'slot__time_start')
+
+    # Подтверждённые предстоящие (дата >= сегодня)
+    confirmed = Appointment.objects.filter(
+        slot__psychologist=request.user,
+        status='confirmed',
+        slot__date__gte=today
+    ).select_related('student', 'slot').order_by('slot__date', 'slot__time_start')
+
+    # Архив — все прошедшие (подтверждённые прошлые + отклонённые + отменённые)
+    archive = Appointment.objects.filter(
+        slot__psychologist=request.user,
+    ).filter(
+        # Прошедшие подтверждённые ИЛИ отклонённые/отменённые
+        **{}
+    ).exclude(
+        status='pending'
+    ).exclude(
+        status='confirmed', slot__date__gte=today
+    ).select_related('student', 'slot').order_by('-slot__date', '-slot__time_start')[:50]
+
+    if request.method == 'POST':
+        apt_id = request.POST.get('appointment_id')
+        action = request.POST.get('action')
+        note   = request.POST.get('note', '').strip()
+        try:
+            apt = Appointment.objects.get(id=apt_id, slot__psychologist=request.user)
+            if action == 'confirm':
+                apt.status = 'confirmed'
+                apt.slot.is_available = False
+                apt.slot.save()
+                # Уведомление ученику
+                create_notification(
+                    apt.student,
+                    'appointment_confirmed',
+                    f'Ваша запись к психологу {request.user.get_full_name()} на {apt.slot.date.strftime("%d.%m.%Y")} в {apt.slot.time_start.strftime("%H:%M")} подтверждена! ✅',
+                    '/my-appointments/'
+                )
+            elif action == 'reject':
+                apt.status = 'rejected'
+                apt.slot.is_available = True
+                apt.slot.save()
+                # Уведомление ученику об отклонении
+                create_notification(
+                    apt.student,
+                    'appointment_rejected',
+                    f'К сожалению, ваша запись к психологу на {apt.slot.date.strftime("%d.%m.%Y")} в {apt.slot.time_start.strftime("%H:%M")} была отклонена. {("Причина: " + note) if note else "Попробуйте выбрать другое время."} ❌',
+                    '/my-appointments/'
+                )
+            apt.psychologist_note = note
+            apt.save()
+        except Appointment.DoesNotExist:
+            pass
+        return redirect('psychologist_appointments')
+
+    return render(request, 'core/psychologist/appointments.html', {
+        'lang': lang,
+        'pending': pending,
+        'confirmed': confirmed,
+        'archive': archive,
+        'today': today,
+    })
+
+
+@login_required
+def manage_schedule(request):
+    """Психолог управляет расписанием — пн-пт 09-18 всегда свободны, отмечает занятые"""
+    from datetime import date, timedelta, datetime
+    lang = get_lang(request)
+    if get_role(request.user) != 'psychologist':
+        return role_redirect(request.user)
+
+    today = tz.now().date()
+    hours = list(range(9, 18))  # 09:00 - 17:00
+
+    # Определяем текущую неделю
+    week_offset = int(request.GET.get('week', 0))
+    week_start = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
+    week_end = week_start + timedelta(days=4)
+
+    # Дни недели (пн-пт)
+    week_days_dates = [week_start + timedelta(days=i) for i in range(5)]
+
+    # Занятые слоты психолога (is_available=False — заблокировано им самим)
+    blocked = PsychologistSchedule.objects.filter(
+        psychologist=request.user,
+        is_available=False,
+        date__range=[week_start, week_end]
+    ).values_list('date', 'time_start')
+    blocked_set = set((b[0], b[1].hour) for b in blocked)
+
+    # Подтверждённые записи
+    confirmed_apts = Appointment.objects.filter(
+        slot__psychologist=request.user,
+        status='confirmed',
+        slot__date__range=[week_start, week_end]
+    ).select_related('slot', 'student')
+    confirmed_set = set()
+    confirmed_info = {}
+    for apt in confirmed_apts:
+        key = (apt.slot.date, apt.slot.time_start.hour)
+        confirmed_set.add(key)
+        confirmed_info[key] = apt.student.get_full_name() or apt.student.username
+
+    # Отклонённые записи (для архива в календаре)
+    rejected_apts = Appointment.objects.filter(
+        slot__psychologist=request.user,
+        status='rejected',
+        slot__date__range=[week_start, week_end]
+    ).select_related('slot')
+    rejected_set = set((apt.slot.date, apt.slot.time_start.hour) for apt in rejected_apts)
+
+    # Строим данные для шаблона — матрица часы x дни
+    calendar_rows = []
+    for hour in hours:
+        row = {'hour': hour, 'cells': []}
+        for d in week_days_dates:
+            is_blocked = (d, hour) in blocked_set
+            is_confirmed = (d, hour) in confirmed_set
+            is_rejected = (d, hour) in rejected_set
+            student_name = confirmed_info.get((d, hour), '')
+            cell = {
+                'date': d,
+                'hour': hour,
+                'date_str': d.isoformat(),
+                'is_blocked': is_blocked,
+                'is_confirmed': is_confirmed,
+                'is_rejected': is_rejected,
+                'is_past': d < today,
+                'student_name': student_name,
+            }
+            row['cells'].append(cell)
+        calendar_rows.append(row)
+
+    error = None
+    success = None
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        date_str = request.POST.get('date')
+        hour_str = request.POST.get('hour')
+
+        if date_str and hour_str:
+            slot_date = date.fromisoformat(date_str)
+            slot_hour = int(hour_str)
+            time_start = datetime.strptime(f"{slot_hour}:00", "%H:%M").time()
+            time_end   = datetime.strptime(f"{slot_hour+1}:00", "%H:%M").time()
+
+            if action == 'block':
+                # Блокируем слот
+                PsychologistSchedule.objects.get_or_create(
+                    psychologist=request.user,
+                    date=slot_date,
+                    time_start=time_start,
+                    defaults={'time_end': time_end, 'is_available': False}
+                )
+                obj, _ = PsychologistSchedule.objects.get_or_create(
+                    psychologist=request.user,
+                    date=slot_date,
+                    time_start=time_start,
+                    defaults={'time_end': time_end}
+                )
+                obj.is_available = False
+                obj.save()
+                success = 'Слот заблокирован'
+
+            elif action == 'free':
+                # Освобождаем слот
+                PsychologistSchedule.objects.filter(
+                    psychologist=request.user,
+                    date=slot_date,
+                    time_start=time_start,
+                    is_available=False
+                ).delete()
+                success = 'Слот освобождён'
+
+        return redirect(f"{request.path}?week={week_offset}")
+
+    # Заголовки дней
+    week_days = [{'date': d, 'is_today': d == today, 'is_past': d < today} for d in week_days_dates]
+
+    return render(request, 'core/psychologist/schedule.html', {
+        'lang': lang,
+        'week_days': week_days,
+        'calendar_rows': calendar_rows,
+        'week_start': week_start,
+        'week_end': week_end,
+        'prev_week': week_offset - 1,
+        'next_week': week_offset + 1,
+        'current_week': 0,
+        'error': error,
+        'success': success,
+        'today': today,
+    })
+
+
+# ── NOTIFICATIONS ─────────────────────────────────────────────
+@login_required
+def notifications_view(request):
+    lang = get_lang(request)
+    notifs = Notification.objects.filter(user=request.user)[:30]
+    # Отмечаем все как прочитанные
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return render(request, 'core/notifications.html', {'lang': lang, 'notifications': notifs})
+
+
+@login_required
+def notifications_count(request):
+    count = Notification.objects.filter(user=request.user, is_read=False).count()
+    return JsonResponse({'count': count})
+
+
+# ── ADMIN IMPORT ──────────────────────────────────────────────
+import tempfile, os
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import messages
+from django.http import FileResponse
+
+@staff_member_required
+def admin_import_view(request):
+    """Страница импорта пользователей из Excel (только для staff/admin)"""
+    lang = get_lang(request)
+    result = None
+
+    if request.method == 'POST' and request.FILES.get('excel_file'):
+        import_file = request.FILES['excel_file']
+        dry_run = bool(request.POST.get('dry_run'))
+
+        with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp:
+            for chunk in import_file.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
+
+        try:
+            result = run_import(tmp_path, dry_run=dry_run)
+            # Сохраняем путь к файлу паролей в сессии
+            if result.get('output_file'):
+                request.session['import_result_path'] = result['output_file']
+        finally:
+            os.unlink(tmp_path)
+
+    return render(request, 'core/admin_import.html', {'lang': lang, 'result': result})
+
+
+
+def run_import(file_path, dry_run=False):
+    """Web версия импорта — вызывается из admin_import_view"""
+    import subprocess, sys, json, tempfile, os
+    from django.contrib.auth.models import User
+    from .models import UserProfile, SchoolClass, ParentStudent
+    import re, secrets, string
+    from openpyxl import load_workbook
+    from django.db import transaction
+
+    def next_sid():
+        existing = User.objects.filter(username__regex=r'^id\d+$').values_list('username', flat=True)
+        nums = [int(u[2:]) for u in existing if u[2:].isdigit()]
+        return f'id{(max(nums)+1 if nums else 1):04d}'
+
+    def gen_pwd(base=''): return f'{base}_2026' if base else ''.join(secrets.choice(string.ascii_letters+string.digits) for _ in range(10))
+
+    def mk_uname(name, prefix=''):
+        parts = re.sub(r'[^\w\s]','',name.lower()).split()
+        base = prefix + '_'.join(parts[:2]) if parts else prefix+'user'
+        u = base; c = 1
+        while User.objects.filter(username=u).exists(): u=f'{base}_{c}'; c+=1
+        return u
+
+    try:
+        wb = load_workbook(file_path)
+    except Exception as e:
+        return {'teachers':0,'students':0,'parents':0,'skipped':0,'errors':[str(e)]}
+
+    ws = wb['Импорт класса'] if 'Импорт класса' in wb.sheetnames else wb.active
+    stats = {'teachers':0,'students':0,'parents':0,'skipped':0}
+    errors = []; created = []
+    teacher_cache = {}; class_cache = {}
+
+    try:
+        with transaction.atomic():
+            sid = transaction.savepoint()
+            for row_num, row in enumerate(ws.iter_rows(min_row=3, values_only=True), 3):
+                if not any(row): continue
+                try:
+                    cn=str(row[0] or '').strip(); sn=str(row[1] or '').strip()
+                    se=str(row[2] or '').strip() if len(row)>2 else ''
+                    tn=str(row[3] or '').strip() if len(row)>3 else ''
+                    pn=str(row[4] or '').strip() if len(row)>4 else ''
+                    pp_raw=row[5] if len(row)>5 else ''
+                    pp=str(int(pp_raw)).strip() if isinstance(pp_raw,(int,float)) else str(pp_raw or '').strip()
+                    pe=str(row[6] or '').strip() if len(row)>6 else ''
+                    if not cn or not sn: continue
+
+                    if cn not in class_cache:
+                        sc,_=SchoolClass.objects.get_or_create(name=cn); class_cache[cn]=sc
+                    school_class=class_cache[cn]
+
+                    # Teacher
+                    if tn and tn not in teacher_cache:
+                        parts=tn.split()
+                        tq=User.objects.filter(profile__role='teacher',first_name=parts[0] if parts else '')
+                        if len(parts)>1: tq=tq.filter(last_name__icontains=parts[1])
+                        if tq.exists():
+                            teacher=tq.first(); teacher_cache[tn]=teacher
+                        else:
+                            tu=mk_uname(tn); tp=gen_pwd()
+                            teacher=User.objects.create_user(tu,'',tp,first_name=parts[0] if parts else '',last_name=' '.join(parts[1:]) if len(parts)>1 else '')
+                            pr,_=UserProfile.objects.get_or_create(user=teacher)
+                            pr.role='teacher'; pr.school_class=school_class; pr.save()
+                            teacher_cache[tn]=teacher; stats['teachers']+=1
+                            created.append({'role':'Учитель','full_name':tn,'username':tu,'password':tp,'class':cn})
+
+                    # Student
+                    parts=sn.split()
+                    sq=User.objects.filter(profile__role='student',profile__school_class=school_class,first_name=parts[0] if parts else '')
+                    if len(parts)>1: sq=sq.filter(last_name__icontains=parts[1])
+                    if sq.exists():
+                        student=sq.first(); stats['skipped']+=1
+                    else:
+                        sid_val=next_sid(); sp=gen_pwd(sid_val)
+                        student=User.objects.create_user(sid_val,se,sp,first_name=parts[0] if parts else '',last_name=' '.join(parts[1:]) if len(parts)>1 else '')
+                        pr,_=UserProfile.objects.get_or_create(user=student)
+                        pr.role='student'; pr.school_class=school_class; pr.save()
+                        stats['students']+=1
+                        created.append({'role':'Ученик','full_name':sn,'username':sid_val,'password':sp,'email':se,'class':cn,'student_id':sid_val})
+
+                    # Parent
+                    if pn and pp:
+                        pp_clean=re.sub(r'[\s\-\(\)]','',pp)
+                        pp_clean=re.sub(r'[\s\-\(\)\+]','',pp)
+                        pq=UserProfile.objects.filter(role='parent',phone__icontains=pp_clean[-7:]).select_related('user') if len(pp_clean)>=7 else UserProfile.objects.none()
+                        if pq.exists():
+                            parent=pq.first().user
+                            ParentStudent.objects.get_or_create(parent=parent,student=student)
+                        else:
+                            pu=mk_uname(pn,'parent_'); pp2=gen_pwd()
+                            pparts=pn.split()
+                            parent=User.objects.create_user(pu,pe,pp2,first_name=pparts[0] if pparts else '',last_name=' '.join(pparts[1:]) if len(pparts)>1 else '')
+                            pr,_=UserProfile.objects.get_or_create(user=parent)
+                            pr.role='parent'; pr.phone=pp; pr.save()
+                            ParentStudent.objects.get_or_create(parent=parent,student=student)
+                            stats['parents']+=1
+                            created.append({'role':'Родитель','full_name':pn,'username':pu,'password':pp2,'email':pe,'phone':pp,'children':student.username})
+                except Exception as e:
+                    errors.append(f'Строка {row_num}: {e}')
+
+            if dry_run: transaction.savepoint_rollback(sid)
+    except Exception as e:
+        errors.append(f'Критическая ошибка: {e}')
+        return {**stats,'errors':errors}
+
+    output_file = _write_passwords_excel(created) if created and not dry_run else None
+    return {**stats,'errors':errors,'output_file':output_file,'dry_run':dry_run}
+
+
+def _write_passwords_excel(users):
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+    import tempfile
+
+    wb = Workbook(); ws = wb.active; ws.title = 'Логины и пароли'
+    h_fill = PatternFill('solid', fgColor='4A7C59')
+    headers = ['Роль','ФИО','Логин','Пароль','Email','Телефон','Класс','ID ученика']
+    for c, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=c, value=h)
+        cell.font = Font(bold=True, color='FFFFFF')
+        cell.fill = h_fill
+    colors = {'Учитель':'EBF3EE','Ученик':'EBF4FA','Родитель':'FDF3E8'}
+    for r, u in enumerate(users, 2):
+        data = [u.get('role'),u.get('full_name'),u.get('username'),u.get('password'),
+                u.get('email'),u.get('phone',''),u.get('class',''),u.get('student_id','')]
+        fill = PatternFill('solid', fgColor=colors.get(u.get('role',''),'FFFFFF'))
+        for c, v in enumerate(data, 1):
+            cell = ws.cell(row=r, column=c, value=v)
+            cell.fill = fill
+    for c, w in enumerate([12,30,20,20,30,18,10,14], 1):
+        ws.column_dimensions[get_column_letter(c)].width = w
+    ws.freeze_panes = 'A2'
+
+    tmp = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False, prefix='import_result_')
+    wb.save(tmp.name)
+    return tmp.name
+
+
+@staff_member_required
+def download_import_template(request):
+    """Скачать шаблон Excel"""
+    template_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'import_template.xlsx')
+    if not os.path.exists(template_path):
+        from django.http import HttpResponse
+        return HttpResponse('Шаблон не найден', status=404)
+    return FileResponse(open(template_path, 'rb'),
+        as_attachment=True, filename='import_template.xlsx')
+
+
+@staff_member_required
+def download_import_result(request):
+    """Скачать результат импорта"""
+    result_path = request.session.get('import_result_path')
+    if result_path and os.path.exists(result_path):
+        return FileResponse(open(result_path, 'rb'),
+            as_attachment=True, filename='import_result.xlsx')
+    from django.http import HttpResponse
+    return HttpResponse('Файл не найден', status=404)
+
+
+# ── PARENT BOOK APPOINTMENT ────────────────────────────────────
+@login_required
+def parent_book_appointment(request):
+    """Родитель записывает ребёнка к психологу"""
+    from datetime import date, timedelta, time as dtime
+    lang = get_lang(request)
+    if get_role(request.user) != 'parent': return role_redirect(request.user)
+
+    from .models import ParentStudent
+
+    # Дети родителя
+    children_links = ParentStudent.objects.filter(parent=request.user).select_related('student')
+    children = [link.student for link in children_links]
+
+    selected_child_id = request.GET.get('child', str(children[0].id) if children else '')
+    selected_child = None
+    for child in children:
+        if str(child.id) == selected_child_id:
+            selected_child = child
+            break
+
+    # Причины обращения
+    reason_choices = [
+        ('anxiety',  '😰 Тревога / Стресс'),
+        ('bullying', '🔴 Буллинг'),
+        ('family',   '👨‍👩‍👧 Семейные проблемы'),
+        ('study',    '📚 Проблемы с учёбой'),
+        ('behavior', '⚡ Поведение'),
+        ('other',    '✏️ Другое'),
+    ]
+
+    success = error = None
+    slots_by_date = {}
+
+    if selected_child:
+        # Генерируем слоты
+        today = tz.now().date()
+        psychologists = User.objects.filter(profile__role='psychologist')
+        free_slots = []
+        for offset in range(0, 15):
+            day = today + timedelta(days=offset)
+            if day.weekday() >= 5:
+                continue
+            for hour in range(9, 18):
+                time_start = dtime(hour, 0)
+                time_end   = dtime(hour + 1, 0)
+                for psych in psychologists:
+                    is_blocked = PsychologistSchedule.objects.filter(
+                        psychologist=psych, date=day,
+                        time_start=time_start, is_available=False
+                    ).exists()
+                    is_booked = Appointment.objects.filter(
+                        slot__psychologist=psych, slot__date=day,
+                        slot__time_start=time_start,
+                        status__in=['pending','confirmed']
+                    ).exists()
+                    if not is_blocked and not is_booked:
+                        free_slots.append({
+                            'psychologist': psych,
+                            'date': day,
+                            'time_start': time_start,
+                            'time_end': time_end,
+                            'slot_key': f"{psych.id}_{day}_{hour}",
+                        })
+
+        for slot in free_slots:
+            d = slot['date']
+            if d not in slots_by_date:
+                slots_by_date[d] = []
+            slots_by_date[d].append(slot)
+
+    if request.method == 'POST':
+        child_id  = request.POST.get('child_id')
+        slot_key  = request.POST.get('slot_key', '')
+        note      = request.POST.get('note', '').strip()
+        reason    = request.POST.get('reason', 'other')
+
+        try:
+            child_user = User.objects.get(id=child_id)
+            # Проверяем что это действительно ребёнок этого родителя
+            if not ParentStudent.objects.filter(parent=request.user, student=child_user).exists():
+                error = 'Ошибка доступа'
+            else:
+                parts = slot_key.split('_')
+                psych_id   = int(parts[0])
+                slot_date  = date.fromisoformat(parts[1])
+                slot_hour  = int(parts[2])
+                time_start = dtime(slot_hour, 0)
+                time_end   = dtime(slot_hour + 1, 0)
+                psych = User.objects.get(id=psych_id, profile__role='psychologist')
+
+                slot_obj, _ = PsychologistSchedule.objects.get_or_create(
+                    psychologist=psych, date=slot_date, time_start=time_start,
+                    defaults={'time_end': time_end, 'is_available': True}
+                )
+                Appointment.objects.create(
+                    student=child_user, slot=slot_obj,
+                    reason=reason, student_note=note,
+                )
+                # Уведомление психологу
+                create_notification(
+                    psych, 'appointment_new',
+                    f'Новая заявка от родителя: {child_user.get_full_name() or child_user.username} на {slot_date.strftime("%d.%m.%Y")} в {time_start.strftime("%H:%M")} 📬',
+                    '/psychologist/appointments/'
+                )
+                # Уведомление ученику
+                create_notification(
+                    child_user, 'appointment_new',
+                    f'Родитель записал тебя к психологу на {slot_date.strftime("%d.%m.%Y")} в {time_start.strftime("%H:%M")} 📅',
+                    '/my-appointments/'
+                )
+                success = f'{"Бала жазылды!" if lang == "kz" else "Ребёнок записан!"} {slot_date.strftime("%d.%m.%Y")} {"сағат" if lang == "kz" else "в"} {time_start.strftime("%H:%M")}'
+        except Exception as e:
+            error = str(e)
+
+    return render(request, 'core/parent/book_appointment.html', {
+        'lang': lang,
+        'children': children,
+        'selected_child': selected_child,
+        'selected_child_id': selected_child_id,
+        'slots_by_date': slots_by_date,
+        'reason_choices': reason_choices,
+        'success': success,
+        'error': error,
+    })

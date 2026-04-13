@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Мұғалім панелі{% else %}Панель учителя{% endif %} — PsyConnect{% endblock %}
+{% block extra_css %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  {% include "core/teacher/sidebar.html" with active="dashboard" %}
+
+  <main class="main-content">
+
+    <!-- ───── OVERVIEW ───── -->
+    <div id="panel-overview">
+      <div class="page-header">
+        <h1 class="page-title">{% if lang == 'kz' %}Сәлем, {{ user.first_name|default:user.username }}! {% else %}Привет, {{ user.first_name|default:user.username }}! {% endif %}</h1>
+        <p class="page-subtitle">
+          {% if teacher_class %}
+            {% if lang == 'kz' %}{{ teacher_class.name }} сыныбының мұғалімі{% else %}Учитель класса {{ teacher_class.name }}{% endif %}
+          {% else %}
+            <span style="color:var(--peach);">
+              {% if lang == 'kz' %}Сізге класс тағайындалмаған — /admin/ арқылы класс тағайындаңыз{% else %}Вам не назначен класс — назначьте через /admin/{% endif %}
+            </span>
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(108,99,255,0.12);"></div>
+          <div><div class="stat-value">{{ student_count }}</div><div class="stat-label">{% if lang == 'kz' %}Оқушы{% else %}Учеников{% endif %}</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon gold"></div>
+          <div><div class="stat-value">{{ emotion_count }}</div><div class="stat-label">{% if lang == 'kz' %}Эмоция жазбасы{% else %}Записей эмоций{% endif %}</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon teal"></div>
+          <div><div class="stat-value">{{ test_count }}</div><div class="stat-label">{% if lang == 'kz' %}Тест нәтижесі{% else %}Результатов тестов{% endif %}</div></div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:2rem;">
+        <!-- Emotion chart -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">{% if lang == 'kz' %}Эмоция статистикасы (7 күн){% else %}Статистика эмоций (7 дней){% endif %}</span>
+          </div>
+          <canvas id="emotionChart" height="220"></canvas>
+        </div>
+
+        <!-- Last emotions -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">{% if lang == 'kz' %}Соңғы эмоциялар{% else %}Последние эмоции{% endif %}</span>
+            <a href="#" onclick="showPanel('emotions');return false;" style="font-size:.8rem;color:var(--sage);font-weight:700;text-decoration:none;">{% if lang == 'kz' %}Барлығы →{% else %}Все →{% endif %}</a>
+          </div>
+          {% for e in all_emotions|slice:":6" %}
+          <div class="emotion-entry" style="padding:.6rem 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:1.5rem;">
+              {% emotion_icon e.emotion %}
+            </span>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <strong style="color:var(--text);font-size:.85rem;">{{ e.user.get_full_name|default:e.user.username }}</strong>
+                {% if e.emotion == 'anxious' or e.emotion == 'sad' or e.emotion == 'angry' %}
+                <span class="badge badge-coral" style="font-size:.65rem;"></span>
+                {% endif %}
+              </div>
+              <div style="font-size:.72rem;color:var(--text-2);">{{ e.created_at|date:"d.m.Y H:i" }}</div>
+            </div>
+          </div>
+          {% empty %}
+          <div style="text-align:center;padding:2rem;color:var(--text-2);">{% if lang == 'kz' %}Жазба жоқ{% else %}Нет записей{% endif %}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">{% if lang == 'kz' %}Жылдам әрекеттер{% else %}Быстрые действия{% endif %}</span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;">
+          <a href="#" onclick="showPanel('students');return false;" class="btn btn-navy">{% if lang == 'kz' %}Оқушылар{% else %}Ученики{% endif %}</a>
+          <a href="#" onclick="showPanel('emotions');return false;" class="btn btn-primary">{% if lang == 'kz' %}Эмоциялар{% else %}Эмоции{% endif %}</a>
+          <a href="{% url 'anonymous_support' %}" class="btn btn-teal">{% if lang == 'kz' %}Психологқа жазу{% else %}Психологу{% endif %}</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── STUDENTS ───── -->
+    <div id="panel-students" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">{% if lang == 'kz' %}Оқушылар тізімі{% else %}Список учеников{% endif %}</h1>
+        <p class="page-subtitle">
+          {{ student_count }} {% if lang == 'kz' %}оқушы{% else %}учеников{% endif %}
+          {% if class_filter %} · {{ class_filter }}{% endif %}
+          {% if search %} · "{{ search }}"{% endif %}
+        </p>
+      </div>
+
+      {% include "core/includes/student_filters.html" with all_classes=available_classes %}
+
+      <div class="card">
+        {% if students %}
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>{% if lang == 'kz' %}Аты-жөні{% else %}Имя{% endif %}</th>
+                <th>{% if lang == 'kz' %}Сынып{% else %}Класс{% endif %}</th>
+                <th>{% if lang == 'kz' %}Логин{% else %}Логин{% endif %}</th>
+                <th>{% if lang == 'kz' %}Эмоция{% else %}Эмоций{% endif %}</th>
+                <th>{% if lang == 'kz' %}Тест{% else %}Тестов{% endif %}</th>
+                <th>{% if lang == 'kz' %}Соңғы эмоция{% else %}Последнее состояние{% endif %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in students %}
+              {% with last_emotion=s.emotions.first %}
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div class="user-avatar" style="width:32px;height:32px;font-size:.8rem;background:var(--sage);">
+                      {{ s.first_name|first|default:s.username|first|upper }}
+                    </div>
+                    <span style="font-weight:600;">{{ s.get_full_name|default:s.username }}</span>
+                  </div>
+                </td>
+                <td>
+                  {% if s.profile.school_class %}
+                  <span class="badge badge-sage">{{ s.profile.school_class.name }}</span>
+                  {% else %}<span style="color:var(--text-3);">—</span>{% endif %}
+                </td>
+                <td style="color:var(--text-2);font-size:.85rem;">{{ s.username }}</td>
+                <td><span class="badge badge-lav">{{ s.emotions.count }}</span></td>
+                <td><span class="badge badge-sky">{{ s.test_results.count }}</span></td>
+                <td>
+                  {% if last_emotion %}
+                    {% if last_emotion.emotion == 'happy' %}<span class="badge badge-amber">{% if lang == 'kz' %}Жақсы{% else %}Хорошо{% endif %}</span>
+                    {% elif last_emotion.emotion == 'calm' %}<span class="badge badge-sage">{% if lang == 'kz' %}Тыныш{% else %}Спокойно{% endif %}</span>
+                    {% elif last_emotion.emotion == 'anxious' or last_emotion.emotion == 'sad' or last_emotion.emotion == 'angry' %}
+                      <span class="badge badge-peach">{{ last_emotion.get_emotion_display }} ⚠️</span>
+                    {% else %}<span class="badge badge-lav">{% if lang == 'kz' %}Шаршаулы{% else %}Устал{% endif %}</span>
+                    {% endif %}
+                  {% else %}<span style="color:var(--text-3);font-size:.8rem;">—</span>{% endif %}
+                </td>
+              </tr>
+              {% endwith %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text-2);">
+          {% if search or class_filter %}
+          <div style="font-weight:600;">{% if lang == 'kz' %}Нәтиже табылмады{% else %}Ничего не найдено{% endif %}</div>
+          <a href="?panel=students" class="btn btn-ghost btn-sm" style="margin-top:.75rem;">{% if lang == 'kz' %}Тазалау{% else %}Сбросить{% endif %}</a>
+          {% else %}
+          {% if lang == 'kz' %}Оқушы тіркелмеген{% else %}Нет зарегистрированных учеников{% endif %}
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ───── EMOTIONS ───── -->
+    <div id="panel-emotions" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">{% if lang == 'kz' %}Оқушылардың эмоциялары{% else %}Эмоции учеников{% endif %}</h1>
+        <p class="page-subtitle">{% if lang == 'kz' %}Соңғы 50 жазба{% else %}Последние 50 записей{% endif %}</p>
+      </div>
+      <div class="card">
+        {% for e in all_emotions %}
+        <div class="emotion-entry">
+          <span style="font-size:2rem;">
+            {% emotion_icon e.emotion %}
+          </span>
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <strong style="color:var(--text);">{{ e.user.get_full_name|default:e.user.username }}</strong>
+              <span class="badge badge-navy" style="font-size:.72rem;">{{ e.get_emotion_display }}</span>
+              {% if e.emotion == 'anxious' or e.emotion == 'sad' or e.emotion == 'angry' %}
+              <span class="badge badge-coral" style="font-size:.7rem;">{% if lang == 'kz' %}Назар аудар{% else %}Обрати внимание{% endif %}</span>
+              {% endif %}
+            </div>
+            {% if e.note %}<div style="color:var(--text-2);font-size:.85rem;margin-top:4px;">{{ e.note }}</div>{% endif %}
+            <div class="meta">{{ e.created_at|date:"d.m.Y H:i" }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:3rem;color:var(--text-2);">
+          <div style="font-size:3rem;margin-bottom:1rem;"></div>
+          {% if lang == 'kz' %}Эмоция жазбасы жоқ{% else %}Нет записей эмоций{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ───── TESTS ───── -->
+    <div id="panel-tests" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">{% if lang == 'kz' %}Тест нәтижелері{% else %}Результаты тестов{% endif %}</h1>
+        <p class="page-subtitle">{% if lang == 'kz' %}Барлық оқушылардың нәтижелері{% else %}Результаты всех учеников{% endif %}</p>
+      </div>
+      <div class="card">
+        {% if all_results %}
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>{% if lang == 'kz' %}Оқушы{% else %}Ученик{% endif %}</th>
+                <th>{% if lang == 'kz' %}Тест{% else %}Тест{% endif %}</th>
+                <th>{% if lang == 'kz' %}Нәтиже{% else %}Результат{% endif %}</th>
+                <th>{% if lang == 'kz' %}Түсіндірме{% else %}Интерпретация{% endif %}</th>
+                <th>{% if lang == 'kz' %}Күні{% else %}Дата{% endif %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in all_results %}
+              <tr>
+                <td><strong>{{ r.user.get_full_name|default:r.user.username }}</strong></td>
+                <td>{{ r.category }}</td>
+                <td>
+                  <span style="font-weight:900;color:var(--text);">{{ r.score }}/{{ r.max_score }}</span>
+                  <div class="progress-bar" style="margin-top:4px;width:80px;">
+                    <div class="progress-fill" style="width:{% widthratio r.score r.max_score 100 %}%;{% if r.score > 15 %}background:var(--peach);{% endif %}"></div>
+                  </div>
+                </td>
+                <td style="color:var(--text-2);font-size:.85rem;">{{ r.interpretation|truncatechars:50 }}</td>
+                <td style="color:var(--text-2);font-size:.85rem;">{{ r.created_at|date:"d.m.Y" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text-2);">
+          <div style="font-size:3rem;margin-bottom:1rem;"></div>
+          {% if lang == 'kz' %}Тест нәтижесі жоқ{% else %}Нет результатов тестов{% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ───── ARTICLES ───── -->
+    <div id="panel-articles" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}</h1>
+        <p class="page-subtitle">{% if lang == 'kz' %}Психоағарту мазмұны{% else %}Психообразовательный контент{% endif %}</p>
+      </div>
+      <div class="grid-3">
+        <div class="article-card"><span class="article-icon"></span><div class="article-title">{% if lang == 'kz' %}Оқушылардың стресін қалай тануға болады?{% else %}Как распознать стресс у учеников?{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Ерте белгілер мен практикалық кеңестер.{% else %}Ранние признаки и практические советы для учителей.{% endif %}</div></div>
+        <div class="article-card"><span class="article-icon"></span><div class="article-title">{% if lang == 'kz' %}Сыныпта қолайлы орта жасау{% else %}Создание комфортной среды в классе{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Оқушылардың эмоционалды қауіпсіздігі.{% else %}Эмоциональная безопасность учеников в классе.{% endif %}</div></div>
+        <div class="article-card"><span class="article-icon"></span><div class="article-title">{% if lang == 'kz' %}Булинг: мұғалімнің рөлі{% else %}Буллинг: роль учителя{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Булинг жағдайында мұғалім не істеуі керек?{% else %}Что делать учителю при буллинге в классе?{% endif %}</div></div>
+        <div class="article-card"><span class="article-icon"></span><div class="article-title">{% if lang == 'kz' %}Гаджет тәуелділігі және оқу{% else %}Гаджеты и обучение{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Технологияны оқуда дұрыс пайдалану.{% else %}Как правильно использовать технологии в обучении.{% endif %}</div></div>
+        <div class="article-card"><span class="article-icon"></span><div class="article-title">{% if lang == 'kz' %}Оқушыларды мотивациялау{% else %}Мотивация учеников{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Оқуға деген ынтаны арттыру тәсілдері.{% else %}Способы повысить интерес к обучению.{% endif %}</div></div>
+        <div class="article-card"><span class="article-icon"></span><div class="article-title">{% if lang == 'kz' %}Эмоционалды зияткерлік{% else %}Эмоциональный интеллект{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Оқушылардың эмоционалды зияткерлігін дамыту.{% else %}Развитие эмоционального интеллекта у школьников.{% endif %}</div></div>
+        {% for art in articles %}<div class="article-card"><span class="article-icon">{{ art.icon }}</span><div class="article-title">{% if lang == 'kz' %}{{ art.title_kz }}{% else %}{{ art.title_ru }}{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}{{ art.content_kz|truncatewords:20 }}{% else %}{{ art.content_ru|truncatewords:20 }}{% endif %}</div></div>{% endfor %}
+      </div>
+    </div>
+
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showPanel(name) {
+  ['overview','students','emotions','tests','articles'].forEach(p => {
+    const panel = document.getElementById('panel-'+p);
+    const btn = document.getElementById('tab-'+p+'-btn');
+    if(panel) panel.style.display = (p===name) ? 'block' : 'none';
+    if(btn) btn.classList.toggle('active', p===name);
+  });
+}
+
+const stats = {{ emotion_stats|safe }};
+const ctx = document.getElementById('emotionChart').getContext('2d');
+new Chart(ctx, {
+  type: 'doughnut',
+  data: {
+    labels: ['','','','','',''],
+    datasets: [{
+      data: [stats.happy||0, stats.calm||0, stats.anxious||0, stats.sad||0, stats.angry||0, stats.tired||0],
+      backgroundColor: ['#F4B942','#2EC4B6','#FF6B6B','#C9B8FF','#FF8C69','#A0AEC0'],
+      borderWidth: 2, borderColor: '#fff'
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Nunito', size: 12 } } } },
+    cutout: '60%'
+  }
+});
+</script>
+{% endblock %}

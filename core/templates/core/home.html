@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block title %}PsyConnect — {% if lang == 'kz' %}Психологиялық қолдау платформасы{% else %}Платформа психологической поддержки{% endif %}{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-text">
+      <div class="hero-badge">
+        {% if lang == 'kz' %}Мектеп қауымдастығына арналған{% else %}Для школьного сообщества{% endif %}
+      </div>
+      <h1 class="hero-title">
+        {% if lang == 'kz' %}
+          Психологиялық қолдау — <span class="highlight">жылы</span> және қауіпсіз
+        {% else %}
+          Психологическая поддержка — <span class="highlight">тёплая</span> и безопасная
+        {% endif %}
+      </h1>
+      <p class="hero-subtitle">
+        {% if lang == 'kz' %}
+          PsyConnect — оқушыларға, ата-аналарға, мұғалімдер мен психологтарға арналған платформа. AI-қолдау, эмоция күнделігі және лицензиялы мамандармен байланыс.
+        {% else %}
+          PsyConnect — платформа для учеников, родителей, учителей и психологов. AI-поддержка, дневник эмоций и связь с лицензированными специалистами.
+        {% endif %}
+      </p>
+      <div class="hero-actions">
+        <a href="{% url 'register' %}" class="btn btn-primary btn-lg">
+          {% if lang == 'kz' %}Бастау{% else %}Начать{% endif %}
+        </a>
+        <a href="{% url 'anonymous_support' %}" class="btn btn-outline btn-lg">
+          {% if lang == 'kz' %}Анонимді жазу{% else %}Написать анонимно{% endif %}
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="hero-card sage-accent">
+        <span class="card-icon"></span>
+        <div class="card-title">AI-{% if lang == 'kz' %}қолдау{% else %}поддержка{% endif %}</div>
+        <div class="card-sub">24/7</div>
+      </div>
+      <div class="hero-card peach-accent">
+        <span class="card-icon"></span>
+        <div class="card-title">{% if lang == 'kz' %}Күнделік{% else %}Дневник{% endif %}</div>
+        <div class="card-sub">{% if lang == 'kz' %}Күнделікті{% else %}Каждый день{% endif %}</div>
+      </div>
+      <div class="hero-card">
+        <span class="card-icon"></span>
+        <div class="card-title">{% if lang == 'kz' %}Тесттер{% else %}Тесты{% endif %}</div>
+        <div class="card-sub">{% if lang == 'kz' %}4 категория{% else %}4 категории{% endif %}</div>
+      </div>
+      <div class="hero-card">
+        <span class="card-icon"></span>
+        <div class="card-title">{% if lang == 'kz' %}Психолог{% else %}Психолог{% endif %}</div>
+        <div class="card-sub">{% if lang == 'kz' %}Лицензиялы{% else %}Лицензированный{% endif %}</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section section-white">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div class="section-header">
+      <div class="section-badge">{% if lang == 'kz' %}МҮМКІНДІКТЕР{% else %}ВОЗМОЖНОСТИ{% endif %}</div>
+      <h2 class="section-title">{% if lang == 'kz' %}Платформа не береді?{% else %}Что даёт платформа?{% endif %}</h2>
+      <p class="section-subtitle">{% if lang == 'kz' %}Мектеп қауымдастығының барлық мүшелеріне арналған кешенді шешім{% else %}Комплексное решение для всех участников школьного сообщества{% endif %}</p>
+    </div>
+    <div class="grid-3">
+      <div class="feature-card">
+        <div class="feature-icon peach"></div>
+        <div class="feature-title">{% if lang == 'kz' %}AI-чат қолдауы{% else %}AI-чат поддержки{% endif %}</div>
+        <p class="feature-desc">{% if lang == 'kz' %}Алғашқы сұрыптау және бағыттау. Human-in-the-loop қағидасы.{% else %}Первичный скрининг и маршрутизация. Human-in-the-loop принцип.{% endif %}</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon sage"></div>
+        <div class="feature-title">{% if lang == 'kz' %}Эмоция күнделігі{% else %}Дневник эмоций{% endif %}</div>
+        <p class="feature-desc">{% if lang == 'kz' %}Күнделікті сезімдерді бақылау. 14 күндік динамика графигі.{% else %}Ежедневное отслеживание настроения. График динамики за 14 дней.{% endif %}</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon amber"></div>
+        <div class="feature-title">{% if lang == 'kz' %}Тест орталығы{% else %}Центр тестирования{% endif %}</div>
+        <p class="feature-desc">{% if lang == 'kz' %}Мазасыздық, стресс, мотивация және әлеуметтік бейімделу тесттері.{% else %}Тесты на тревожность, стресс, мотивацию и социальную адаптацию.{% endif %}</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon sky"></div>
+        <div class="feature-title">{% if lang == 'kz' %}Анонимді арна{% else %}Анонимный канал{% endif %}</div>
+        <p class="feature-desc">{% if lang == 'kz' %}Тіркеусіз жеке хабарлама жіберу. Психолог жауап береді.{% else %}Отправить личное сообщение без регистрации. Психолог ответит.{% endif %}</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon lav"></div>
+        <div class="feature-title">{% if lang == 'kz' %}Ата-аналарға{% else %}Для родителей{% endif %}</div>
+        <p class="feature-desc">{% if lang == 'kz' %}Баланың жағдайын бақылау, мақалалар және психологпен байланыс.{% else %}Мониторинг состояния ребёнка, статьи и связь с психологом.{% endif %}</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon peach"></div>
+        <div class="feature-title">{% if lang == 'kz' %}Мұғалімдерге{% else %}Для учителей{% endif %}</div>
+        <p class="feature-desc">{% if lang == 'kz' %}Сынып статистикасы, оқушылардың эмоциялары мен тест нәтижелері.{% else %}Статистика класса, эмоции и результаты тестов учеников.{% endif %}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHO IS IT FOR -->
+<section class="section section-cream">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div class="section-header">
+      <div class="section-badge">{% if lang == 'kz' %}АУДИТОРИЯ{% else %}АУДИТОРИЯ{% endif %}</div>
+      <h2 class="section-title">{% if lang == 'kz' %}Кімдерге арналған?{% else %}Для кого?{% endif %}</h2>
+    </div>
+    <div class="grid-4">
+      <div class="card" style="text-align:center;padding:2rem;">
+        <div style="font-size:3rem;margin-bottom:1rem;"></div>
+        <h3 style="font-family:'Inter',sans-serif;font-weight:800;font-size:1.1rem;margin-bottom:.5rem;">{% if lang == 'kz' %}Оқушылар{% else %}Ученики{% endif %}</h3>
+        <p style="color:var(--text-2);font-size:.83rem;line-height:1.55;margin-bottom:1.25rem;">{% if lang == 'kz' %}Эмоция күнделігі, тесттер, AI-чат{% else %}Дневник эмоций, тесты, AI-чат{% endif %}</p>
+        <a href="{% url 'register' %}" class="btn btn-primary btn-sm">{% if lang == 'kz' %}Кіру{% else %}Войти{% endif %}</a>
+      </div>
+      <div class="card" style="text-align:center;padding:2rem;border-color:#C8DFD0;background:var(--sage-pale);">
+        <div style="font-size:3rem;margin-bottom:1rem;"></div>
+        <h3 style="font-family:'Inter',sans-serif;font-weight:800;font-size:1.1rem;margin-bottom:.5rem;">{% if lang == 'kz' %}Ата-аналар{% else %}Родители{% endif %}</h3>
+        <p style="color:var(--text-2);font-size:.83rem;line-height:1.55;margin-bottom:1.25rem;">{% if lang == 'kz' %}Баланың жағдайын бақылау{% else %}Мониторинг состояния ребёнка{% endif %}</p>
+        <a href="{% url 'register' %}" class="btn btn-primary btn-sm">{% if lang == 'kz' %}Кіру{% else %}Войти{% endif %}</a>
+      </div>
+      <div class="card" style="text-align:center;padding:2rem;">
+        <div style="font-size:3rem;margin-bottom:1rem;"></div>
+        <h3 style="font-family:'Inter',sans-serif;font-weight:800;font-size:1.1rem;margin-bottom:.5rem;">{% if lang == 'kz' %}Мұғалімдер{% else %}Учителя{% endif %}</h3>
+        <p style="color:var(--text-2);font-size:.83rem;line-height:1.55;margin-bottom:1.25rem;">{% if lang == 'kz' %}Сынып статистикасы{% else %}Статистика класса{% endif %}</p>
+        <a href="{% url 'register' %}" class="btn btn-primary btn-sm">{% if lang == 'kz' %}Кіру{% else %}Войти{% endif %}</a>
+      </div>
+      <div class="card" style="text-align:center;padding:2rem;">
+        <div style="font-size:3rem;margin-bottom:1rem;"></div>
+        <h3 style="font-family:'Inter',sans-serif;font-weight:800;font-size:1.1rem;margin-bottom:.5rem;">{% if lang == 'kz' %}Психологтар{% else %}Психологи{% endif %}</h3>
+        <p style="color:var(--text-2);font-size:.83rem;line-height:1.55;margin-bottom:1.25rem;">{% if lang == 'kz' %}Анонимді сұраулар, мониторинг{% else %}Запросы, мониторинг{% endif %}</p>
+        <a href="{% url 'register' %}" class="btn btn-primary btn-sm">{% if lang == 'kz' %}Кіру{% else %}Войти{% endif %}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="background:var(--sage);padding:5rem 2rem;text-align:center;position:relative;overflow:hidden;">
+  <div style="position:absolute;top:-40%;right:-5%;width:400px;height:400px;background:rgba(255,255,255,0.06);border-radius:50%;pointer-events:none;"></div>
+  <div style="max-width:600px;margin:0 auto;position:relative;z-index:1;">
+    <h2 style="font-family:'Inter',sans-serif;font-weight:800;color:var(--white);font-size:2.2rem;margin-bottom:1rem;">
+      {% if lang == 'kz' %}Бүгін бастаңыз {% else %}Начните сегодня {% endif %}
+    </h2>
+    <p style="color:rgba(255,255,255,0.8);margin-bottom:2rem;font-size:1rem;line-height:1.65;">
+      {% if lang == 'kz' %}Тіркеу тегін. Психологиялық қолдауға кіру — бірнеше секунд.{% else %}Регистрация бесплатна. Доступ к психологической поддержке — за несколько секунд.{% endif %}
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a href="{% url 'register' %}" class="btn btn-white btn-lg">{% if lang == 'kz' %}Тегін тіркелу{% else %}Зарегистрироваться{% endif %}</a>
+      <a href="{% url 'anonymous_support' %}" class="btn btn-lg" style="background:rgba(255,255,255,0.15);color:var(--white);border:1.5px solid rgba(255,255,255,0.3);">{% if lang == 'kz' %}Анонимді жазу{% else %}Написать анонимно{% endif %}</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

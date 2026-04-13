@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Ата-ана панелі{% else %}Панель родителя{% endif %} — PsyConnect{% endblock %}
+{% block extra_css %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+{% include "core/parent/sidebar.html" with active="dashboard" %}
+
+  <main class="main-content">
+
+    <!-- Уведомление о новых сообщениях -->
+    {% if notifications_count %}
+    <div style="background:var(--sage-pale);border:1px solid #C8DFD0;border-radius:var(--r-lg);padding:.875rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.875rem;">
+      <div style="width:34px;height:34px;background:var(--sage);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        {% icon 'bell' 'nav-icon' %}
+      </div>
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:.875rem;color:var(--sage);">
+          {% if lang == 'kz' %}{{ notifications_count }} жаңа хабарлама{% else %}{{ notifications_count }} новых уведомлений{% endif %}
+        </div>
+        <div style="font-size:.78rem;color:var(--text-2);">{% if lang == 'kz' %}Психологтан хабарлама бар{% else %}Есть сообщения от психолога{% endif %}</div>
+      </div>
+      <a href="{% url 'notifications' %}" class="btn btn-primary btn-sm">{% if lang == 'kz' %}Көру{% else %}Смотреть{% endif %}</a>
+    </div>
+    {% endif %}
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem;">
+      <div>
+        <h1 class="page-title">{% if lang == 'kz' %}Сәлем, {{ user.first_name|default:user.username }}!{% else %}Привет, {{ user.first_name|default:user.username }}!{% endif %}</h1>
+        <p class="page-subtitle">{% if lang == 'kz' %}Балаңыздың жағдайын бақылаңыз{% else %}Следите за состоянием вашего ребёнка{% endif %}</p>
+      </div>
+    </div>
+
+    {% if link_success %}<div class="alert alert-success" style="margin-bottom:1.25rem;">{{ link_success }}</div>{% endif %}
+    {% if link_error %}<div class="alert alert-error" style="margin-bottom:1.25rem;">{{ link_error }}</div>{% endif %}
+
+    <!-- ══ ДЕТИ ═════════════════════════════════════════════════ -->
+    {% if children_data %}
+      {% for child in children_data %}
+      <div class="card" style="margin-bottom:1.5rem;">
+
+        <!-- Шапка карточки ребёнка -->
+        <div style="display:flex;align-items:center;gap:1rem;padding-bottom:1rem;margin-bottom:1rem;border-bottom:1px solid var(--border);">
+          <div class="user-avatar" style="width:48px;height:48px;font-size:1.2rem;background:linear-gradient(135deg,var(--sage),var(--sky));">
+            {{ child.user.first_name|first|default:child.user.username|first|upper }}
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:1.05rem;font-weight:800;color:var(--text);">{{ child.user.get_full_name|default:child.user.username }}</div>
+            <div style="font-size:.78rem;color:var(--text-3);margin-top:2px;">
+              {% if lang == 'kz' %}Оқушы{% else %}Ученик{% endif %}
+              {% if child.user.profile.school_class %}· <span style="color:var(--text-2);">{{ child.user.profile.school_class }}</span>{% endif %}
+            </div>
+          </div>
+          <!-- Кнопка убрать — серая, иконка -->
+          <form method="post" onsubmit="return confirm('{% if lang == "kz" %}Растайсыз ба?{% else %}Вы уверены?{% endif %}');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="remove_child">
+            <input type="hidden" name="child_id" value="{{ child.user.id }}">
+            <button type="submit" title="{% if lang == 'kz' %}Жою{% else %}Убрать{% endif %}"
+              style="background:none;border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 10px;cursor:pointer;color:var(--text-3);font-size:.75rem;transition:all .2s;display:flex;align-items:center;gap:4px;"
+              onmouseover="this.style.borderColor='var(--peach)';this.style.color='var(--peach)';"
+              onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-3)';">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </form>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+
+          <!-- Последние эмоции + sparkline -->
+          <div>
+            <div style="font-weight:700;font-size:.85rem;color:var(--text);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;">
+              {% if lang == 'kz' %}Соңғы эмоциялар{% else %}Последние эмоции{% endif %}
+              <span style="font-size:.72rem;color:var(--text-3);font-weight:400;">{% if lang == 'kz' %}(7 күн){% else %}(7 дней){% endif %}</span>
+            </div>
+
+            <!-- Sparkline -->
+            <div style="margin-bottom:.875rem;background:var(--cream);border-radius:var(--r-md);padding:.5rem .75rem;">
+              <canvas id="spark_{{ forloop.counter }}" height="40"></canvas>
+            </div>
+
+            {% if child.last_emotions %}
+              {% for e in child.last_emotions %}
+              <div style="display:flex;align-items:center;gap:.75rem;padding:.45rem 0;border-bottom:1px solid var(--border);">
+                <div style="width:28px;height:28px;flex-shrink:0;">{% emotion_icon e.emotion 28 %}</div>
+                <div style="flex:1;">
+                  <div style="font-size:.82rem;font-weight:600;color:var(--text);">{{ e.get_emotion_display }}</div>
+                  {% if e.note %}<div style="font-size:.72rem;color:var(--text-2);">{{ e.note|truncatechars:35 }}</div>{% endif %}
+                </div>
+                <div style="font-size:.7rem;color:var(--text-3);">{{ e.created_at|date:"d.m H:i" }}</div>
+                {% if e.emotion == 'anxious' or e.emotion == 'sad' or e.emotion == 'angry' %}
+                <span style="font-size:.65rem;color:#DC2626;font-weight:700;">⚠️</span>
+                {% endif %}
+              </div>
+              {% endfor %}
+            {% else %}
+              <div style="color:var(--text-3);font-size:.85rem;padding:.75rem 0;">{% if lang == 'kz' %}Жазба жоқ{% else %}Нет записей{% endif %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Тест -->
+          <div>
+            <div style="font-weight:700;font-size:.85rem;color:var(--text);margin-bottom:.75rem;">{% if lang == 'kz' %}Соңғы тест{% else %}Последний тест{% endif %}</div>
+            {% if child.last_test %}
+            <div style="background:var(--cream);border-radius:var(--r-lg);padding:1.1rem;">
+              <div style="font-weight:700;color:var(--text);margin-bottom:.5rem;font-size:.875rem;">{{ child.last_test.category }}</div>
+              <div style="font-size:2.5rem;font-weight:800;color:var(--text);line-height:1;font-family:'Inter',sans-serif;letter-spacing:-.04em;">
+                {{ child.last_test.score }}<span style="font-size:1rem;color:var(--text-3);">/{{ child.last_test.max_score }}</span>
+              </div>
+              <div class="progress-bar" style="margin:.75rem 0;">
+                <div class="progress-fill" style="width:{% widthratio child.last_test.score child.last_test.max_score 100 %}%;{% if child.last_test.score > 15 %}background:var(--peach);{% endif %}"></div>
+              </div>
+              {% if child.last_test.interpretation %}
+              <div style="font-size:.8rem;color:var(--text-2);line-height:1.5;">{{ child.last_test.interpretation }}</div>
+              {% endif %}
+              <div style="font-size:.72rem;color:var(--text-3);margin-top:.5rem;">{{ child.last_test.created_at|date:"d.m.Y" }}</div>
+            </div>
+            {% else %}
+            <div style="background:var(--cream);border-radius:var(--r-lg);padding:1rem;">
+              <div style="color:var(--text-3);font-size:.8rem;margin-bottom:.875rem;">{% if lang == 'kz' %}Тест өтілмеген{% else %}Тесты не пройдены{% endif %}</div>
+              <div style="display:flex;flex-direction:column;gap:.4rem;">
+                <div style="display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;background:var(--white);border-radius:var(--r-sm);font-size:.78rem;font-weight:600;color:var(--text-2);">
+                  <span style="width:8px;height:8px;border-radius:50%;background:#8B5CF6;flex-shrink:0;"></span>{% if lang == 'kz' %}Мазасыздық{% else %}Тревожность{% endif %}
+                </div>
+                <div style="display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;background:var(--white);border-radius:var(--r-sm);font-size:.78rem;font-weight:600;color:var(--text-2);">
+                  <span style="width:8px;height:8px;border-radius:50%;background:#EF4444;flex-shrink:0;"></span>{% if lang == 'kz' %}Стресс{% else %}Стресс{% endif %}
+                </div>
+                <div style="display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;background:var(--white);border-radius:var(--r-sm);font-size:.78rem;font-weight:600;color:var(--text-2);">
+                  <span style="width:8px;height:8px;border-radius:50%;background:#F59E0B;flex-shrink:0;"></span>{% if lang == 'kz' %}Мотивация{% else %}Мотивация{% endif %}
+                </div>
+                <div style="display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;background:var(--white);border-radius:var(--r-sm);font-size:.78rem;font-weight:600;color:var(--text-2);">
+                  <span style="width:8px;height:8px;border-radius:50%;background:#3B82F6;flex-shrink:0;"></span>{% if lang == 'kz' %}Әлеуметтік{% else %}Социальное{% endif %}
+                </div>
+              </div>
+              <div style="font-size:.72rem;color:var(--text-3);margin-top:.75rem;">{% if lang == 'kz' %}Ребенок сможет пройти тесты в своем аккаунте{% else %}Ребёнок может пройти тесты в своём аккаунте{% endif %}</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Alert блок -->
+        {% if child.has_alert %}
+        <div style="margin-top:1.25rem;background:#FFF5F5;border:1px solid #FECACA;border-radius:var(--r-lg);padding:1rem 1.25rem;display:flex;align-items:flex-start;gap:1rem;">
+          <div style="width:36px;height:36px;background:#EF4444;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:700;color:#DC2626;font-size:.9rem;margin-bottom:.3rem;">{% if lang == 'kz' %}Назар аударыңыз{% else %}Обратите внимание{% endif %}</div>
+            <div style="color:#7F1D1D;font-size:.82rem;line-height:1.55;">
+              {% if lang == 'kz' %}Психолог баланың жағдайындағы өзгерістерді байқады. Кеңес алуға жазылуды ұсынамыз.{% else %}Психолог заметил изменения в состоянии ребёнка. Рекомендуем записаться на консультацию.{% endif %}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.5rem;flex-shrink:0;">
+            <a href="{% url 'parent_book_appointment' %}?child={{ child.user.id }}" class="btn btn-sm" style="background:#EF4444;color:white;border:none;white-space:nowrap;">
+              {% if lang == 'kz' %}Жазылу{% else %}Записаться к психологу{% endif %}
+            </a>
+            {% if child.user.profile.phone %}
+            <a href="tel:{{ child.user.profile.phone }}" class="btn btn-outline btn-sm" style="white-space:nowrap;">
+              {% if lang == 'kz' %}Қоңырау шалу{% else %}Позвонить{% endif %}
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="card" style="text-align:center;padding:3rem;margin-bottom:1.5rem;">
+        <div style="font-size:3.5rem;margin-bottom:1rem;">👨‍👩‍👧</div>
+        <h3 style="font-weight:800;color:var(--text);margin-bottom:.75rem;">{% if lang == 'kz' %}Бала қосылмаған{% else %}Нет привязанных детей{% endif %}</h3>
+        <p style="color:var(--text-3);font-size:.875rem;">{% if lang == 'kz' %}Төмендегі форма арқылы баланың логинін енгізіп қосыңыз{% else %}Введите логин ребёнка в форму ниже{% endif %}</p>
+      </div>
+    {% endif %}
+
+    <!-- ══ ДОБАВИТЬ РЕБЁНКА (аккордеон) ═════════════════════════ -->
+    <div style="border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:2rem;">
+      <button onclick="toggleAddChild()" id="addChildBtn"
+        style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;background:var(--cream-dark);border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:.875rem;font-weight:600;color:var(--text);">
+        <span style="display:flex;align-items:center;gap:.75rem;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+          {% if lang == 'kz' %}Бала қосу{% else %}Добавить ребёнка{% endif %}
+        </span>
+        <svg id="addChildArrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="transition:transform .25s;{% if not has_children %}transform:rotate(180deg);{% endif %}"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div id="addChildForm" style="{% if has_children %}display:none;{% endif %}padding:1.25rem;background:var(--white);">
+        <p style="color:var(--text-2);font-size:.85rem;margin-bottom:1rem;">
+          {% if lang == 'kz' %}Баланың логинін енгізіңіз (ол платформада тіркелген болуы керек){% else %}Введите логин ребёнка (он должен быть зарегистрирован на платформе){% endif %}
+        </p>
+        <form method="post" style="display:flex;gap:.75rem;align-items:flex-end;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_child">
+          <div style="flex:1;">
+            <label class="form-label">{% if lang == 'kz' %}Баланың логині{% else %}Логин ребёнка{% endif %}</label>
+            <input type="text" name="child_username" class="form-control"
+              placeholder="{% if lang == 'kz' %}Мысалы: id0001{% else %}Например: id0001{% endif %}" required>
+          </div>
+          <button type="submit" class="btn btn-primary">{% if lang == 'kz' %}Қосу{% else %}Добавить{% endif %}</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ══ СТАТЬИ ════════════════════════════════════════════════ -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <h2 style="font-size:1rem;font-weight:700;color:var(--text);">{% if lang == 'kz' %}Ата-аналарға арналған мақалалар{% else %}Библиотека для родителей{% endif %}</h2>
+        <a href="{% url 'articles' %}" style="font-size:.8rem;color:var(--sage);font-weight:700;text-decoration:none;">{% if lang == 'kz' %}Барлығы →{% else %}Все →{% endif %}</a>
+      </div>
+
+      <!-- Фильтр по темам — красивые pill-кнопки -->
+      <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;" id="articleFilters">
+        <button onclick="filterArticles('all',this)" class="article-filter-btn active">📚 {% if lang == 'kz' %}Барлығы{% else %}Все{% endif %}</button>
+        <button onclick="filterArticles('stress',this)" class="article-filter-btn">🧠 {% if lang == 'kz' %}Стресс{% else %}Стресс{% endif %}</button>
+        <button onclick="filterArticles('study',this)" class="article-filter-btn">📖 {% if lang == 'kz' %}Оқу{% else %}Учёба{% endif %}</button>
+        <button onclick="filterArticles('relations',this)" class="article-filter-btn">💬 {% if lang == 'kz' %}Қарым-қатынас{% else %}Отношения{% endif %}</button>
+        <button onclick="filterArticles('bullying',this)" class="article-filter-btn">🛡️ {% if lang == 'kz' %}Буллинг{% else %}Буллинг{% endif %}</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;" id="articlesGrid">
+        <!-- Статические статьи -->
+        <div class="parent-article-card" data-topic="stress">
+          <div style="height:90px;background:linear-gradient(135deg,#FEF3C7,#FDE68A);border-radius:var(--r-md);margin-bottom:.875rem;display:flex;align-items:center;justify-content:center;font-size:2rem;">🧠</div>
+          <div style="font-weight:700;font-size:.875rem;color:var(--text);line-height:1.4;margin-bottom:.4rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{% if lang == 'kz' %}Балаңыздың стресін қалай тануға болады?{% else %}Как распознать стресс у ребёнка?{% endif %}</div>
+          <div style="font-size:.75rem;color:var(--text-3);">5 {% if lang == 'kz' %}мин{% else %}мин{% endif %}</div>
+        </div>
+        <div class="parent-article-card" data-topic="relations">
+          <div style="height:90px;background:linear-gradient(135deg,#EDE9FE,#DDD6FE);border-radius:var(--r-md);margin-bottom:.875rem;display:flex;align-items:center;justify-content:center;font-size:2rem;">💬</div>
+          <div style="font-weight:700;font-size:.875rem;color:var(--text);line-height:1.4;margin-bottom:.4rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{% if lang == 'kz' %}Сезімдер туралы сөйлесу{% else %}Как говорить с ребёнком о чувствах{% endif %}</div>
+          <div style="font-size:.75rem;color:var(--text-3);">7 {% if lang == 'kz' %}мин{% else %}мин{% endif %}</div>
+        </div>
+        <div class="parent-article-card" data-topic="bullying">
+          <div style="height:90px;background:linear-gradient(135deg,#FEE2E2,#FECACA);border-radius:var(--r-md);margin-bottom:.875rem;display:flex;align-items:center;justify-content:center;font-size:2rem;">🛡️</div>
+          <div style="font-weight:700;font-size:.875rem;color:var(--text);line-height:1.4;margin-bottom:.4rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{% if lang == 'kz' %}Булинг — не істеу керек?{% else %}Буллинг — что делать родителям?{% endif %}</div>
+          <div style="font-size:.75rem;color:var(--text-3);">10 {% if lang == 'kz' %}мин{% else %}мин{% endif %}</div>
+        </div>
+        <div class="parent-article-card" data-topic="study">
+          <div style="height:90px;background:linear-gradient(135deg,#DBEAFE,#BFDBFE);border-radius:var(--r-md);margin-bottom:.875rem;display:flex;align-items:center;justify-content:center;font-size:2rem;">📚</div>
+          <div style="font-weight:700;font-size:.875rem;color:var(--text);line-height:1.4;margin-bottom:.4rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{% if lang == 'kz' %}Оқу мотивациясын қалай арттыруға болады?{% else %}Как повысить мотивацию к учёбе?{% endif %}</div>
+          <div style="font-size:.75rem;color:var(--text-3);">6 {% if lang == 'kz' %}мин{% else %}мин{% endif %}</div>
+        </div>
+        <div class="parent-article-card" data-topic="stress">
+          <div style="height:90px;background:linear-gradient(135deg,#D1FAE5,#A7F3D0);border-radius:var(--r-md);margin-bottom:.875rem;display:flex;align-items:center;justify-content:center;font-size:2rem;">🌱</div>
+          <div style="font-weight:700;font-size:.875rem;color:var(--text);line-height:1.4;margin-bottom:.4rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{% if lang == 'kz' %}Дем алу техникасы — балаға үйрету{% else %}Техники дыхания — как научить ребёнка{% endif %}</div>
+          <div style="font-size:.75rem;color:var(--text-3);">4 {% if lang == 'kz' %}мин{% else %}мин{% endif %}</div>
+        </div>
+        <div class="parent-article-card" data-topic="relations">
+          <div style="height:90px;background:linear-gradient(135deg,#FDF3E8,#FDE3BC);border-radius:var(--r-md);margin-bottom:.875rem;display:flex;align-items:center;justify-content:center;font-size:2rem;">❤️</div>
+          <div style="font-weight:700;font-size:.875rem;color:var(--text);line-height:1.4;margin-bottom:.4rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{% if lang == 'kz' %}Баламен сенімді байланыс орнату{% else %}Как выстроить доверительные отношения с ребёнком{% endif %}</div>
+          <div style="font-size:.75rem;color:var(--text-3);">8 {% if lang == 'kz' %}мин{% else %}мин{% endif %}</div>
+        </div>
+        {% for art in articles %}
+        <div class="parent-article-card" data-topic="{{ art.category|default:'other' }}">
+          <div style="height:90px;background:linear-gradient(135deg,var(--sage-pale),var(--cream-dark));border-radius:var(--r-md);margin-bottom:.875rem;display:flex;align-items:center;justify-content:center;font-size:2rem;">{{ art.icon|default:"📄" }}</div>
+          <div style="font-weight:700;font-size:.875rem;color:var(--text);line-height:1.4;margin-bottom:.4rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{% if lang == 'kz' %}{{ art.title_kz }}{% else %}{{ art.title_ru }}{% endif %}</div>
+          <div style="font-size:.75rem;color:var(--text-3);">5 {% if lang == 'kz' %}мин{% else %}мин{% endif %}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Аккордеон добавления ребёнка
+function toggleAddChild() {
+  const form  = document.getElementById('addChildForm');
+  const arrow = document.getElementById('addChildArrow');
+  const open  = form.style.display === 'none';
+  form.style.display  = open ? 'block' : 'none';
+  arrow.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+// Фильтрация статей
+function filterArticles(topic, btn) {
+  document.querySelectorAll('.article-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.parent-article-card').forEach(card => {
+    card.style.display = (topic === 'all' || card.dataset.topic === topic) ? '' : 'none';
+  });
+}
+
+// Sparkline графики
+{% for child in children_data %}
+(function() {
+  const ctx = document.getElementById('spark_{{ forloop.counter }}');
+  if (!ctx) return;
+  const data = {{ child.sparkline }};
+  const labels = data.map((_,i) => {
+    const d = new Date(); d.setDate(d.getDate() - (6-i));
+    return d.toLocaleDateString('ru', {day:'numeric',month:'short'});
+  });
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        borderColor: '#4A7C59',
+        backgroundColor: 'rgba(74,124,89,0.08)',
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: data.map(v => v !== null && v <= 2 ? '#EF4444' : '#4A7C59'),
+        tension: 0.4,
+        fill: true,
+        spanGaps: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ['','Плохо','Грустно','Нейтрально','Спокойно','Хорошо'][ctx.parsed.y] || '' }
+      }},
+      scales: {
+        y: { min: 0, max: 5, display: false },
+        x: { display: false }
+      }
+    }
+  });
+})();
+{% endfor %}
+</script>
+{% endblock %}

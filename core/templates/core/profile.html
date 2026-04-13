@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang == 'kz' %}Менің профилім{% else %}Мой профиль{% endif %} — PsyConnect{% endblock %}
+
+{% block content %}
+<div style="min-height:calc(100vh - 68px - 60px); background:var(--bg); padding:2rem;">
+<div style="max-width:720px; margin:0 auto;">
+
+  <div class="page-header">
+    <h1 class="page-title">{% if lang == 'kz' %}Менің профилім{% else %}Мой профиль{% endif %}</h1>
+    <p class="page-subtitle">{% if lang == 'kz' %}Жеке деректеріңізді өзгертіңіз{% else %}Управляйте своими личными данными{% endif %}</p>
+  </div>
+
+  {% if success == 'info' %}
+  <div class="alert alert-success" style="margin-bottom:1.5rem;">
+    {% if lang == 'kz' %}Деректер сәтті сақталды!{% else %}Данные успешно сохранены!{% endif %}
+  </div>
+  {% elif success == 'password' %}
+  <div class="alert alert-success" style="margin-bottom:1.5rem;">
+    {% if lang == 'kz' %}Құпия сөз өзгертілді!{% else %}Пароль успешно изменён!{% endif %}
+  </div>
+  {% endif %}
+
+  {% if error %}
+  <div class="alert alert-error" style="margin-bottom:1.5rem;">{{ error }}</div>
+  {% endif %}
+
+  <!-- AVATAR + ROLE CARD -->
+  <div class="card" style="margin-bottom:1.5rem; background:linear-gradient(135deg,var(--text),var(--text)); border:none;">
+    <div style="display:flex; align-items:center; gap:1.5rem;">
+      <div style="width:80px; height:80px; border-radius:50%;
+        background:linear-gradient(135deg,var(--amber),var(--amber));
+        display:flex; align-items:center; justify-content:center;
+        font-size:2rem; font-weight:900; color:var(--text); flex-shrink:0;
+        box-shadow: 0 8px 24px rgba(244,185,66,0.4);">
+        {{ user.first_name|first|default:user.username|first|upper }}
+      </div>
+      <div>
+        <div style="font-family:'Inter',sans-serif; font-size:1.5rem; color:white; font-weight:700;">
+          {{ user.get_full_name|default:user.username }}
+        </div>
+        <div style="color:var(--amber); font-weight:700; margin-top:4px;">
+          {% if profile.role == 'student' %}{% if lang == 'kz' %}Оқушы{% else %}Ученик{% endif %}
+          {% elif profile.role == 'parent' %}{% if lang == 'kz' %}Ата-ана{% else %}Родитель{% endif %}
+          {% elif profile.role == 'teacher' %}{% if lang == 'kz' %}Мұғалім{% else %}Учитель{% endif %}
+          {% elif profile.role == 'psychologist' %}{% if lang == 'kz' %}Психолог{% else %}Психолог{% endif %}
+          {% endif %}
+        </div>
+        <div style="color:rgba(255,255,255,0.5); font-size:0.8rem; margin-top:4px;">
+          {% if lang == 'kz' %}Тіркелген:{% else %}Зарегистрирован:{% endif %} {{ user.date_joined|date:"d.m.Y" }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERSONAL INFO FORM -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+      <span class="card-title">{% if lang == 'kz' %}Жеке деректер{% else %}Личные данные{% endif %}</span>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="update_info">
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">{% if lang == 'kz' %}Аты{% else %}Имя{% endif %}</label>
+          <input type="text" name="first_name" class="form-control"
+            value="{{ user.first_name }}"
+            placeholder="{% if lang == 'kz' %}Атыңыз{% else %}Ваше имя{% endif %}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">{% if lang == 'kz' %}Тегі{% else %}Фамилия{% endif %}</label>
+          <input type="text" name="last_name" class="form-control"
+            value="{{ user.last_name }}"
+            placeholder="{% if lang == 'kz' %}Тегіңіз{% else %}Ваша фамилия{% endif %}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{% if lang == 'kz' %}Логин{% else %}Логин{% endif %}</label>
+        <input type="text" name="username" class="form-control"
+          value="{{ user.username }}" required>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control"
+            value="{{ user.email }}"
+            placeholder="example@mail.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">{% if lang == 'kz' %}Телефон{% else %}Телефон{% endif %}</label>
+          <input type="text" name="phone" class="form-control"
+            value="{{ profile.phone }}"
+            placeholder="+7 777 000 00 00">
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary">
+        {% if lang == 'kz' %}Сақтау{% else %}Сохранить{% endif %}
+      </button>
+    </form>
+  </div>
+
+  <!-- CHANGE PASSWORD FORM -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+      <span class="card-title">{% if lang == 'kz' %}Құпия сөзді өзгерту{% else %}Изменить пароль{% endif %}</span>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="change_password">
+
+      <div class="form-group">
+        <label class="form-label">{% if lang == 'kz' %}Ағымдағы құпия сөз{% else %}Текущий пароль{% endif %}</label>
+        <input type="password" name="old_password" class="form-control"
+          placeholder="{% if lang == 'kz' %}Ағымдағы құпия сөзіңіз{% else %}Введите текущий пароль{% endif %}" required>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">{% if lang == 'kz' %}Жаңа құпия сөз{% else %}Новый пароль{% endif %}</label>
+          <input type="password" name="new_password" class="form-control"
+            placeholder="{% if lang == 'kz' %}Кемінде 6 таңба{% else %}Минимум 6 символов{% endif %}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">{% if lang == 'kz' %}Қайталаңыз{% else %}Повторите пароль{% endif %}</label>
+          <input type="password" name="new_password2" class="form-control"
+            placeholder="{% if lang == 'kz' %}Қайтадан енгізіңіз{% else %}Введите ещё раз{% endif %}" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-navy">
+        {% if lang == 'kz' %}Құпия сөзді өзгерту{% else %}Изменить пароль{% endif %}
+      </button>
+    </form>
+  </div>
+
+  <!-- BACK BUTTON -->
+  <div style="text-align:center;">
+    <a href="javascript:history.back()" class="btn btn-outline" style="border-color:var(--border);color:var(--text);">
+      ← {% if lang == 'kz' %}Артқа{% else %}Назад{% endif %}
+    </a>
+  </div>
+
+</div>
+</div>
+{% endblock %}

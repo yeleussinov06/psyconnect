@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang == 'kz' %}Ата-ана панелі{% else %}Панель родителя{% endif %} — PsyConnect{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <aside class="sidebar">
+    <a href="{% url 'parent_dashboard' %}" class="sidebar-link active">
+      <div class="icon"></div>{% if lang == 'kz' %}Бақылау тақтасы{% else %}Дашборд{% endif %}
+    </a>
+    <a href="{% url 'articles' %}?audience=parent" class="sidebar-link">
+      <div class="icon"></div>{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}
+    </a>
+    <a href="{% url 'anonymous_support' %}" class="sidebar-link">
+      <div class="icon"></div>{% if lang == 'kz' %}Анонимді арна{% else %}Анонимно{% endif %}
+    </a>
+    <div class="user-card">
+      <div class="user-avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+      <div class="user-info">
+        <div class="name">{{ user.get_full_name|default:user.username }}</div>
+        <div class="role">{% if lang == 'kz' %}Ата-ана{% else %}Родитель{% endif %}</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">{% if lang == 'kz' %}Сәлем, {{ user.first_name|default:user.username }}!{% else %}Привет, {{ user.first_name|default:user.username }}!{% endif %}</h1>
+      <p class="page-subtitle">{% if lang == 'kz' %}Ата-аналарға арналған психоағарту панелі{% else %}Психообразовательная панель для родителей{% endif %}</p>
+    </div>
+
+    <!-- INFO CARDS -->
+    <div class="stats-grid" style="margin-bottom:2rem;">
+      <div class="stat-card">
+        <div class="stat-icon gold"></div>
+        <div>
+          <div class="stat-value">{{ articles|length }}</div>
+          <div class="stat-label">{% if lang == 'kz' %}Мақала{% else %}Статей{% endif %}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon teal"></div>
+        <div>
+          <div class="stat-value">4</div>
+          <div class="stat-label">{% if lang == 'kz' %}Тақырып{% else %}Темы{% endif %}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon coral"></div>
+        <div>
+          <div class="stat-value">∞</div>
+          <div class="stat-label">{% if lang == 'kz' %}Анонимді{% else %}Анонимно{% endif %}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IMPORTANT INFO -->
+    <div class="card" style="margin-bottom:2rem; background:linear-gradient(135deg,var(--text),var(--text)); border:none;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; align-items:center;">
+        <div>
+          <div style="font-size:2rem; margin-bottom:0.75rem;"></div>
+          <h3 style="font-family:'Inter',sans-serif; color:white; font-size:1.3rem; margin-bottom:0.75rem;">
+            {% if lang == 'kz' %}Балаңызға назар аударыңыз{% else %}Обратите внимание на ребёнка{% endif %}
+          </h3>
+          <p style="color:rgba(255,255,255,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:1.5rem;">
+            {% if lang == 'kz' %}
+              Оқушылар арасында психоэмоциялық күйзеліс жиі байқалады. Ерте белгілерді тани біліңіз және психологқа уақытылы жүгіріңіз.
+            {% else %}
+              Психоэмоциональное напряжение часто встречается среди школьников. Умейте распознавать ранние признаки и своевременно обращаться к специалисту.
+            {% endif %}
+          </p>
+          <a href="{% url 'anonymous_support' %}" class="btn btn-primary">
+            {% if lang == 'kz' %}Психологқа жазу{% else %}Написать психологу{% endif %}
+          </a>
+        </div>
+        <div style="display:grid; gap:0.75rem;">
+          {% for sign in "1234" %}
+          <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:0.875rem 1rem; display:flex; gap:0.75rem; align-items:flex-start;">
+            {% if forloop.counter == 1 %}
+              <span style="font-size:1.3rem;">😟</span>
+              <div>
+                <div style="color:var(--amber); font-weight:800; font-size:0.85rem;">{% if lang == 'kz' %}Белсенділіктің төмендеуі{% else %}Снижение активности{% endif %}</div>
+                <div style="color:rgba(255,255,255,0.5); font-size:0.75rem;">{% if lang == 'kz' %}Бала оқудан бас тартады{% else %}Ребёнок избегает учёбы{% endif %}</div>
+              </div>
+            {% elif forloop.counter == 2 %}
+              <span style="font-size:1.3rem;"></span>
+              <div>
+                <div style="color:var(--amber); font-weight:800; font-size:0.85rem;">{% if lang == 'kz' %}Ұйқы бұзылыстары{% else %}Нарушения сна{% endif %}</div>
+                <div style="color:rgba(255,255,255,0.5); font-size:0.75rem;">{% if lang == 'kz' %}Ұйықтамайды немесе тым көп ұйықтайды{% else %}Не спит или спит слишком много{% endif %}</div>
+              </div>
+            {% elif forloop.counter == 3 %}
+              <span style="font-size:1.3rem;">😔</span>
+              <div>
+                <div style="color:var(--amber); font-weight:800; font-size:0.85rem;">{% if lang == 'kz' %}Оқшаулану{% else %}Социальная изоляция{% endif %}</div>
+                <div style="color:rgba(255,255,255,0.5); font-size:0.75rem;">{% if lang == 'kz' %}Достарымен қарым-қатынас азайды{% else %}Уменьшение общения с друзьями{% endif %}</div>
+              </div>
+            {% elif forloop.counter == 4 %}
+              <span style="font-size:1.3rem;">📉</span>
+              <div>
+                <div style="color:var(--amber); font-weight:800; font-size:0.85rem;">{% if lang == 'kz' %}Үлгерімнің төмендеуі{% else %}Снижение успеваемости{% endif %}</div>
+                <div style="color:rgba(255,255,255,0.5); font-size:0.75rem;">{% if lang == 'kz' %}Бағалар кенеттен төмендеді{% else %}Оценки резко упали{% endif %}</div>
+              </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ARTICLES -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">{% if lang == 'kz' %}Ата-аналарға арналған мақалалар{% else %}Статьи для родителей{% endif %}</span>
+        <a href="{% url 'articles' %}?audience=parent" style="font-size:0.8rem;color:var(--sage);font-weight:700;text-decoration:none;">{% if lang == 'kz' %}Барлығы →{% else %}Все →{% endif %}</a>
+      </div>
+
+      {% if articles %}
+        <div class="grid-3" style="margin-top:0.5rem;">
+          {% for art in articles %}
+          <div class="article-card">
+            <span class="article-icon">{{ art.icon }}</span>
+            <div class="article-title">{% if lang == 'kz' %}{{ art.title_kz }}{% else %}{{ art.title_ru }}{% endif %}</div>
+            <div class="article-excerpt">{% if lang == 'kz' %}{{ art.content_kz|truncatewords:20 }}{% else %}{{ art.content_ru|truncatewords:20 }}{% endif %}</div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <!-- Default articles when DB is empty -->
+        <div class="grid-3" style="margin-top:0.5rem;">
+          <div class="article-card">
+            <span class="article-icon"></span>
+            <div class="article-title">{% if lang == 'kz' %}Балаңыздың стресін қалай тануға болады?{% else %}Как распознать стресс у ребёнка?{% endif %}</div>
+            <div class="article-excerpt">{% if lang == 'kz' %}Ерте белгілер мен ата-аналар үшін практикалық кеңестер.{% else %}Ранние признаки и практические советы для родителей.{% endif %}</div>
+          </div>
+          <div class="article-card">
+            <span class="article-icon"></span>
+            <div class="article-title">{% if lang == 'kz' %}Баламен қалай сөйлесуге болады?{% else %}Как разговаривать с ребёнком о чувствах?{% endif %}</div>
+            <div class="article-excerpt">{% if lang == 'kz' %}Сезімдер туралы ашық сөйлесу тәсілдері.{% else %}Методы открытого общения о чувствах.{% endif %}</div>
+          </div>
+          <div class="article-card">
+            <span class="article-icon"></span>
+            <div class="article-title">{% if lang == 'kz' %}Мектептегі булинг — не істеу керек?{% else %}Буллинг в школе — что делать?{% endif %}</div>
+            <div class="article-excerpt">{% if lang == 'kz' %}Ата-аналар үшін нұсқаулық: таный біл, қолда, шеш.{% else %}Руководство для родителей: узнать, поддержать, решить.{% endif %}</div>
+          </div>
+          <div class="article-card">
+            <span class="article-icon"></span>
+            <div class="article-title">{% if lang == 'kz' %}Гаджет тәуелділігі{% else %}Зависимость от гаджетов{% endif %}</div>
+            <div class="article-excerpt">{% if lang == 'kz' %}Экран уақытын дұрыс реттеу жолдары.{% else %}Способы правильно регулировать экранное время.{% endif %}</div>
+          </div>
+          <div class="article-card">
+            <span class="article-icon"></span>
+            <div class="article-title">{% if lang == 'kz' %}Ұйқы гигиенасы{% else %}Гигиена сна для школьника{% endif %}</div>
+            <div class="article-excerpt">{% if lang == 'kz' %}Дұрыс ұйқы тәртібін қалыптастыру.{% else %}Формирование правильного режима сна.{% endif %}</div>
+          </div>
+          <div class="article-card">
+            <span class="article-icon"></span>
+            <div class="article-title">{% if lang == 'kz' %}Шартсыз сүйіспеншілік{% else %}Безусловная любовь и принятие{% endif %}</div>
+            <div class="article-excerpt">{% if lang == 'kz' %}Баланың психологиялық иммунитетін қалыптастыру.{% else %}Формирование психологического иммунитета ребёнка.{% endif %}</div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}

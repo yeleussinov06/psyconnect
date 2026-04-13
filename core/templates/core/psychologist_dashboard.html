@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Психолог панелі{% else %}Панель психолога{% endif %} — PsyConnect{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <aside class="sidebar">
+    <a href="{% url 'psychologist_dashboard' %}" class="sidebar-link active">
+      <div class="icon"></div>{% if lang == 'kz' %}Бақылау тақтасы{% else %}Дашборд{% endif %}
+    </a>
+    <div class="sidebar-section-title">{% if lang == 'kz' %}ЖҰМЫС ОРНЫ{% else %}РАБОЧЕЕ МЕСТО{% endif %}</div>
+    <a href="#anon" class="sidebar-link" onclick="showTab('anon')">
+      <div class="icon"></div>{% if lang == 'kz' %}Анонимді сұраулар{% else %}Анонимные запросы{% endif %}
+    </a>
+    <a href="#students" class="sidebar-link" onclick="showTab('students')">
+      <div class="icon"></div>{% if lang == 'kz' %}Оқушылар{% else %}Ученики{% endif %}
+    </a>
+    <a href="#emotions" class="sidebar-link" onclick="showTab('emotions')">
+      <div class="icon"></div>{% if lang == 'kz' %}Эмоция мониторинг{% else %}Мониторинг эмоций{% endif %}
+    </a>
+    <div class="user-card">
+      <div class="user-avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+      <div class="user-info">
+        <div class="name">{{ user.get_full_name|default:user.username }}</div>
+        <div class="role">{% if lang == 'kz' %}Психолог{% else %}Психолог{% endif %}</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">{% if lang == 'kz' %}Психолог панелі{% else %}Панель психолога{% endif %}</h1>
+      <p class="page-subtitle">{% if lang == 'kz' %}Барлық сұраулар мен мониторинг{% else %}Все запросы и мониторинг{% endif %}</p>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid" style="margin-bottom:2rem;">
+      <div class="stat-card">
+        <div class="stat-icon coral"></div>
+        <div>
+          <div class="stat-value">{{ anon_requests|length }}</div>
+          <div class="stat-label">{% if lang == 'kz' %}Анонимді сұрау{% else %}Анонимных запросов{% endif %}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gold"></div>
+        <div>
+          <div class="stat-value">{{ students|length }}</div>
+          <div class="stat-label">{% if lang == 'kz' %}Оқушы{% else %}Учеников{% endif %}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon teal"></div>
+        <div>
+          <div class="stat-value">{{ all_emotions|length }}</div>
+          <div class="stat-label">{% if lang == 'kz' %}Эмоция жазбасы{% else %}Записей эмоций{% endif %}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon navy"></div>
+        <div>
+          <div class="stat-value">{{ anon_requests|length }}</div>
+          <div class="stat-label">{% if lang == 'kz' %}Өңдеуде{% else %}В работе{% endif %}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div style="display:flex; gap:0.5rem; margin-bottom:1.5rem; border-bottom:2px solid var(--border); padding-bottom:0;">
+      <button onclick="showTab('anon')" class="tab-btn active" id="tab_anon" style="background:none;border:none;padding:12px 20px;font-family:'Inter',sans-serif;font-weight:800;font-size:0.9rem;cursor:pointer;color:var(--text);border-bottom:3px solid var(--text);margin-bottom:-2px;">
+        {% if lang == 'kz' %}Анонимді сұраулар{% else %}Анонимные запросы{% endif %}
+        {% if anon_requests %}<span class="badge badge-coral" style="margin-left:6px;">{{ anon_requests|length }}</span>{% endif %}
+      </button>
+      <button onclick="showTab('students')" class="tab-btn" id="tab_students" style="background:none;border:none;padding:12px 20px;font-family:'Inter',sans-serif;font-weight:800;font-size:0.9rem;cursor:pointer;color:var(--text-2);border-bottom:3px solid transparent;margin-bottom:-2px;">
+        {% if lang == 'kz' %}Оқушылар{% else %}Ученики{% endif %}
+      </button>
+      <button onclick="showTab('emotions')" class="tab-btn" id="tab_emotions" style="background:none;border:none;padding:12px 20px;font-family:'Inter',sans-serif;font-weight:800;font-size:0.9rem;cursor:pointer;color:var(--text-2);border-bottom:3px solid transparent;margin-bottom:-2px;">
+        {% if lang == 'kz' %}Эмоция мониторинг{% else %}Мониторинг эмоций{% endif %}
+      </button>
+    </div>
+
+    <!-- TAB: ANON REQUESTS -->
+    <div id="panel_anon">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">{% if lang == 'kz' %}Анонимді сұраулар{% else %}Анонимные запросы{% endif %}</span>
+        </div>
+        {% if anon_requests %}
+          {% for req in anon_requests %}
+          <div class="request-item" style="border-left-color: {% if req.status == 'new' %}var(--peach){% elif req.status == 'in_progress' %}var(--amber){% else %}var(--sage){% endif %};">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div style="flex:1;">
+                <div class="request-msg">{{ req.message }}</div>
+                <div class="request-meta">{{ req.created_at|date:"d.m.Y H:i" }} &nbsp;·&nbsp; {{ req.session_key|truncatechars:10 }}...</div>
+              </div>
+              <span class="badge {% if req.status == 'new' %}badge-coral{% elif req.status == 'in_progress' %}badge-gold{% else %}badge-teal{% endif %}" style="margin-left:1rem; flex-shrink:0;">
+                {{ req.get_status_display }}
+              </span>
+            </div>
+            {% if req.response %}
+            <div style="margin-top:0.75rem; background:rgba(46,196,182,0.08); border-radius:8px; padding:0.75rem; font-size:0.85rem; color:var(--text);">
+              <strong>{% if lang == 'kz' %}Жауап:{% else %}Ответ:{% endif %}</strong> {{ req.response }}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="text-align:center; padding:3rem; color:var(--text-2);">
+            <div style="font-size:3rem; margin-bottom:1rem;"></div>
+            {% if lang == 'kz' %}Анонимді сұрау жоқ{% else %}Нет анонимных запросов{% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- TAB: STUDENTS -->
+    <div id="panel_students" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">{% if lang == 'kz' %}Тіркелген оқушылар{% else %}Зарегистрированные ученики{% endif %}</span>
+        </div>
+        {% if students %}
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>{% if lang == 'kz' %}Аты-жөні{% else %}Имя{% endif %}</th>
+                  <th>{% if lang == 'kz' %}Логин{% else %}Логин{% endif %}</th>
+                  <th>{% if lang == 'kz' %}Тіркелген күн{% else %}Дата регистрации{% endif %}</th>
+                  <th>{% if lang == 'kz' %}Статус{% else %}Статус{% endif %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for student in students %}
+                <tr>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <div class="user-avatar" style="width:32px;height:32px;font-size:0.8rem;">
+                        {{ student.first_name|first|default:student.username|first|upper }}
+                      </div>
+                      {{ student.get_full_name|default:student.username }}
+                    </div>
+                  </td>
+                  <td style="color:var(--text-2);">{{ student.username }}</td>
+                  <td style="color:var(--text-2);">{{ student.date_joined|date:"d.m.Y" }}</td>
+                  <td><span class="badge badge-teal">{% if lang == 'kz' %}Белсенді{% else %}Активен{% endif %}</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div style="text-align:center; padding:3rem; color:var(--text-2);">
+            <div style="font-size:3rem; margin-bottom:1rem;"></div>
+            {% if lang == 'kz' %}Тіркелген оқушы жоқ{% else %}Нет зарегистрированных учеников{% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- TAB: EMOTIONS -->
+    <div id="panel_emotions" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">{% if lang == 'kz' %}Соңғы эмоция жазбалары{% else %}Последние записи эмоций{% endif %}</span>
+        </div>
+        {% if all_emotions %}
+          {% for entry in all_emotions %}
+          <div class="emotion-entry">
+            <span class="emoji" style="font-size:1.8rem;">
+              {% emotion_icon entry.emotion %}
+            </span>
+            <div style="flex:1;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <strong style="color:var(--text); font-size:0.9rem;">{{ entry.user.get_full_name|default:entry.user.username }}</strong>
+                <span class="badge badge-navy" style="font-size:0.7rem;">{{ entry.get_emotion_display }}</span>
+              </div>
+              {% if entry.note %}
+              <div style="color:var(--text-2); font-size:0.85rem; margin-top:4px;">{{ entry.note }}</div>
+              {% endif %}
+              <div class="meta">{{ entry.created_at|date:"d.m.Y H:i" }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="text-align:center; padding:3rem; color:var(--text-2);">
+            <div style="font-size:3rem; margin-bottom:1rem;"></div>
+            {% if lang == 'kz' %}Эмоция жазбасы жоқ{% else %}Нет записей эмоций{% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showTab(name) {
+  ['anon','students','emotions'].forEach(t => {
+    document.getElementById('panel_' + t).style.display = t === name ? 'block' : 'none';
+    const btn = document.getElementById('tab_' + t);
+    if (t === name) {
+      btn.style.color = 'var(--text)';
+      btn.style.borderBottom = '3px solid var(--text)';
+    } else {
+      btn.style.color = 'var(--text-2)';
+      btn.style.borderBottom = '3px solid transparent';
+    }
+  });
+}
+</script>
+{% endblock %}

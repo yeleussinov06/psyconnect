@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %} — PsyConnect{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  {% include "core/student/sidebar.html" with active="dashboard" %}
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">{% if lang == 'kz' %}Сәлем, {{ user.first_name|default:user.username }}!{% else %}Привет, {{ user.first_name|default:user.username }}!{% endif %} </h1>
+      <p class="page-subtitle">{% if lang == 'kz' %}Бүгін қалайсың?{% else %}Как дела сегодня?{% endif %}</p>
+    </div>
+
+    <div class="stats-grid" style="margin-bottom:1.5rem;">
+      <div class="stat-card">
+        <div class="stat-icon peach" style="color:var(--peach);">{% icon 'heart' 'sidebar-icon' %}</div>
+        <div><div class="stat-value">{{ emotion_count }}</div><div class="stat-label">{% if lang == 'kz' %}Эмоция жазбасы{% else %}Записей эмоций{% endif %}</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon sage" style="color:var(--sage);">{% icon 'clipboard-document-check' 'sidebar-icon' %}</div>
+        <div><div class="stat-value">{{ test_count }}</div><div class="stat-label">{% if lang == 'kz' %}Тест нәтижесі{% else %}Результатов тестов{% endif %}</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon sky" style="color:var(--sky);">{% icon 'chat-bubble-left-right' 'sidebar-icon' %}</div>
+        <div><div class="stat-value">{{ chat_count }}</div><div class="stat-label">{% if lang == 'kz' %}Чат хабарлама{% else %}Сообщений в чате{% endif %}</div></div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:1.5rem;">
+      <div class="card">
+        <div class="card-header"><span class="card-title">{% if lang == 'kz' %}Жылдам әрекеттер{% else %}Быстрые действия{% endif %}</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+          <a href="{% url 'emotion_diary' %}" class="quick-action-btn" style="background:var(--peach-pale);border:1.5px solid #F5C9C2;color:var(--text);">
+            <span style="color:#C4614F;">{% icon 'heart' 'sidebar-icon' %}</span>
+            <span>{% if lang == 'kz' %}Эмоция жаз{% else %}Записать эмоцию{% endif %}</span>
+          </a>
+          <a href="{% url 'test_center' %}" class="quick-action-btn" style="background:var(--sage-pale);border:1.5px solid #C8DFD0;color:var(--text);">
+            <span style="color:var(--sage);">{% icon 'clipboard-document-check' 'sidebar-icon' %}</span>
+            <span>{% if lang == 'kz' %}Тест өту{% else %}Пройти тест{% endif %}</span>
+          </a>
+          <a href="{% url 'ai_chat' %}" class="quick-action-btn" style="background:var(--sky-pale);border:1.5px solid #C0DDEF;color:var(--text);">
+            <span style="color:#4A8DAE;">{% icon 'chat-bubble-left-right' 'sidebar-icon' %}</span>
+            <span>AI-чат</span>
+          </a>
+          <a href="{% url 'anonymous_support' %}" class="quick-action-btn" style="background:var(--lav-pale);border:1.5px solid #D5CEEE;color:var(--text);">
+            <span style="color:var(--lavender);">{% icon 'eye-slash' 'sidebar-icon' %}</span>
+            <span>{% if lang == 'kz' %}Анонимді{% else %}Анонимно{% endif %}</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">{% if lang == 'kz' %}Соңғы тест нәтижелері{% else %}Последние результаты{% endif %}</span>
+          <a href="{% url 'test_center' %}" style="font-size:.8rem;color:var(--sage);font-weight:700;text-decoration:none;">{% if lang == 'kz' %}Барлығы →{% else %}Все →{% endif %}</a>
+        </div>
+        {% if recent_results %}
+          {% for r in recent_results %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-weight:700;font-size:.875rem;color:var(--text);">{{ r.category }}</div>
+              <div style="font-size:.72rem;color:var(--text-3);margin-top:2px;">{{ r.created_at|date:"d.m.Y" }}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-family:'Inter',sans-serif;font-weight:800;font-weight:700;font-size:1.1rem;color:var(--text);">{{ r.score }}<span style="font-size:.75rem;color:var(--text-3);">/{{ r.max_score }}</span></div>
+              <div class="progress-bar" style="width:72px;margin-top:4px;"><div class="progress-fill" style="width:{% widthratio r.score r.max_score 100 %}%;"></div></div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="text-align:center;padding:2rem 0;color:var(--text-3);">
+            <div style="margin:0 auto .75rem;display:flex;justify-content:center;">{% icon 'clipboard-document-check' 'sidebar-icon' %}</div>
+            <div style="font-size:.85rem;">{% if lang == 'kz' %}Нәтиже жоқ{% else %}Нет результатов{% endif %}</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">{% if lang == 'kz' %}Соңғы эмоциялар{% else %}Последние эмоции{% endif %}</span>
+        <a href="{% url 'emotion_diary' %}" style="font-size:.8rem;color:var(--sage);font-weight:700;text-decoration:none;">{% if lang == 'kz' %}Барлығы →{% else %}Все →{% endif %}</a>
+      </div>
+      {% if emotions %}
+        {% for e in emotions %}
+        <div class="emotion-entry">
+          <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;background:{% if e.emotion == 'happy' %}var(--amber-pale){% elif e.emotion == 'calm' %}var(--sage-pale){% elif e.emotion == 'anxious' %}var(--peach-pale){% elif e.emotion == 'sad' %}var(--sky-pale){% elif e.emotion == 'angry' %}var(--peach-pale){% else %}var(--lav-pale){% endif %};">
+            {% emotion_icon e.emotion %}
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:.875rem;color:var(--text);">{{ e.get_emotion_display }}</div>
+            {% if e.note %}<div style="color:var(--text-2);font-size:.8rem;margin-top:2px;line-height:1.4;">{{ e.note }}</div>{% endif %}
+            <div class="meta">{{ e.created_at|date:"d F Y, H:i" }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center;padding:2.5rem 0;">
+          <div style="font-size:2.5rem;margin-bottom:.75rem;"></div>
+          <div style="font-weight:700;color:var(--text-2);margin-bottom:.4rem;">{% if lang == 'kz' %}Жазба жоқ{% else %}Нет записей{% endif %}</div>
+          <a href="{% url 'emotion_diary' %}" class="btn btn-primary btn-sm" style="margin-top:.75rem;">{% if lang == 'kz' %}Жазу{% else %}Записать{% endif %}</a>
+        </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}

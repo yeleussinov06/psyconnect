@@ -1,0 +1,67 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="{{ lang|default:'ru' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}PsyConnect{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=3">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+<nav class="navbar">
+  <a href="{% url 'landing' %}" class="navbar-brand">
+    <div class="brand-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="white" opacity="0.3"/>
+        <path d="M12 3c-2.4 0-4.6.85-6.3 2.25C7.2 6.4 9.5 7 12 7s4.8-.6 6.3-1.75C16.6 3.85 14.4 3 12 3z" fill="white"/>
+        <path d="M12 9c-2.5 0-4.8-.6-6.55-1.6A9 9 0 003 12c0 4.97 4.03 9 9 9s9-4.03 9-9a9 9 0 00-2.45-6.1C16.8 8.4 14.5 9 12 9z" fill="white" opacity="0.6"/>
+      </svg>
+    </div>
+    <span class="brand-text">Psy<span>Connect</span></span>
+  </a>
+
+  <ul class="navbar-nav">
+    {% if user.is_authenticated %}
+      {% with role=user.profile.role %}
+        {% if role == 'student' %}
+          <li><a href="{% url 'student_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</a></li>
+          <li><a href="{% url 'emotion_diary' %}" class="nav-link">{% if lang == 'kz' %}Күнделік{% else %}Дневник{% endif %}</a></li>
+          <li><a href="{% url 'test_center' %}" class="nav-link">{% if lang == 'kz' %}Тесттер{% else %}Тесты{% endif %}</a></li>
+          <li><a href="{% url 'ai_chat' %}" class="nav-link">AI-чат</a></li>
+        {% elif role == 'teacher' %}
+          <li><a href="{% url 'teacher_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</a></li>
+          <li><a href="{% url 'articles' %}" class="nav-link">{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}</a></li>
+        {% elif role == 'parent' %}
+          <li><a href="{% url 'parent_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</a></li>
+          <li><a href="{% url 'articles' %}" class="nav-link">{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}</a></li>
+        {% elif role == 'psychologist' %}
+          <li><a href="{% url 'psychologist_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Панель{% else %}Панель{% endif %}</a></li>
+        {% endif %}
+      {% endwith %}
+      <li><a href="{% url 'anonymous_support' %}" class="nav-link">{% if lang == 'kz' %}Анонимді{% else %}Анонимно{% endif %}</a></li>
+      <li><a href="{% url 'logout' %}" class="btn btn-ghost btn-sm" style="margin-left:4px;">{% if lang == 'kz' %}Шығу{% else %}Выйти{% endif %}</a></li>
+    {% else %}
+      <li><a href="{% url 'login' %}" class="nav-link">{% if lang == 'kz' %}Кіру{% else %}Войти{% endif %}</a></li>
+      <li><a href="{% url 'register' %}" class="btn btn-primary btn-sm" style="margin-left:4px;">{% if lang == 'kz' %}Тіркелу{% else %}Регистрация{% endif %}</a></li>
+    {% endif %}
+  </ul>
+
+  <div class="lang-switcher">
+    <a href="{% url 'set_language' 'ru' %}" class="lang-btn {% if lang == 'ru' or not lang %}active{% endif %}">RU</a>
+    <a href="{% url 'set_language' 'kz' %}" class="lang-btn {% if lang == 'kz' %}active{% endif %}">KZ</a>
+  </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<footer>
+  <span>PsyConnect</span> &nbsp;·&nbsp;
+  {% if lang == 'kz' %}Мектеп қауымдастығына арналған платформа{% else %}Платформа для школьного сообщества{% endif %} © 2025
+</footer>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

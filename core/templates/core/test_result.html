@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang == 'kz' %}Нәтиже{% else %}Результат{% endif %} — PsyConnect{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <aside class="sidebar">
+    <a href="{% url 'student_dashboard' %}" class="sidebar-link">
+      <div class="icon"></div>{% if lang == 'kz' %}Бақылау тақтасы{% else %}Дашборд{% endif %}
+    </a>
+    <a href="{% url 'test_center' %}" class="sidebar-link active">
+      <div class="icon"></div>{% if lang == 'kz' %}Тест орталығы{% else %}Тест центр{% endif %}
+    </a>
+    <a href="{% url 'ai_chat' %}" class="sidebar-link">
+      <div class="icon"></div>AI-чат
+    </a>
+    <div class="user-card">
+      <div class="user-avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+      <div class="user-info">
+        <div class="name">{{ user.get_full_name|default:user.username }}</div>
+        <div class="role">{% if lang == 'kz' %}Оқушы{% else %}Ученик{% endif %}</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div style="max-width: 640px; margin: 0 auto;">
+
+      <div class="result-card" style="margin-bottom: 2rem;">
+        <div style="font-size:3rem; margin-bottom:1rem;"></div>
+        <div class="result-score">{{ score }}</div>
+        <div class="result-label">{% if lang == 'kz' %}{{ max_score }} баллдан{% else %}из {{ max_score }} баллов{% endif %}</div>
+
+        <!-- Score gauge -->
+        <div style="margin: 1.5rem 0;">
+          <div class="progress-bar" style="height:16px; background:rgba(255,255,255,0.15);">
+            <div class="progress-fill" style="width:{% widthratio score max_score 100 %}%; background: linear-gradient(90deg, var(--sage), var(--amber));"></div>
+          </div>
+        </div>
+
+        <div class="result-interpretation">
+          {% if lang == 'kz' %}{{ interp_kz }}{% else %}{{ interp_ru }}{% endif %}
+        </div>
+
+        <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+          <a href="{% url 'test_center' %}" class="btn btn-outline">
+            ← {% if lang == 'kz' %}Тесттерге оралу{% else %}К тестам{% endif %}
+          </a>
+          <a href="{% url 'ai_chat' %}" class="btn btn-primary">
+            {% if lang == 'kz' %}AI-чатта сөйлесу{% else %}Поговорить в AI-чате{% endif %}
+          </a>
+        </div>
+      </div>
+
+      <!-- Recommendation box -->
+      <div class="card" style="border-left: 4px solid var(--sage);">
+        <div class="card-title" style="margin-bottom:0.75rem;">
+          {% if lang == 'kz' %}Ұсыныс{% else %}Рекомендация{% endif %}
+        </div>
+        {% if score <= 5 %}
+          <p style="color:var(--text-2); font-size:0.9rem; line-height:1.7;">
+            {% if lang == 'kz' %}Керемет! Жағдайыңыз өте жақсы. Осы деңгейді сақтауды жалғастырыңыз. Егер болашақта қиындықтар туса, AI-чатқа жазып немесе психологқа жолығыңыз.{% else %}Отлично! Ваше состояние очень хорошее. Продолжайте поддерживать этот уровень. Если в будущем возникнут трудности — напишите в AI-чате или обратитесь к психологу.{% endif %}
+          </p>
+        {% elif score <= 10 %}
+          <p style="color:var(--text-2); font-size:0.9rem; line-height:1.7;">
+            {% if lang == 'kz' %}Орташа деңгей. Эмоция күнделігін жүргізіп, өзіңіздің жағдайыңызды бақылаңыз. AI-чатта сөйлесу немесе жанды психологпен консультация пайдалы болуы мүмкін.{% else %}Умеренный уровень. Ведите дневник эмоций и отслеживайте своё состояние. Разговор в AI-чате или консультация с живым психологом может быть полезна.{% endif %}
+          </p>
+        {% else %}
+          <p style="color:var(--text-2); font-size:0.9rem; line-height:1.7;">
+            {% if lang == 'kz' %}Жоғары деңгей. Психологпен кездесу ұсынылады. Анонимді арна арқылы хабарлама жіберіп немесе AI-чатта жаза аласыз.{% else %}Высокий уровень. Рекомендуем обратиться к психологу. Напишите через анонимный канал или в AI-чате.{% endif %}
+          </p>
+          <a href="{% url 'anonymous_support' %}" class="btn btn-primary" style="margin-top:1rem;">
+            {% if lang == 'kz' %}Анонимді жіберу{% else %}Написать анонимно{% endif %}
+          </a>
+        {% endif %}
+      </div>
+
+    </div>
+  </main>
+</div>
+{% endblock %}

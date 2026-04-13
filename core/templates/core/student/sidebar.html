@@ -1,0 +1,45 @@
+{% load icons %}
+<aside class="sidebar" id="appSidebar">
+  <button class="sb-toggle" onclick="toggleSidebar()" title="Свернуть/развернуть">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 18l-6-6 6-6"/>
+    </svg>
+  </button>
+
+  <div class="sidebar-section-title">{% if lang == 'kz' %}ОҚУШЫ{% else %}УЧЕНИК{% endif %}</div>
+
+  <a href="{% url 'student_dashboard' %}" class="sidebar-link {% if active == 'dashboard' %}active{% endif %}">
+    <div class="icon">{% icon 'home' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</span>
+  </a>
+  <a href="{% url 'emotion_diary' %}" class="sidebar-link {% if active == 'emotions' %}active{% endif %}">
+    <div class="icon">{% icon 'heart' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Эмоция күнделігі{% else %}Дневник эмоций{% endif %}</span>
+  </a>
+  <a href="{% url 'test_center' %}" class="sidebar-link {% if active == 'tests' %}active{% endif %}">
+    <div class="icon">{% icon 'clipboard-document-check' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Тест орталығы{% else %}Тест центр{% endif %}</span>
+  </a>
+  <a href="{% url 'ai_chat' %}" class="sidebar-link {% if active == 'chat' %}active{% endif %}">
+    <div class="icon">{% icon 'chat-bubble-left-right' %}</div>
+    <span class="sb-label">AI-чат</span>
+  </a>
+
+  <!-- Психолог — аккордеон -->
+  <button class="acc-btn {% if active == 'appointments' or active == 'anon' %}acc-active{% endif %}" onclick="toggleAccordion('psychMenu')">
+    <div class="icon">{% icon 'user-circle' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Психолог{% else %}Психолог{% endif %}</span>
+    <svg class="acc-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="acc-sub {% if active == 'appointments' or active == 'anon' %}acc-open{% endif %}" id="psychMenu">
+    <a href="{% url 'my_appointments' %}" class="acc-sub-link {% if active == 'appointments' %}active{% endif %}">
+      {% icon 'calendar-days' 'nav-icon' %} {% if lang == 'kz' %}Жазылымдар{% else %}Мои записи{% endif %}
+    </a>
+    <a href="{% url 'book_appointment' %}" class="acc-sub-link">
+      {% if lang == 'kz' %}Жазылу{% else %}Записаться{% endif %}
+    </a>
+    <a href="{% url 'anonymous_support' %}" class="acc-sub-link {% if active == 'anon' %}active{% endif %}">
+      {% icon 'eye-slash' 'nav-icon' %} {% if lang == 'kz' %}Анонимді{% else %}Анонимно{% endif %}
+    </a>
+  </div>
+</aside>

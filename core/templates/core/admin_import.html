@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Импорт пользователей — PsyConnect{% endblock %}
+{% block content %}
+<div style="max-width:800px;margin:2rem auto;padding:0 1rem;">
+
+  <div class="page-header">
+    <h1 class="page-title">Импорт пользователей из Excel</h1>
+    <p class="page-subtitle">Массовое создание учителей, учеников и родителей из одного файла</p>
+  </div>
+
+  {% if result %}
+  <!-- РЕЗУЛЬТАТ -->
+  <div class="card" style="margin-bottom:1.5rem;border-left:4px solid {% if result.dry_run %}var(--amber){% else %}var(--sage){% endif %};">
+    <div class="card-header">
+      <span class="card-title">
+        {% if result.dry_run %}Результат проверки (Dry Run){% else %}Результат импорта{% endif %}
+      </span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.25rem;">
+      <div style="text-align:center;padding:1rem;background:var(--sage-pale);border-radius:var(--r-md);">
+        <div style="font-size:2.5rem;font-weight:800;color:var(--sage);">{{ result.teachers }}</div>
+        <div style="font-size:.8rem;color:var(--text-2);font-weight:600;">Учителей</div>
+      </div>
+      <div style="text-align:center;padding:1rem;background:var(--sky-pale);border-radius:var(--r-md);">
+        <div style="font-size:2.5rem;font-weight:800;color:#3B7EBF;">{{ result.students }}</div>
+        <div style="font-size:.8rem;color:var(--text-2);font-weight:600;">Учеников</div>
+      </div>
+      <div style="text-align:center;padding:1rem;background:var(--amber-pale);border-radius:var(--r-md);">
+        <div style="font-size:2.5rem;font-weight:800;color:var(--amber);">{{ result.parents }}</div>
+        <div style="font-size:.8rem;color:var(--text-2);font-weight:600;">Родителей</div>
+      </div>
+      <div style="text-align:center;padding:1rem;background:var(--cream-dark);border-radius:var(--r-md);">
+        <div style="font-size:2.5rem;font-weight:800;color:var(--text-3);">{{ result.skipped }}</div>
+        <div style="font-size:.8rem;color:var(--text-2);font-weight:600;">Пропущено</div>
+      </div>
+    </div>
+
+    {% if result.errors %}
+    <div style="background:var(--peach-pale);border-radius:var(--r-sm);padding:1rem;margin-bottom:1rem;">
+      <div style="font-weight:700;color:#C4614F;margin-bottom:.5rem;">Ошибки ({{ result.errors|length }}):</div>
+      {% for e in result.errors %}
+      <div style="font-size:.83rem;color:#C4614F;padding:2px 0;">• {{ e }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if result.output_file and not result.dry_run %}
+    <a href="{% url 'download_import_result' %}" class="btn btn-primary">
+      Скачать файл с логинами и паролями (.xlsx)
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- ФОРМА ЗАГРУЗКИ -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header"><span class="card-title">Загрузить файл Excel</span></div>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Файл (.xlsx)</label>
+        <input type="file" name="excel_file" accept=".xlsx" class="form-control" required>
+        <div style="font-size:.78rem;color:var(--text-3);margin-top:4px;">Используй шаблон ниже. Данные начиная со строки 3.</div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <input type="checkbox" name="dry_run" value="1" style="width:16px;height:16px;">
+          <div>
+            <div style="font-weight:600;font-size:.875rem;">Dry run — только проверить</div>
+            <div style="font-size:.78rem;color:var(--text-3);">Покажет сколько будет создано, но не создаст</div>
+          </div>
+        </label>
+      </div>
+      <div style="display:flex;gap:.75rem;">
+        <button type="submit" class="btn btn-primary">Импортировать</button>
+        <a href="{% url 'download_import_template' %}" class="btn btn-outline">Скачать шаблон</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- ИНСТРУКЦИЯ -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">Инструкция</span></div>
+    <div style="font-size:.875rem;color:var(--text-2);line-height:1.8;">
+      <p style="margin-bottom:.75rem;"><strong>Формат файла (один лист «Импорт класса»):</strong></p>
+      <div style="background:var(--cream-dark);border-radius:var(--r-sm);padding:.875rem;font-family:monospace;font-size:.8rem;margin-bottom:1rem;overflow-x:auto;">
+        Класс | ФИО ученика | Email ученика | ФИО учителя | ФИО родителя | Телефон | Email родителя<br>
+        9А | Алиев Арман | arman@mail.ru | Иванов Иван | Алиева Гульнара | 77771234567 | g@mail.ru<br>
+        11Б | Алиев Максат | maxat@mail.ru | Сидоров Пётр | Алиева Гульнара | 77771234567 | g@mail.ru
+      </div>
+      <ul style="padding-left:1.25rem;">
+        <li>Каждая строка = один ученик</li>
+        <li>Учитель создаётся один раз, повторяйте ФИО в каждой строке класса</li>
+        <li>Если у родителя несколько детей — повторите его телефон в каждой строке. Скрипт найдёт по телефону и привяжет всех детей к одному аккаунту</li>
+        <li>Логин ученика: <strong>id0001, id0002...</strong> (авто)</li>
+        <li>Пароль ученика: <strong>id0001_2026</strong></li>
+        <li>Телефон можно писать без +7, скрипт ищет по последним 7 цифрам</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

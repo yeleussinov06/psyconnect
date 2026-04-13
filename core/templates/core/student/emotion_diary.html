@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Эмоция күнделігі{% else %}Дневник эмоций{% endif %} — PsyConnect{% endblock %}
+{% block extra_css %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "core/student/sidebar.html" with active="emotions" %}
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">{% if lang == 'kz' %}Эмоция күнделігі{% else %}Дневник эмоций{% endif %}</h1>
+      <p class="page-subtitle">{% if lang == 'kz' %}Бүгін қалай сезінесің?{% else %}Как ты себя чувствуешь сегодня?{% endif %}</p>
+    </div>
+
+    <!-- ADD EMOTION -->
+    <div class="card" style="margin-bottom:2rem;">
+      <div class="card-header"><span class="card-title">{% if lang == 'kz' %}Эмоцияны жазу{% else %}Записать эмоцию{% endif %}</span></div>
+      <form method="post" id="emotionForm">
+        {% csrf_token %}
+        <div class="emotion-grid">
+          <label class="emotion-btn" id="btn_happy" onclick="selectEmotion('happy',this)">
+            {% emotion_icon "happy" 36 %}
+            <span class="label">{% if lang == 'kz' %}Жақсы{% else %}Хорошо{% endif %}</span>
+            <input type="radio" name="emotion" value="happy" style="display:none;" id="e_happy">
+          </label>
+          <label class="emotion-btn" id="btn_calm" onclick="selectEmotion('calm',this)">
+            {% emotion_icon "calm" 36 %}
+            <span class="label">{% if lang == 'kz' %}Тыныш{% else %}Спокойно{% endif %}</span>
+            <input type="radio" name="emotion" value="calm" style="display:none;" id="e_calm">
+          </label>
+          <label class="emotion-btn" id="btn_anxious" onclick="selectEmotion('anxious',this)">
+            {% emotion_icon "anxious" 36 %}
+            <span class="label">{% if lang == 'kz' %}Алаңдаулы{% else %}Тревожно{% endif %}</span>
+            <input type="radio" name="emotion" value="anxious" style="display:none;" id="e_anxious">
+          </label>
+          <label class="emotion-btn" id="btn_sad" onclick="selectEmotion('sad',this)">
+            {% emotion_icon "sad" 36 %}
+            <span class="label">{% if lang == 'kz' %}Қайғылы{% else %}Грустно{% endif %}</span>
+            <input type="radio" name="emotion" value="sad" style="display:none;" id="e_sad">
+          </label>
+          <label class="emotion-btn" id="btn_angry" onclick="selectEmotion('angry',this)">
+            {% emotion_icon "angry" 36 %}
+            <span class="label">{% if lang == 'kz' %}Ашулы{% else %}Злой{% endif %}</span>
+            <input type="radio" name="emotion" value="angry" style="display:none;" id="e_angry">
+          </label>
+          <label class="emotion-btn" id="btn_tired" onclick="selectEmotion('tired',this)">
+            {% emotion_icon "tired" 36 %}
+            <span class="label">{% if lang == 'kz' %}Шаршаулы{% else %}Устал{% endif %}</span>
+            <input type="radio" name="emotion" value="tired" style="display:none;" id="e_tired">
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{% if lang == 'kz' %}ОҚИ ТҮРІ (МІНДЕТТІ ЕМЕС){% else %}ТИП СОБЫТИЯ (НЕОБЯЗАТЕЛЬНО){% endif %}</label>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.25rem;">
+            <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);font-size:.8rem;font-weight:500;transition:all .2s;">
+              <input type="radio" name="event_type" value="" checked style="display:none;" onchange="updateEventStyle(this)"> — {% if lang == 'kz' %}Жоқ{% else %}Нет{% endif %}
+            </label>
+            <label style="cursor:pointer;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);font-size:.8rem;font-weight:500;transition:all .2s;">
+              <input type="radio" name="event_type" value="bullying" style="display:none;" onchange="updateEventStyle(this)"> 🔴 {% if lang == 'kz' %}Буллинг{% else %}Буллинг{% endif %}
+            </label>
+            <label style="cursor:pointer;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);font-size:.8rem;font-weight:500;transition:all .2s;">
+              <input type="radio" name="event_type" value="conflict" style="display:none;" onchange="updateEventStyle(this)"> 🟡 {% if lang == 'kz' %}Жанжал{% else %}Конфликт{% endif %}
+            </label>
+            <label style="cursor:pointer;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);font-size:.8rem;font-weight:500;transition:all .2s;">
+              <input type="radio" name="event_type" value="study" style="display:none;" onchange="updateEventStyle(this)"> 📚 {% if lang == 'kz' %}Оқу стрессі{% else %}Стресс от учёбы{% endif %}
+            </label>
+            <label style="cursor:pointer;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);font-size:.8rem;font-weight:500;transition:all .2s;">
+              <input type="radio" name="event_type" value="loneliness" style="display:none;" onchange="updateEventStyle(this)"> 💙 {% if lang == 'kz' %}Жалғыздық{% else %}Одиночество{% endif %}
+            </label>
+            <label style="cursor:pointer;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);font-size:.8rem;font-weight:500;transition:all .2s;">
+              <input type="radio" name="event_type" value="other" style="display:none;" onchange="updateEventStyle(this)"> ✏️ {% if lang == 'kz' %}Басқа{% else %}Другое{% endif %}
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{% if lang == 'kz' %}Ескертпе (міндетті емес){% else %}Заметка (необязательно){% endif %}</label>
+          <textarea name="note" class="form-control" placeholder="{% if lang == 'kz' %}Не болды? Ойларыңызды жазыңыз...{% else %}Что произошло? Запишите свои мысли...{% endif %}" rows="3"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>{% if lang == 'kz' %}Сақтау{% else %}Сохранить{% endif %}</button>
+      </form>
+    </div>
+
+    <!-- CHART -->
+    <div class="card" style="margin-bottom:2rem;">
+      <div class="card-header"><span class="card-title">📈 {% if lang == 'kz' %}14 күндік динамика{% else %}Динамика за 14 дней{% endif %}</span></div>
+      <canvas id="emotionChart" height="100"></canvas>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">{% if lang == 'kz' %}Тарих{% else %}История{% endif %}</span>
+        <span class="badge badge-navy">{{ entries|length }}</span>
+      </div>
+      {% if entries %}
+        {% for e in entries %}
+        <div class="emotion-entry">
+          <span class="emotion-entry-icon" style="width:44px;height:44px;">{% emotion_icon e.emotion %}</span>
+          <div style="flex:1;">
+            <div style="font-weight:800;color:var(--text);">{{ e.get_emotion_display }}</div>
+            {% if e.note %}<div style="color:var(--text);font-size:.9rem;margin-top:4px;line-height:1.5;">{{ e.note }}</div>{% endif %}
+            <div class="meta">{{ e.created_at|date:"d F Y, H:i" }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text-2);">
+          <div style="font-size:3rem;margin-bottom:1rem;"></div>
+          {% if lang == 'kz' %}Жазба жоқ. Жоғарыдан эмоцияны таңдаңыз!{% else %}Нет записей. Выберите эмоцию выше!{% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function selectEmotion(val, el) {
+  document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('e_' + val).checked = true;
+  document.getElementById('submitBtn').disabled = false;
+}
+
+// Chart
+const ctx = document.getElementById('emotionChart').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: {{ chart_labels|safe }},
+    datasets: [
+      { label: '{% if lang == "kz" %}Жақсы{% else %}Хорошо{% endif %}', data: {{ chart_happy|safe }}, borderColor: '#F4B942', backgroundColor: 'rgba(244,185,66,0.1)', tension: 0.4, fill: true },
+      { label: '{% if lang == "kz" %}Тыныш{% else %}Спокойно{% endif %}', data: {{ chart_calm|safe }}, borderColor: '#2EC4B6', backgroundColor: 'rgba(46,196,182,0.1)', tension: 0.4, fill: true },
+      { label: '{% if lang == "kz" %}Алаңдаулы{% else %}Тревожно{% endif %}', data: {{ chart_anxious|safe }}, borderColor: '#FF6B6B', backgroundColor: 'rgba(255,107,107,0.1)', tension: 0.4, fill: true },
+      { label: '{% if lang == "kz" %}Қайғылы{% else %}Грустно{% endif %}', data: {{ chart_sad|safe }}, borderColor: '#C9B8FF', backgroundColor: 'rgba(201,184,255,0.1)', tension: 0.4, fill: true },
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'bottom' } },
+    scales: {
+      y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+</script>
+{% endblock %}

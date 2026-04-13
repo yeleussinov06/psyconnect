@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Тест орталығы{% else %}Центр тестирования{% endif %} — PsyConnect{% endblock %}
+{% block nav_tests %}active{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  {% include "core/student/sidebar.html" with active="tests" %}
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">{% if lang == 'kz' %}Тест орталығы{% else %}Центр тестирования{% endif %}</h1>
+      <p class="page-subtitle">{% if lang == 'kz' %}Өзіңді тани — тест өт{% else %}Узнай себя лучше — пройди тест{% endif %}</p>
+    </div>
+
+    <!-- TEST CARDS -->
+    <div class="grid-2" style="margin-bottom: 2rem;">
+      {% for cat in categories %}
+      <a href="{% url 'take_test' cat.key %}" class="test-card">
+        <span class="test-icon">{{ cat.icon }}</span>
+        <div class="test-name">{% if lang == 'kz' %}{{ cat.name_kz }}{% else %}{{ cat.name_ru }}{% endif %}</div>
+        <div class="test-desc">{% if lang == 'kz' %}{{ cat.desc_kz }}{% else %}{{ cat.desc_ru }}{% endif %}</div>
+        <div class="test-questions">5 {% if lang == 'kz' %}сұрақ • 3 минут{% else %}вопросов • 3 минуты{% endif %}</div>
+      </a>
+      {% endfor %}
+    </div>
+
+    <!-- RECENT RESULTS -->
+    {% if recent_results %}
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">{% if lang == 'kz' %}Соңғы нәтижелер{% else %}Последние результаты{% endif %}</span>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>{% if lang == 'kz' %}Тест{% else %}Тест{% endif %}</th>
+              <th>{% if lang == 'kz' %}Нәтиже{% else %}Результат{% endif %}</th>
+              <th>{% if lang == 'kz' %}Түсіндірме{% else %}Интерпретация{% endif %}</th>
+              <th>{% if lang == 'kz' %}Күні{% else %}Дата{% endif %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in recent_results %}
+            <tr>
+              <td><strong>{{ r.category }}</strong></td>
+              <td>
+                <span style="font-weight:900; color:var(--text);">{{ r.score }}/{{ r.max_score }}</span>
+                <div class="progress-bar" style="margin-top:6px; width:80px;">
+                  <div class="progress-fill" style="width:{% widthratio r.score r.max_score 100 %}%;"></div>
+                </div>
+              </td>
+              <td style="color:var(--text-2); font-size:0.85rem;">{{ r.interpretation }}</td>
+              <td style="color:var(--text-2); font-size:0.85rem;">{{ r.created_at|date:"d.m.Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

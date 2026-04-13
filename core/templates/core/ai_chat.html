@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block title %}AI-чат — PsyConnect{% endblock %}
+{% block nav_chat %}active{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <aside class="sidebar">
+    <a href="{% url 'student_dashboard' %}" class="sidebar-link">
+      <div class="icon"></div>{% if lang == 'kz' %}Бақылау тақтасы{% else %}Дашборд{% endif %}
+    </a>
+    <a href="{% url 'emotion_diary' %}" class="sidebar-link">
+      <div class="icon"></div>{% if lang == 'kz' %}Эмоция күнделігі{% else %}Дневник эмоций{% endif %}
+    </a>
+    <a href="{% url 'test_center' %}" class="sidebar-link">
+      <div class="icon"></div>{% if lang == 'kz' %}Тесттер{% else %}Тесты{% endif %}
+    </a>
+    <a href="{% url 'ai_chat' %}" class="sidebar-link active">
+      <div class="icon"></div>AI-чат
+    </a>
+    <a href="{% url 'anonymous_support' %}" class="sidebar-link">
+      <div class="icon"></div>{% if lang == 'kz' %}Анонимді{% else %}Анонимно{% endif %}
+    </a>
+    {% if user.is_authenticated %}
+    <div class="user-card">
+      <div class="user-avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+      <div class="user-info">
+        <div class="name">{{ user.get_full_name|default:user.username }}</div>
+        <div class="role">{% if lang == 'kz' %}Оқушы{% else %}Ученик{% endif %}</div>
+      </div>
+    </div>
+    {% endif %}
+  </aside>
+
+  <main class="main-content" style="padding:1.5rem; display:flex; flex-direction:column;">
+    <!-- Demo notice -->
+    <div style="background:rgba(244,185,66,0.1); border:1px solid rgba(244,185,66,0.3); border-radius:10px; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.85rem; color:#8B6914; font-weight:600;">
+      {% if lang == 'kz' %}Демо режим — AI жауаптары эмулятор. Нақты AI кейінірек қосылады.{% else %}Демо-режим — ответы AI эмулируются. Реальный AI будет подключён позже.{% endif %}
+    </div>
+
+    <div class="chat-container" style="flex:1;">
+      <div class="chat-header">
+        <div class="chat-avatar"></div>
+        <div class="chat-header-info">
+          <div class="name">PsyBot</div>
+          <div class="status">● {% if lang == 'kz' %}Онлайн{% else %}Онлайн{% endif %}</div>
+        </div>
+        <div style="margin-left:auto; font-size:0.8rem; color:rgba(255,255,255,0.4); font-weight:600;">
+          {% if lang == 'kz' %}Human-in-the-loop{% else %}Human-in-the-loop{% endif %}
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <!-- Welcome message -->
+        <div class="message bot">
+          <div class="message-avatar" style="background: linear-gradient(135deg, var(--amber), var(--amber)); color: var(--text);"></div>
+          <div>
+            <div class="message-bubble">
+              {% if lang == 'kz' %}
+                Сәлем! Мен PsyBot — сенің психологиялық қолдау көмекшің. Бүгін не туралы сөйлескің келеді?
+              {% else %}
+                Привет! Я PsyBot — твой помощник психологической поддержки. О чём хочешь поговорить сегодня?
+              {% endif %}
+            </div>
+            <div class="message-time">{% now "H:i" %}</div>
+          </div>
+        </div>
+
+        <!-- Quick prompts -->
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; padding:0 0 0.5rem 44px;">
+          <button onclick="sendQuick(this)" class="btn btn-sm" style="background:white; border:1px solid var(--border); color:var(--text); font-size:0.8rem;">
+            {% if lang == 'kz' %}Мен стресстемін{% else %}Я в стрессе{% endif %}
+          </button>
+          <button onclick="sendQuick(this)" class="btn btn-sm" style="background:white; border:1px solid var(--border); color:var(--text); font-size:0.8rem;">
+            {% if lang == 'kz' %}😔 Оқу қиын{% else %}😔 Учёба тяжело{% endif %}
+          </button>
+          <button onclick="sendQuick(this)" class="btn btn-sm" style="background:white; border:1px solid var(--border); color:var(--text); font-size:0.8rem;">
+            {% if lang == 'kz' %}Достарыммен мәселе{% else %}Проблемы с друзьями{% endif %}
+          </button>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <textarea
+          class="chat-input"
+          id="chatInput"
+          placeholder="{% if lang == 'kz' %}Хабарлама жазыңыз...{% else %}Напишите сообщение...{% endif %}"
+          rows="1"
+          onkeydown="handleKey(event)"
+        ></textarea>
+        <button class="btn btn-primary" onclick="sendMessage()" id="sendBtn" style="padding:12px 20px;">
+          ➤
+        </button>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const lang = '{{ lang }}';
+const csrfToken = '{{ csrf_token }}';
+
+function getCurrentTime() {
+  const now = new Date();
+  return now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+}
+
+function appendMessage(text, isUser) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'message' + (isUser ? ' user' : ' bot');
+
+  if (isUser) {
+    div.innerHTML = `
+      <div class="message-avatar"></div>
+      <div>
+        <div class="message-bubble">${escapeHtml(text)}</div>
+        <div class="message-time">${getCurrentTime()}</div>
+      </div>`;
+  } else {
+    div.innerHTML = `
+      <div class="message-avatar" style="background:linear-gradient(135deg,var(--amber),var(--amber));color:var(--text);"></div>
+      <div>
+        <div class="message-bubble">${escapeHtml(text)}</div>
+        <div class="message-time">${getCurrentTime()}</div>
+      </div>`;
+  }
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showTyping() {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'message bot';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="message-avatar" style="background:linear-gradient(135deg,var(--amber),var(--amber));color:var(--text);"></div>
+    <div>
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(text));
+  return div.innerHTML;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+
+  appendMessage(text, true);
+  showTyping();
+
+  try {
+    const response = await fetch('/api/chat/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await response.json();
+    setTimeout(() => {
+      removeTyping();
+      appendMessage(data.response, false);
+      document.getElementById('sendBtn').disabled = false;
+    }, 800 + Math.random() * 600);
+  } catch (e) {
+    removeTyping();
+    appendMessage(lang === 'kz' ? 'Қате орын алды. Қайталап көріңіз.' : 'Произошла ошибка. Попробуйте ещё раз.', false);
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
+function sendQuick(btn) {
+  document.getElementById('chatInput').value = btn.textContent.trim();
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+  // auto-resize textarea
+  const ta = document.getElementById('chatInput');
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+}
+</script>
+{% endblock %}

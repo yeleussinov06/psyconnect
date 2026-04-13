@@ -1,0 +1,30 @@
+{% load icons %}
+<aside class="sidebar" id="appSidebar">
+  <button class="sb-toggle" id="sbToggleBtn" onclick="toggleSidebar()"></button>
+  <div class="sidebar-section-title sb-label">{% if lang == 'kz' %}МҰҒАЛІМ{% else %}УЧИТЕЛЬ{% endif %}</div>
+
+  <a href="{% url 'teacher_dashboard' %}" class="sidebar-link {% if active == 'dashboard' %}active{% endif %}">
+    <div class="icon">{% icon 'home' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</span>
+  </a>
+
+  <a href="{% url 'teacher_dashboard' %}?panel=students" class="sidebar-link {% if active == 'students' %}active{% endif %}">
+    <div class="icon">{% icon 'users' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Оқушылар{% else %}Ученики{% endif %}</span>
+  </a>
+
+  <a href="{% url 'teacher_dashboard' %}?panel=emotions" class="sidebar-link {% if active == 'emotions' %}active{% endif %}">
+    <div class="icon">{% icon 'heart' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Эмоциялар{% else %}Эмоции{% endif %}</span>
+  </a>
+
+  <a href="{% url 'articles' %}" class="sidebar-link {% if active == 'articles' %}active{% endif %}">
+    <div class="icon">{% icon 'newspaper' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}</span>
+  </a>
+
+  <a href="{% url 'anonymous_support' %}" class="sidebar-link {% if active == 'anon' %}active{% endif %}">
+    <div class="icon">{% icon 'eye-slash' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Анонимді хабар{% else %}Анонимное сообщение{% endif %}</span>
+  </a>
+</aside>

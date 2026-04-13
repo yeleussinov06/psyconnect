@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Анонимді арна{% else %}Анонимный канал{% endif %} — PsyConnect{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+
+  <!-- Sidebar — зависит от роли -->
+  {% if user.is_authenticated %}
+  {% with role=user.profile.role %}
+
+  {% if role == 'parent' %}
+  {% include "core/parent/sidebar.html" with active="anon" %}
+
+  {% elif role == 'student' %}
+  {% include "core/student/sidebar.html" with active="anon" %}
+
+  {% elif role == 'teacher' %}
+  {% include "core/teacher/sidebar.html" with active="anon" %}
+  {% endif %}
+
+  {% endwith %}
+  {% endif %}
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">{% if lang == 'kz' %}Анонимді арна{% else %}Анонимный канал{% endif %}</h1>
+      <p class="page-subtitle">
+        {% if lang == 'kz' %}Тіркелусіз хабарлама жіберіңіз. Психолог жауап береді.{% else %}Отправьте сообщение без регистрации. Психолог ответит.{% endif %}
+      </p>
+    </div>
+
+    <div style="max-width:620px;">
+      <!-- Trust indicators -->
+      <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:var(--sage);">✓ {% if lang == 'kz' %}Анонимді{% else %}Анонимно{% endif %}</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:var(--sage);">✓ {% if lang == 'kz' %}Деректер сақталмайды{% else %}Данные не хранятся{% endif %}</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:var(--sage);">✓ {% if lang == 'kz' %}Лицензиялы психолог{% else %}Лицензированный психолог{% endif %}</div>
+      </div>
+
+      <div class="card">
+        <form method="post">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label">{% if lang == 'kz' %}Хабарламаңыз{% else %}Ваше сообщение{% endif %}</label>
+            <textarea name="message" class="form-control" rows="6" required
+              placeholder="{% if lang == 'kz' %}Не болды? Ойларыңызды еркін жазыңыз. Сіздің жеке ақпаратыңыз ешкімге белгісіз болады.{% else %}Что произошло? Пишите свободно. Ваша личная информация останется неизвестной.{% endif %}"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">{% if lang == 'kz' %}Тақырып (міндетті емес){% else %}Тема (необязательно){% endif %}</label>
+            <select name="category" class="form-control">
+              <option value="">{% if lang == 'kz' %}Таңдаңыз...{% else %}Выберите...{% endif %}</option>
+              <option value="stress">{% if lang == 'kz' %}Стресс / Алаңдаушылық{% else %}Стресс / Тревога{% endif %}</option>
+              <option value="study">{% if lang == 'kz' %}Оқу қиындықтары{% else %}Трудности с учёбой{% endif %}</option>
+              <option value="social">{% if lang == 'kz' %}Достар / Қарым-қатынас{% else %}Друзья / Отношения{% endif %}</option>
+              <option value="family">{% if lang == 'kz' %}Отбасы{% else %}Семья{% endif %}</option>
+              <option value="other">{% if lang == 'kz' %}Басқа{% else %}Другое{% endif %}</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%;">
+            {% if lang == 'kz' %}Жіберу{% else %}Отправить{% endif %}
+          </button>
+        </form>
+
+        <div style="margin-top:1.25rem;padding:1rem;background:var(--cream);border-radius:var(--r-md);font-size:.8rem;color:var(--text-2);line-height:1.6;">
+          ℹ️ {% if lang == 'kz' %}Жедел жәрдем қажет болса, 111 нөміріне хабарласыңыз (Ұлттық сенім телефоны){% else %}Если нужна срочная помощь, позвоните на номер 111 (Национальный телефон доверия){% endif %}
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

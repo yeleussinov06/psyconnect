@@ -1,0 +1,496 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Психолог панелі{% else %}Панель психолога{% endif %} — PsyConnect{% endblock %}
+{% block extra_css %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "core/psychologist/sidebar.html" with active="overview" %}
+
+  <main class="main-content">
+
+    <!-- ═══════════════════════════════════════════ OVERVIEW -->
+    <div id="panel-overview">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
+        <div>
+          <h1 class="page-title">{% if lang == 'kz' %}Сәлем, {{ user.first_name|default:user.username }}!{% else %}Привет, {{ user.first_name|default:user.username }}!{% endif %}</h1>
+          <p class="page-subtitle">
+            {% if class_filter or search %}
+              {% if lang == 'kz' %}Фильтр:{% else %}Фильтр:{% endif %}
+              {% if class_filter %}<strong>{{ class_filter }}</strong>{% endif %}
+              {% if search %}"<strong>{{ search }}</strong>"{% endif %}
+              · {{ student_count }} {% if lang == 'kz' %}оқушы{% else %}уч.{% endif %}
+              <a href="/" style="color:var(--peach);font-size:.8rem;margin-left:.5rem;">× {% if lang == 'kz' %}тазалау{% else %}сбросить{% endif %}</a>
+            {% else %}
+              {% if lang == 'kz' %}Барлық {{ total_students }} оқушы{% else %}Все {{ total_students }} учеников{% endif %}
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <!-- ── Компактный фильтр с живым поиском ── -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:.875rem 1rem;margin-bottom:1.25rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
+        <!-- Поиск -->
+        <div style="position:relative;flex:1;min-width:160px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+            style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-3);">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="liveSearch" value="{{ search }}"
+            class="form-control" style="padding:8px 12px 8px 32px;font-size:.85rem;"
+            placeholder="{% if lang == 'kz' %}Іздеу...{% else %}Поиск ученика...{% endif %}">
+        </div>
+        <!-- Класс -->
+        <select id="classFilter" class="form-control" style="min-width:120px;padding:8px 12px;font-size:.85rem;">
+          <option value="">{% if lang == 'kz' %}Барлығы{% else %}Все классы{% endif %}</option>
+          {% for cls in all_classes %}
+          <option value="{{ cls.name }}" {% if cls.name == class_filter %}selected{% endif %}>{{ cls.name }}</option>
+          {% endfor %}
+        </select>
+        <!-- Риск -->
+        <select id="riskFilter" class="form-control" style="min-width:130px;padding:8px 12px;font-size:.85rem;">
+          <option value="">{% if lang == 'kz' %}Барлық риск{% else %}Все группы риска{% endif %}</option>
+          <option value="high" {% if risk_filter == 'high' %}selected{% endif %}>🔴 {% if lang == 'kz' %}Жоғары{% else %}Высокий{% endif %}</option>
+          <option value="medium" {% if risk_filter == 'medium' %}selected{% endif %}>🟡 {% if lang == 'kz' %}Орташа{% else %}Средний{% endif %}</option>
+          <option value="low" {% if risk_filter == 'low' %}selected{% endif %}>🟢 {% if lang == 'kz' %}Төмен{% else %}Низкий{% endif %}</option>
+        </select>
+        <button onclick="applyFilters()" class="btn btn-primary btn-sm">{% if lang == 'kz' %}Іздеу{% else %}Найти{% endif %}</button>
+        {% if search or class_filter or risk_filter %}
+        <a href="/" class="btn btn-ghost btn-sm">× {% if lang == 'kz' %}Тазалау{% else %}Сброс{% endif %}</a>
+        {% endif %}
+      </div>
+
+      <!-- ── Метрики ── -->
+      <div class="stats-grid" style="margin-bottom:1.25rem;">
+        <div class="stat-card">
+          <div class="stat-icon sage" style="color:var(--sage);">{% icon 'users' 'sidebar-icon' %}</div>
+          <div><div class="stat-value">{{ student_count }}</div><div class="stat-label">{% if lang == 'kz' %}Оқушы{% else %}Учеников{% endif %}</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon sky" style="color:var(--sky);">{% icon 'clipboard-document-check' 'sidebar-icon' %}</div>
+          <div><div class="stat-value">{{ class_count }}</div><div class="stat-label">{% if lang == 'kz' %}Сыныптар{% else %}Классов{% endif %}</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon lav" style="color:var(--lavender);">{% icon 'heart' 'sidebar-icon' %}</div>
+          <div><div class="stat-value">{{ emotion_count }}</div><div class="stat-label">{% if lang == 'kz' %}Эмоция жазбасы{% else %}Записей эмоций{% endif %}</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon peach" style="color:var(--peach);">{% icon 'inbox' 'sidebar-icon' %}</div>
+          <div><div class="stat-value">{{ new_request_count }}</div><div class="stat-label">{% if lang == 'kz' %}Жаңа сұрау{% else %}Новых запросов{% endif %}</div></div>
+        </div>
+      </div>
+
+      <!-- ── 3 колонки: Диаграмма + Топ проблем + Последние запросы ── -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+
+        <!-- Диаграмма эмоций -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">{% if lang == 'kz' %}Эмоциялар (7 күн){% else %}Эмоции (7 дней){% endif %}</span>
+            {% if class_filter %}<span class="badge badge-sage">{{ class_filter }}</span>{% endif %}
+          </div>
+          <canvas id="emotionPieChart" height="200"></canvas>
+        </div>
+
+        <!-- Топ проблем недели -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">{% if lang == 'kz' %}Апта топ мәселелері{% else %}Топ проблем недели{% endif %}</span></div>
+          <div style="display:flex;flex-direction:column;gap:.875rem;padding-top:.25rem;">
+            <!-- Стресс/Тревога -->
+            {% with stress_count=emotion_stats_obj.anxious %}
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:.35rem;">
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                  <div style="width:10px;height:10px;border-radius:50%;background:#EF4444;flex-shrink:0;"></div>
+                  <span style="font-size:.85rem;font-weight:600;color:var(--text);">{% if lang == 'kz' %}Стресс / Тревога{% else %}Стресс / Тревога{% endif %}</span>
+                </div>
+                <span style="font-size:.85rem;font-weight:700;color:#EF4444;">{{ emotion_stats_obj.anxious }}</span>
+              </div>
+              <div style="height:6px;background:var(--cream-dark);border-radius:99px;overflow:hidden;">
+                <div style="height:100%;background:#EF4444;border-radius:99px;width:{% if emotion_stats_obj.anxious %}{% widthratio emotion_stats_obj.anxious total_emotion_week 100 %}{% else %}0{% endif %}%;transition:width .6s;"></div>
+              </div>
+            </div>
+            {% endwith %}
+            <!-- Грусть/Одиночество -->
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:.35rem;">
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                  <div style="width:10px;height:10px;border-radius:50%;background:#8B5CF6;flex-shrink:0;"></div>
+                  <span style="font-size:.85rem;font-weight:600;color:var(--text);">{% if lang == 'kz' %}Жалғыздық / Қайғы{% else %}Грусть / Одиночество{% endif %}</span>
+                </div>
+                <span style="font-size:.85rem;font-weight:700;color:#8B5CF6;">{{ emotion_stats_obj.sad }}</span>
+              </div>
+              <div style="height:6px;background:var(--cream-dark);border-radius:99px;overflow:hidden;">
+                <div style="height:100%;background:#8B5CF6;border-radius:99px;width:{% if emotion_stats_obj.sad %}{% widthratio emotion_stats_obj.sad total_emotion_week 100 %}{% else %}0{% endif %}%;transition:width .6s;"></div>
+              </div>
+            </div>
+            <!-- Конфликты/Злость -->
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:.35rem;">
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                  <div style="width:10px;height:10px;border-radius:50%;background:#F59E0B;flex-shrink:0;"></div>
+                  <span style="font-size:.85rem;font-weight:600;color:var(--text);">{% if lang == 'kz' %}Қақтығыс / Ашу{% else %}Конфликты / Злость{% endif %}</span>
+                </div>
+                <span style="font-size:.85rem;font-weight:700;color:#F59E0B;">{{ emotion_stats_obj.angry }}</span>
+              </div>
+              <div style="height:6px;background:var(--cream-dark);border-radius:99px;overflow:hidden;">
+                <div style="height:100%;background:#F59E0B;border-radius:99px;width:{% if emotion_stats_obj.angry %}{% widthratio emotion_stats_obj.angry total_emotion_week 100 %}{% else %}0{% endif %}%;transition:width .6s;"></div>
+              </div>
+            </div>
+            <!-- Усталость -->
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:.35rem;">
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                  <div style="width:10px;height:10px;border-radius:50%;background:#A0AEC0;flex-shrink:0;"></div>
+                  <span style="font-size:.85rem;font-weight:600;color:var(--text);">{% if lang == 'kz' %}Шаршау{% else %}Усталость{% endif %}</span>
+                </div>
+                <span style="font-size:.85rem;font-weight:700;color:#A0AEC0;">{{ emotion_stats_obj.tired }}</span>
+              </div>
+              <div style="height:6px;background:var(--cream-dark);border-radius:99px;overflow:hidden;">
+                <div style="height:100%;background:#A0AEC0;border-radius:99px;width:{% if emotion_stats_obj.tired %}{% widthratio emotion_stats_obj.tired total_emotion_week 100 %}{% else %}0{% endif %}%;transition:width .6s;"></div>
+              </div>
+            </div>
+            <div style="font-size:.72rem;color:var(--text-3);margin-top:.25rem;">
+              {% if lang == 'kz' %}Барлығы: {{ total_emotion_week }} жазба{% else %}Всего: {{ total_emotion_week }} записей{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Последние запросы -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">{% if lang == 'kz' %}Соңғы сұраулар{% else %}Последние запросы{% endif %}</span>
+            <a href="#" onclick="showPanel('requests');return false;" style="font-size:.8rem;color:var(--sage);font-weight:700;text-decoration:none;">{% if lang == 'kz' %}Барлығы →{% else %}Все →{% endif %}</a>
+          </div>
+          {% for req in anon_requests|slice:":4" %}
+          <div class="request-item" style="border-left-color:{% if req.status == 'new' %}var(--peach){% elif req.status == 'in_progress' %}var(--amber){% else %}var(--sage){% endif %};">
+            <div class="request-msg">{{ req.message|truncatechars:75 }}</div>
+            <div class="request-meta">{{ req.created_at|date:"d.m H:i" }}
+              &nbsp;·&nbsp;<span class="badge {% if req.status == 'new' %}badge-peach{% else %}badge-sage{% endif %}" style="font-size:.65rem;">{{ req.get_status_display }}</span>
+            </div>
+          </div>
+          {% empty %}<div style="text-align:center;padding:2rem;color:var(--text-3);font-size:.85rem;">{% if lang == 'kz' %}Сұрау жоқ{% else %}Нет запросов{% endif %}</div>{% endfor %}
+        </div>
+      </div>
+
+      <!-- ── Таблица учеников с живым поиском ── -->
+      {% if class_filter or search or risk_filter %}
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">{% if lang == 'kz' %}Оқушылар{% else %}Ученики{% endif %} ({{ students_with_risk|length }})</span>
+        </div>
+        <div class="table-wrapper">
+          <table id="studentsTable">
+            <thead>
+              <tr>
+                <th>{% if lang == 'kz' %}Аты-жөні{% else %}Имя{% endif %}</th>
+                <th>{% if lang == 'kz' %}Сынып{% else %}Класс{% endif %}</th>
+                <th>{% if lang == 'kz' %}Ата-ана телефоны{% else %}Телефон родителя{% endif %}</th>
+                <th>{% if lang == 'kz' %}Эмоция{% else %}Эмоций{% endif %}</th>
+                <th>{% if lang == 'kz' %}Тәуекел тобы{% else %}Группа риска{% endif %}</th>
+                <th>{% if lang == 'kz' %}Соңғы белсенділік{% else %}Последняя активность{% endif %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in students_with_risk %}
+              <tr class="student-row" data-name="{{ item.user.get_full_name|lower }} {{ item.user.username|lower }}">
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="user-avatar" style="width:30px;height:30px;font-size:.78rem;background:var(--sage);">{{ item.user.first_name|first|default:item.user.username|first|upper }}</div>
+                    <span style="font-weight:600;font-size:.875rem;">{{ item.user.get_full_name|default:item.user.username }}</span>
+                  </div>
+                </td>
+                <td>{% if item.user.profile.school_class %}<span class="badge badge-sage">{{ item.user.profile.school_class.name }}</span>{% else %}<span style="color:var(--text-3);">—</span>{% endif %}</td>
+                <td style="font-size:.83rem;color:var(--text-2);">{{ item.parent_phone|default:"—" }}</td>
+                <td><span class="badge badge-lav">{{ item.user.emotions.count }}</span></td>
+                <td>
+                  {% if item.risk == 'high' %}
+                    <span style="background:#FEE2E2;color:#DC2626;padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700;">{% if lang == 'kz' %}Жоғары{% else %}Высокий{% endif %}</span>
+                  {% elif item.risk == 'medium' %}
+                    <span style="background:#FEF3C7;color:#D97706;padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700;">{% if lang == 'kz' %}Орташа{% else %}Средний{% endif %}</span>
+                  {% else %}
+                    <span style="background:#D1FAE5;color:#065F46;padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700;">{% if lang == 'kz' %}Төмен{% else %}Низкий{% endif %}</span>
+                  {% endif %}
+                </td>
+                <td style="font-size:.8rem;color:var(--text-3);">
+                  {% with last_e=item.user.emotions.first %}
+                    {% if last_e %}{{ last_e.created_at|date:"d.m.Y" }}{% else %}{% if lang == 'kz' %}Жазба жоқ{% else %}Нет записей{% endif %}{% endif %}
+                  {% endwith %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-3);">{% if lang == 'kz' %}Нәтиже табылмады{% else %}Ничего не найдено{% endif %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ═══════════════════════════════════════════ REQUESTS -->
+    <div id="panel-requests" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">{% if lang == 'kz' %}Анонимді сұраулар{% else %}Анонимные запросы{% endif %}</h1>
+      </div>
+      {% for req in anon_requests %}
+      <div class="card" style="margin-bottom:1rem;border-left:4px solid {% if req.status == 'new' %}var(--peach){% elif req.status == 'in_progress' %}var(--amber){% else %}var(--sage){% endif %};">
+        <!-- Статус в правом верхнем углу -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem;">
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <div style="font-size:.75rem;color:var(--text-3);">{{ req.created_at|date:"d.m.Y H:i" }}</div>
+            {% if req.reason %}
+            <span style="background:var(--amber-pale);color:var(--amber);padding:2px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">{{ req.get_reason_display }}</span>
+            {% endif %}
+          </div>
+          <span class="badge {% if req.status == 'new' %}badge-peach{% elif req.status == 'in_progress' %}badge-amber{% else %}badge-sage{% endif %}" style="opacity:{% if req.status == 'closed' %}0.6{% else %}1{% endif %};">{{ req.get_status_display }}</span>
+        </div>
+
+        <!-- Чат-формат -->
+        <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:.875rem;">
+          <!-- Сообщение ученика — слева -->
+          <div style="display:flex;gap:.75rem;align-items:flex-end;max-width:85%;">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--cream-dark);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.75rem;">👤</div>
+            <div style="background:var(--white);border:1px solid var(--border);border-radius:16px 16px 16px 4px;padding:.75rem 1rem;font-size:.875rem;line-height:1.55;color:var(--text);">
+              {{ req.message }}
+            </div>
+          </div>
+
+          <!-- Ответ психолога — справа -->
+          {% if req.response %}
+          <div style="display:flex;gap:.75rem;align-items:flex-end;justify-content:flex-end;max-width:85%;margin-left:auto;">
+            <div style="background:var(--sage-pale);border:1px solid #C8DFD0;border-radius:16px 16px 4px 16px;padding:.75rem 1rem;font-size:.875rem;line-height:1.55;color:var(--text);">
+              {{ req.response }}
+            </div>
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:white;font-size:.75rem;font-weight:700;">{{ user.first_name|first|default:"П" }}</div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Поле ответа внизу -->
+        {% if req.status != 'closed' %}
+        <form method="post" action="{% url 'respond_to_request' req.id %}" style="border-top:1px solid var(--border);padding-top:.875rem;">
+          {% csrf_token %}
+          <div style="display:flex;gap:.75rem;align-items:flex-end;">
+            <textarea name="response" class="form-control" rows="2"
+              placeholder="{% if lang == 'kz' %}Жауап жазыңыз...{% else %}Напишите ответ...{% endif %}"
+              style="flex:1;resize:none;font-size:.875rem;"></textarea>
+            <button type="submit" class="btn btn-primary btn-sm" style="padding:9px 16px;flex-shrink:0;">
+              {% if lang == 'kz' %}Жіберу{% else %}Отправить{% endif %}
+            </button>
+          </div>
+        </form>
+        {% endif %}
+      </div>
+      {% empty %}
+      <div class="card" style="text-align:center;padding:3rem;color:var(--text-3);">{% if lang == 'kz' %}Сұрау жоқ{% else %}Нет запросов{% endif %}</div>
+      {% endfor %}
+    </div>
+
+    <!-- ═══════════════════════════════════════════ STUDENTS -->
+    <div id="panel-students" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">{% if lang == 'kz' %}Оқушылар тізімі{% else %}Список учеников{% endif %}</h1>
+        <p class="page-subtitle">{{ student_count }} {% if lang == 'kz' %}оқушы{% else %}учеников{% endif %}</p>
+      </div>
+
+      {% include "core/includes/student_filters.html" %}
+
+      <!-- Фильтр по риску -->
+      <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+        <a href="?panel=students{% if search %}&search={{ search }}{% endif %}{% if class_filter %}&class={{ class_filter }}{% endif %}" class="btn btn-sm {% if not risk_filter %}btn-primary{% else %}btn-ghost{% endif %}">{% if lang == 'kz' %}Барлығы{% else %}Все{% endif %}</a>
+        <a href="?panel=students{% if search %}&search={{ search }}{% endif %}{% if class_filter %}&class={{ class_filter }}{% endif %}&risk=high" class="btn btn-sm {% if risk_filter == 'high' %}btn-primary{% else %}btn-ghost{% endif %}" style="{% if risk_filter == 'high' %}background:#EF4444;border-color:#EF4444;{% endif %}">🔴 {% if lang == 'kz' %}Жоғары{% else %}Высокий{% endif %}</a>
+        <a href="?panel=students{% if search %}&search={{ search }}{% endif %}{% if class_filter %}&class={{ class_filter }}{% endif %}&risk=medium" class="btn btn-sm {% if risk_filter == 'medium' %}btn-primary{% else %}btn-ghost{% endif %}" style="{% if risk_filter == 'medium' %}background:#D97706;border-color:#D97706;{% endif %}">🟡 {% if lang == 'kz' %}Орташа{% else %}Средний{% endif %}</a>
+        <a href="?panel=students{% if search %}&search={{ search }}{% endif %}{% if class_filter %}&class={{ class_filter }}{% endif %}&risk=low" class="btn btn-sm {% if risk_filter == 'low' %}btn-primary{% else %}btn-ghost{% endif %}" style="{% if risk_filter == 'low' %}background:#065F46;border-color:#065F46;{% endif %}">🟢 {% if lang == 'kz' %}Төмен{% else %}Низкий{% endif %}</a>
+      </div>
+
+      <div class="card">
+        {% if students_with_risk %}
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>{% if lang == 'kz' %}Аты-жөні{% else %}Имя{% endif %}</th>
+                <th>{% if lang == 'kz' %}Сынып{% else %}Класс{% endif %}</th>
+                <th>{% if lang == 'kz' %}Ата-ана телефоны{% else %}Телефон родителя{% endif %}</th>
+                <th>{% if lang == 'kz' %}Эмоция{% else %}Эмоций{% endif %}</th>
+                <th>{% if lang == 'kz' %}Тәуекел тобы{% else %}Группа риска{% endif %}</th>
+                <th>{% if lang == 'kz' %}Соңғы белсенділік{% else %}Последняя активность{% endif %}</th>
+              </tr>
+            </thead>
+            <tbody id="studentsTableBody">
+              {% for item in students_with_risk %}
+              <tr class="student-row" data-name="{{ item.user.get_full_name|lower }} {{ item.user.username|lower }}">
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="user-avatar" style="width:32px;height:32px;font-size:.8rem;background:var(--sage);">{{ item.user.first_name|first|default:item.user.username|first|upper }}</div>
+                    <span style="font-weight:600;">{{ item.user.get_full_name|default:item.user.username }}</span>
+                  </div>
+                </td>
+                <td>{% if item.user.profile.school_class %}<span class="badge badge-sage">{{ item.user.profile.school_class.name }}</span>{% else %}<span style="color:var(--text-3);">—</span>{% endif %}</td>
+                <td style="font-size:.83rem;color:var(--text-2);">{{ item.parent_phone|default:"—" }}</td>
+                <td><span class="badge badge-lav">{{ item.user.emotions.count }}</span></td>
+                <td>
+                  {% if item.risk == 'high' %}
+                    <span style="background:#FEE2E2;color:#DC2626;padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700;">{% if lang == 'kz' %}Жоғары{% else %}Высокий{% endif %}</span>
+                  {% elif item.risk == 'medium' %}
+                    <span style="background:#FEF3C7;color:#D97706;padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700;">{% if lang == 'kz' %}Орташа{% else %}Средний{% endif %}</span>
+                  {% else %}
+                    <span style="background:#D1FAE5;color:#065F46;padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700;">{% if lang == 'kz' %}Төмен{% else %}Низкий{% endif %}</span>
+                  {% endif %}
+                </td>
+                <td style="font-size:.8rem;color:var(--text-3);">
+                  {% with last_e=item.user.emotions.first %}
+                    {% if last_e %}{{ last_e.created_at|date:"d.m.Y" }}{% else %}{% if lang == 'kz' %}Жазба жоқ{% else %}Нет записей{% endif %}{% endif %}
+                  {% endwith %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text-3);">{% if lang == 'kz' %}Нәтиже табылмады{% else %}Ничего не найдено{% endif %}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ EMOTIONS -->
+    <div id="panel-emotions" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">{% if lang == 'kz' %}Эмоция мониторингі{% else %}Мониторинг эмоций{% endif %}</h1>
+        <p class="page-subtitle">{% if lang == 'kz' %}Оқушылар бойынша топтастырылған{% else %}Сгруппировано по ученикам{% endif %}</p>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        {% regroup all_emotions by user as emotions_by_user %}
+        {% for group in emotions_by_user %}
+        <div style="padding:1rem 1.25rem;{% if not forloop.last %}border-bottom:1px solid var(--border);{% endif %}">
+          <!-- Заголовок ученика -->
+          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;">
+            <div class="user-avatar" style="width:32px;height:32px;font-size:.8rem;background:var(--sage);flex-shrink:0;">{{ group.grouper.first_name|first|default:group.grouper.username|first|upper }}</div>
+            <div style="font-weight:700;font-size:.875rem;color:var(--text);">{{ group.grouper.get_full_name|default:group.grouper.username }}</div>
+            {% if group.grouper.profile.school_class %}
+            <span class="badge badge-sage" style="font-size:.62rem;">{{ group.grouper.profile.school_class.name }}</span>
+            {% endif %}
+          </div>
+          <!-- Таймлайн — тревожные выделены красным + тег события -->
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;padding-left:44px;align-items:flex-start;">
+            {% for e in group.list %}
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <!-- Чип эмоции -->
+              <div style="display:flex;align-items:center;gap:.35rem;border-radius:var(--r-full);padding:4px 10px 4px 6px;
+                {% if e.emotion == 'anxious' or e.emotion == 'sad' or e.emotion == 'angry' %}background:#FEF2F2;border:1px solid #FECACA;{% else %}background:var(--cream-dark);border:1px solid transparent;{% endif %}">
+                <div style="width:20px;height:20px;flex-shrink:0;">{% emotion_icon e.emotion 20 %}</div>
+                <div>
+                  <div style="font-size:.7rem;font-weight:{% if e.emotion == 'anxious' or e.emotion == 'sad' or e.emotion == 'angry' %}700{% else %}600{% endif %};
+                    color:{% if e.emotion == 'anxious' or e.emotion == 'sad' or e.emotion == 'angry' %}#DC2626{% else %}var(--text){% endif %};">
+                    {{ e.get_emotion_display }}
+                  </div>
+                  <div style="font-size:.62rem;color:{% if e.emotion == 'anxious' or e.emotion == 'sad' or e.emotion == 'angry' %}#EF4444{% else %}var(--text-3){% endif %};">{{ e.created_at|date:"d.m H:i" }}</div>
+                </div>
+              </div>
+              <!-- Тег типа события — пунктирная граница, другой цвет -->
+              {% if e.event_type %}
+              <span style="border-radius:99px;font-size:.62rem;font-weight:700;padding:1px 7px;text-align:center;border:1.5px dashed;
+                {% if e.event_type == 'bullying' %}background:#FFF0F0;color:#DC2626;border-color:#FECACA;
+                {% elif e.event_type == 'conflict' %}background:#FFFBEB;color:#D97706;border-color:#FDE68A;
+                {% elif e.event_type == 'study' %}background:#EFF6FF;color:#2563EB;border-color:#BFDBFE;
+                {% elif e.event_type == 'loneliness' %}background:#F0F4FF;color:#6366F1;border-color:#C7D2FE;
+                {% else %}background:var(--cream-dark);color:var(--text-2);border-color:var(--border);{% endif %}">
+                {{ e.get_event_type_display }}
+              </span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% for e in group.list %}{% if e.note %}
+          <div style="margin-top:.5rem;padding-left:44px;">
+            <div style="background:var(--sage-pale);border-left:3px solid var(--sage);border-radius:0 var(--r-sm) var(--r-sm) 0;padding:.4rem .75rem;font-size:.78rem;color:var(--text-2);">
+              💬 {{ e.note }}
+            </div>
+          </div>
+          {% endif %}{% endfor %}
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:3rem;color:var(--text-3);">{% if lang == 'kz' %}Жазба жоқ{% else %}Нет записей{% endif %}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Переключение панелей ─────────────────────────
+function showPanel(name) {
+  ['overview','requests','students','emotions'].forEach(p => {
+    const el = document.getElementById('panel-'+p);
+    if(el) el.style.display = (p===name) ? 'block' : 'none';
+  });
+}
+document.addEventListener('DOMContentLoaded', function() {
+  const panel = new URLSearchParams(window.location.search).get('panel');
+  if (panel && ['requests','students','emotions'].includes(panel)) showPanel(panel);
+});
+
+// ── Применить фильтры ────────────────────────────
+function applyFilters() {
+  const search = document.getElementById('liveSearch').value.trim();
+  const cls    = document.getElementById('classFilter').value;
+  const risk   = document.getElementById('riskFilter').value;
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (cls)    params.set('class', cls);
+  if (risk)   params.set('risk', risk);
+  window.location.href = '/psychologist/?' + params.toString();
+}
+
+// ── Живой поиск по таблице ───────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  const input = document.getElementById('liveSearch');
+  if (!input) return;
+
+  input.addEventListener('input', function() {
+    const q = this.value.toLowerCase().trim();
+    // Фильтруем все строки на странице (и в обзоре и в students)
+    document.querySelectorAll('.student-row').forEach(row => {
+      const name = row.getAttribute('data-name') || '';
+      row.style.display = (!q || name.includes(q)) ? '' : 'none';
+    });
+    // Показываем таблицу результатов если есть поиск
+    const overviewTable = document.getElementById('overviewStudentsCard');
+    if (overviewTable) {
+      overviewTable.style.display = q ? 'block' : 'none';
+    }
+  });
+
+  // Enter → полный поиск через сервер
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') applyFilters();
+  });
+
+  // Dropdown → сразу submit
+  const cls  = document.getElementById('classFilter');
+  const risk = document.getElementById('riskFilter');
+  if (cls)  cls.addEventListener('change', applyFilters);
+  if (risk) risk.addEventListener('change', applyFilters);
+});
+
+// ── Chart.js ─────────────────────────────────────
+const stats = {{ emotion_stats|safe }};
+const ctx = document.getElementById('emotionPieChart');
+if (ctx) {
+  new Chart(ctx.getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['{% if lang == "kz" %}Жақсы{% else %}Хорошо{% endif %}','{% if lang == "kz" %}Тыныш{% else %}Спокойно{% endif %}','{% if lang == "kz" %}Алаңдаулы{% else %}Тревожно{% endif %}','{% if lang == "kz" %}Қайғылы{% else %}Грустно{% endif %}','{% if lang == "kz" %}Ашулы{% else %}Злой{% endif %}','{% if lang == "kz" %}Шаршаулы{% else %}Устал{% endif %}'],
+      datasets: [{ data: [stats.happy||0,stats.calm||0,stats.anxious||0,stats.sad||0,stats.angry||0,stats.tired||0],
+        backgroundColor:['#F4B942','#4A7C59','#EF4444','#8B5CF6','#F59E0B','#A0AEC0'],
+        borderWidth:2, borderColor:'#fff' }]
+    },
+    options: { responsive:true, plugins:{ legend:{ position:'bottom', labels:{ font:{ family:'Inter', size:11 }}}}, cutout:'62%' }
+  });
+}
+</script>
+{% endblock %}

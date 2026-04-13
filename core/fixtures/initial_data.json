@@ -1,0 +1,6 @@
+[
+  {"model":"auth.user","pk":1,"fields":{"username":"admin","password":"pbkdf2_sha256$600000$salt$hashed","is_superuser":true,"is_staff":true,"is_active":true,"first_name":"Admin","last_name":"","email":"admin@psyconnect.kz","date_joined":"2025-01-01T00:00:00Z"}},
+  {"model":"auth.user","pk":2,"fields":{"username":"student1","password":"pbkdf2_sha256$600000$abc$def","is_superuser":false,"is_staff":false,"is_active":true,"first_name":"Айгерим","last_name":"Сейткали","email":"","date_joined":"2025-01-02T00:00:00Z"}},
+  {"model":"auth.user","pk":3,"fields":{"username":"parent1","password":"pbkdf2_sha256$600000$abc$def","is_superuser":false,"is_staff":false,"is_active":true,"first_name":"Назгуль","last_name":"Сейткали","email":"","date_joined":"2025-01-03T00:00:00Z"}},
+  {"model":"auth.user","pk":4,"fields":{"username":"psycholog1","password":"pbkdf2_sha256$600000$abc$def","is_superuser":false,"is_staff":false,"is_active":true,"first_name":"Нурсулу","last_name":"Иманғалиева","email":"","date_joined":"2025-01-04T00:00:00Z"}}
+]

@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Расписание{% else %}Расписание{% endif %} — PsyConnect{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "core/psychologist/sidebar.html" with active="schedule" %}
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">{% if lang == 'kz' %}Расписание{% else %}Расписание{% endif %}</h1>
+      <p class="page-subtitle">
+        {% if lang == 'kz' %}Пн-Жм 09:00–18:00 автоматты түрде бос. Тек бос емес уақытты белгілеңіз.{% else %}Пн-Пт 09:00–18:00 автоматически свободны. Отмечайте только занятое время.{% endif %}
+      </p>
+    </div>
+
+    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+    {% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
+
+    <!-- WEEK NAVIGATION -->
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+      <a href="?week={{ prev_week }}" class="btn btn-ghost btn-sm">← {% if lang == 'kz' %}Алдыңғы{% else %}Пред. неделя{% endif %}</a>
+      <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:1rem;font-weight:700;color:var(--text);">
+        {{ week_start|date:"d F" }} — {{ week_end|date:"d F Y" }}
+      </div>
+      <a href="?week={{ next_week }}" class="btn btn-ghost btn-sm">{% if lang == 'kz' %}Келесі{% else %}След. неделя{% endif %} →</a>
+      <a href="?week={{ current_week }}" class="btn btn-primary btn-sm">{% if lang == 'kz' %}Бүгін{% else %}Сегодня{% endif %}</a>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;min-width:600px;">
+          <!-- Header -->
+          <thead>
+            <tr>
+              <th style="width:70px;background:var(--cream-dark);padding:.75rem .5rem;text-align:center;font-size:.72rem;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);">
+                {% if lang == 'kz' %}Уақыт{% else %}Время{% endif %}
+              </th>
+              {% for day in week_days %}
+              <th style="background:{% if day.is_today %}var(--sage-pale){% else %}var(--cream-dark){% endif %};padding:.75rem .5rem;text-align:center;border-bottom:1px solid var(--border);border-left:1px solid var(--border);">
+                <div style="font-size:.7rem;font-weight:700;color:var(--text-3);text-transform:uppercase;">{{ day.date|date:"D" }}</div>
+                <div style="font-size:1.1rem;font-weight:800;color:{% if day.is_today %}var(--sage){% else %}var(--text){% endif %};">{{ day.date|date:"d" }}</div>
+                <div style="font-size:.7rem;color:var(--text-3);">{{ day.date|date:"M" }}</div>
+              </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in calendar_rows %}
+            <tr>
+              <!-- Time label -->
+              <td style="padding:.5rem;text-align:right;font-size:.75rem;font-weight:700;color:var(--text-3);border-bottom:1px solid var(--border);white-space:nowrap;">
+                {{ row.hour }}:00
+              </td>
+              {% for cell in row.cells %}
+              <td style="border-left:1px solid var(--border);border-bottom:1px solid var(--border);padding:3px;min-height:48px;width:{% widthratio 1 6 100 %}%;">
+                {% if cell.is_past %}
+                  {% if cell.is_confirmed %}
+                  <!-- Прошедшая подтверждённая запись -->
+                  <div style="height:44px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:.35rem .5rem;display:flex;flex-direction:column;justify-content:center;opacity:.7;">
+                    <div style="font-size:.68rem;color:#16A34A;font-weight:800;">✓ {% if lang == 'kz' %}Болды{% else %}Состоялась{% endif %}</div>
+                    {% if cell.student_name %}<div style="font-size:.62rem;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ cell.student_name }}</div>{% endif %}
+                  </div>
+                  {% elif cell.is_rejected %}
+                  <!-- Прошедшая отклонённая -->
+                  <div style="height:44px;background:#FFF5F5;border:1px solid #FECACA;border-radius:6px;padding:.35rem .5rem;display:flex;align-items:center;opacity:.6;">
+                    <span style="font-size:.68rem;color:#DC2626;font-weight:700;">✕ {% if lang == 'kz' %}Қабылданбады{% else %}Отклонена{% endif %}</span>
+                  </div>
+                  {% else %}
+                  <!-- Пустая прошедшая -->
+                  <div style="height:44px;background:var(--cream);border-radius:6px;opacity:.5;"></div>
+                  {% endif %}
+
+                {% elif cell.is_confirmed %}
+                  <!-- Подтверждённая запись -->
+                  <div style="height:44px;background:var(--sage-pale);border:1px solid #C8DFD0;border-radius:6px;padding:.35rem .5rem;display:flex;flex-direction:column;justify-content:center;">
+                    <div style="font-size:.68rem;color:var(--sage);font-weight:800;">{% if lang == 'kz' %}Жазылым{% else %}Запись{% endif %}</div>
+                    {% if cell.student_name %}<div style="font-size:.63rem;color:var(--text-2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ cell.student_name }}</div>{% endif %}
+                  </div>
+
+                {% elif cell.is_blocked %}
+                  <!-- Заблокировано психологом -->
+                  <div style="height:44px;background:var(--peach-pale);border:1px solid #F5C9C2;border-radius:6px;padding:.35rem .5rem;display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-size:.68rem;color:#C4614F;font-weight:700;">{% if lang == 'kz' %}Бос емес{% else %}Занято{% endif %}</span>
+                    <form method="post" style="display:inline;">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="free">
+                      <input type="hidden" name="date" value="{{ cell.date_str }}">
+                      <input type="hidden" name="hour" value="{{ cell.hour }}">
+                      <button type="submit" style="background:none;border:none;cursor:pointer;color:#C4614F;font-size:.75rem;font-weight:800;padding:2px 4px;">✕</button>
+                    </form>
+                  </div>
+
+                {% else %}
+                  <!-- Свободно — нажми чтобы заблокировать -->
+                  <form method="post" style="height:44px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="block">
+                    <input type="hidden" name="date" value="{{ cell.date_str }}">
+                    <input type="hidden" name="hour" value="{{ cell.hour }}">
+                    <button type="submit"
+                      style="width:100%;height:100%;background:none;border:1.5px dashed transparent;border-radius:6px;cursor:pointer;color:var(--text-3);font-size:.75rem;transition:all .15s;"
+                      onmouseover="this.style.borderColor='var(--border)';this.style.background='var(--cream-dark)';"
+                      onmouseout="this.style.borderColor='transparent';this.style.background='none';"
+                      title="{% if lang == 'kz' %}Блоктау үшін басыңыз{% else %}Нажмите чтобы заблокировать{% endif %}">
+                      
+                    </button>
+                  </form>
+                {% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LEGEND -->
+    <div style="display:flex;gap:1.5rem;margin-top:1rem;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--text-2);">
+        <div style="width:14px;height:14px;background:var(--sage-pale);border:1px solid #C8DFD0;border-radius:4px;flex-shrink:0;"></div>
+        {% if lang == 'kz' %}Расталған жазылым{% else %}Подтверждённая запись{% endif %}
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--text-2);">
+        <div style="width:14px;height:14px;background:var(--peach-pale);border:1px solid #F5C9C2;border-radius:4px;flex-shrink:0;"></div>
+        {% if lang == 'kz' %}Сіз белгілеген бос емес{% else %}Заблокировано вами{% endif %}
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--text-2);">
+        <div style="width:14px;height:14px;border:1.5px dashed var(--border);border-radius:4px;flex-shrink:0;"></div>
+        {% if lang == 'kz' %}Бос (басу = блоктау){% else %}Свободно (нажмите чтобы заблокировать){% endif %}
+      </div>
+    </div>
+
+  </main>
+</div>
+{% endblock %}

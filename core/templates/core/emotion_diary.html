@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Эмоция күнделігі{% else %}Дневник эмоций{% endif %} — PsyConnect{% endblock %}
+{% block nav_emotion %}active{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <aside class="sidebar">
+    <a href="{% url 'student_dashboard' %}" class="sidebar-link">
+      <div class="icon"></div>{% if lang == 'kz' %}Бақылау тақтасы{% else %}Дашборд{% endif %}
+    </a>
+    <a href="{% url 'emotion_diary' %}" class="sidebar-link active">
+      <div class="icon"></div>{% if lang == 'kz' %}Эмоция күнделігі{% else %}Дневник эмоций{% endif %}
+    </a>
+    <a href="{% url 'test_center' %}" class="sidebar-link">
+      <div class="icon"></div>{% if lang == 'kz' %}Тесттер{% else %}Тесты{% endif %}
+    </a>
+    <a href="{% url 'ai_chat' %}" class="sidebar-link">
+      <div class="icon"></div>AI-чат
+    </a>
+    <div class="user-card">
+      <div class="user-avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+      <div class="user-info">
+        <div class="name">{{ user.get_full_name|default:user.username }}</div>
+        <div class="role">{% if lang == 'kz' %}Оқушы{% else %}Ученик{% endif %}</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">{% if lang == 'kz' %}Эмоция күнделігі{% else %}Дневник эмоций{% endif %}</h1>
+      <p class="page-subtitle">{% if lang == 'kz' %}Бүгін қалай сезінесің?{% else %}Как ты себя чувствуешь сегодня?{% endif %}</p>
+    </div>
+
+    <!-- ADD EMOTION -->
+    <div class="card" style="margin-bottom:2rem;">
+      <div class="card-header">
+        <span class="card-title">{% if lang == 'kz' %}Эмоцияны жазу{% else %}Записать эмоцию{% endif %}</span>
+      </div>
+      <form method="post" id="emotionForm">
+        {% csrf_token %}
+        <div class="emotion-grid">
+          {% for value, label in entries.0.EMOTION_CHOICES|default:"" %}{% endfor %}
+          <label class="emotion-btn" onclick="selectEmotion('happy')">
+            {% emotion_icon "happy" 32 %}
+            <span class="label">{% if lang == 'kz' %}Жақсы{% else %}Хорошо{% endif %}</span>
+            <input type="radio" name="emotion" value="happy" style="display:none;" id="e_happy">
+          </label>
+          <label class="emotion-btn" onclick="selectEmotion('calm')">
+            {% emotion_icon "calm" 32 %}
+            <span class="label">{% if lang == 'kz' %}Тыныш{% else %}Спокойно{% endif %}</span>
+            <input type="radio" name="emotion" value="calm" style="display:none;" id="e_calm">
+          </label>
+          <label class="emotion-btn" onclick="selectEmotion('anxious')">
+            {% emotion_icon "anxious" 32 %}
+            <span class="label">{% if lang == 'kz' %}Алаңдаулы{% else %}Тревожно{% endif %}</span>
+            <input type="radio" name="emotion" value="anxious" style="display:none;" id="e_anxious">
+          </label>
+          <label class="emotion-btn" onclick="selectEmotion('sad')">
+            {% emotion_icon "sad" 32 %}
+            <span class="label">{% if lang == 'kz' %}Қайғылы{% else %}Грустно{% endif %}</span>
+            <input type="radio" name="emotion" value="sad" style="display:none;" id="e_sad">
+          </label>
+          <label class="emotion-btn" onclick="selectEmotion('angry')">
+            {% emotion_icon "angry" 32 %}
+            <span class="label">{% if lang == 'kz' %}Ашулы{% else %}Злой{% endif %}</span>
+            <input type="radio" name="emotion" value="angry" style="display:none;" id="e_angry">
+          </label>
+          <label class="emotion-btn" onclick="selectEmotion('tired')">
+            {% emotion_icon "tired" 32 %}
+            <span class="label">{% if lang == 'kz' %}Шаршаулы{% else %}Устал{% endif %}</span>
+            <input type="radio" name="emotion" value="tired" style="display:none;" id="e_tired">
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{% if lang == 'kz' %}Ескертпе (міндетті емес){% else %}Заметка (необязательно){% endif %}</label>
+          <textarea name="note" class="form-control" placeholder="{% if lang == 'kz' %}Не болды? Ойларыңызды жазыңыз...{% else %}Что произошло? Запишите свои мысли...{% endif %}" rows="3"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+          {% if lang == 'kz' %}Сақтау{% else %}Сохранить{% endif %}
+        </button>
+      </form>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">{% if lang == 'kz' %}Тарих (соңғы 30){% else %}История (последние 30){% endif %}</span>
+        <span class="badge badge-navy">{{ entries|length }} {% if lang == 'kz' %}жазба{% else %}записей{% endif %}</span>
+      </div>
+
+      {% if entries %}
+        {% for entry in entries %}
+        <div class="emotion-entry">
+          <span class="emoji" style="font-size:2rem;">
+            {% emotion_icon entry.emotion %}
+          </span>
+          <div style="flex:1;">
+            <div style="font-weight:800; color:var(--text);">{{ entry.get_emotion_display }}</div>
+            {% if entry.note %}
+            <div style="color:var(--text); font-size:0.9rem; margin-top:4px; line-height:1.5;">{{ entry.note }}</div>
+            {% endif %}
+            <div class="meta">{{ entry.created_at|date:"d F Y, H:i" }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center; padding:3rem; color:var(--text-2);">
+          <div style="font-size:3rem; margin-bottom:1rem;"></div>
+          <div style="font-weight:700; margin-bottom:0.5rem;">{% if lang == 'kz' %}Жазба жоқ{% else %}Нет записей{% endif %}</div>
+          <div style="font-size:0.85rem;">{% if lang == 'kz' %}Жоғарыдан эмоцияны таңдаңыз{% else %}Выберите эмоцию выше{% endif %}</div>
+        </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selected = null;
+function selectEmotion(val) {
+  selected = val;
+  document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  document.getElementById('e_' + val).checked = true;
+  document.getElementById('submitBtn').disabled = false;
+}
+</script>
+{% endblock %}

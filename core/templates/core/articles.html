@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %} — PsyConnect{% endblock %}
+{% block content %}
+<div style="max-width:1200px; margin:0 auto; padding:2rem;">
+  <div class="page-header">
+    <h1 class="page-title">{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}</h1>
+    <p class="page-subtitle">{% if lang == 'kz' %}Психоағарту мазмұны{% else %}Психообразовательный контент{% endif %}</p>
+  </div>
+
+  <!-- FILTER -->
+  <div style="display:flex; gap:0.5rem; margin-bottom:2rem; flex-wrap:wrap;">
+    <a href="?audience=parent" class="btn {% if audience == 'parent' %}btn-navy{% else %}btn-outline" style="border-color:var(--border);color:var(--text){% endif %}">
+      {% if lang == 'kz' %}Ата-аналарға{% else %}Родителям{% endif %}
+    </a>
+    <a href="?audience=student" class="btn {% if audience == 'student' %}btn-navy{% else %}btn-outline" style="border-color:var(--border);color:var(--text){% endif %}">
+      {% if lang == 'kz' %}Оқушыларға{% else %}Ученикам{% endif %}
+    </a>
+    <a href="?audience=teacher" class="btn {% if audience == 'teacher' %}btn-navy{% else %}btn-outline" style="border-color:var(--border);color:var(--text){% endif %}">
+      {% if lang == 'kz' %}Мұғалімдерге{% else %}Учителям{% endif %}
+    </a>
+  </div>
+
+  <div class="grid-3">
+    {% if articles %}
+      {% for art in articles %}
+      <div class="article-card">
+        <span class="article-icon">{{ art.icon }}</span>
+        <div class="article-title">{% if lang == 'kz' %}{{ art.title_kz }}{% else %}{{ art.title_ru }}{% endif %}</div>
+        <div class="article-excerpt">{% if lang == 'kz' %}{{ art.content_kz|truncatewords:30 }}{% else %}{{ art.content_ru|truncatewords:30 }}{% endif %}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="article-card"><span class="article-icon"></span>
+        <div class="article-title">{% if lang == 'kz' %}Стресті қалай жеңуге болады?{% else %}Как победить стресс?{% endif %}</div>
+        <div class="article-excerpt">{% if lang == 'kz' %}Практикалық тәсілдер мен кеңестер.{% else %}Практические методы и советы.{% endif %}</div></div>
+      <div class="article-card"><span class="article-icon"></span>
+        <div class="article-title">{% if lang == 'kz' %}Сезімдер туралы сөйлесу{% else %}Говорить о чувствах{% endif %}</div>
+        <div class="article-excerpt">{% if lang == 'kz' %}Эмоциялық сауаттылық дегеніміз не?{% else %}Что такое эмоциональная грамотность?{% endif %}</div></div>
+      <div class="article-card"><span class="article-icon"></span>
+        <div class="article-title">{% if lang == 'kz' %}Мотивацияны арттыру{% else %}Повышение мотивации{% endif %}</div>
+        <div class="article-excerpt">{% if lang == 'kz' %}Оқуға деген ынтаны қалай арттыруға болады?{% else %}Как повысить интерес к учёбе?{% endif %}</div></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

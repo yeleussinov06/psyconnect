@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}AI-чат — PsyConnect{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "core/student/sidebar.html" with active="chat" %}
+
+  <main class="main-content" style="padding:1.5rem;display:flex;flex-direction:column;">
+    <!-- Demo notice -->
+    <div style="background:var(--amber-pale);border:1px solid #F5D8BE;border-radius:var(--r-md);padding:.75rem 1rem;margin-bottom:1rem;font-size:.83rem;color:var(--amber);font-weight:600;">
+      {% if lang == 'kz' %}Демо режим — AI жауаптары эмулятор{% else %}Демо-режим — ответы AI эмулируются{% endif %}
+    </div>
+
+    <div class="chat-container" style="flex:1;">
+      <div class="chat-header">
+        <div class="chat-avatar"></div>
+        <div class="chat-header-info">
+          <div class="name">PsyBot</div>
+          <div class="status">● {% if lang == 'kz' %}Онлайн{% else %}Онлайн{% endif %}</div>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="message">
+          <div class="message-avatar"></div>
+          <div>
+            <div class="message-bubble">
+              {% if lang == 'kz' %}Сәлем! Бүгін қалайсың? Маған еркін айта аласың — мен тыңдаймын.{% else %}Привет! Как ты сегодня? Можешь рассказать мне всё — я здесь, чтобы выслушать.{% endif %}
+            </div>
+            <div class="message-time">{% now "H:i" %}</div>
+          </div>
+        </div>
+
+        <!-- Quick prompts -->
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;padding:0 0 .5rem 42px;">
+          <button onclick="sendQuick(this)" class="btn btn-sm btn-ghost" style="font-size:.78rem;">
+            {% if lang == 'kz' %}Стрестемін{% else %}Я в стрессе{% endif %}
+          </button>
+          <button onclick="sendQuick(this)" class="btn btn-sm btn-ghost" style="font-size:.78rem;">
+            {% if lang == 'kz' %}😔 Оқу қиын{% else %}😔 Учёба тяжело{% endif %}
+          </button>
+          <button onclick="sendQuick(this)" class="btn btn-sm btn-ghost" style="font-size:.78rem;">
+            {% if lang == 'kz' %}😟 Жалғыз сезінемін{% else %}😟 Чувствую себя одиноко{% endif %}
+          </button>
+        </div>
+      </div>
+
+      <!-- Appointment suggestion banner (скрыт по умолчанию) -->
+      <div id="appointmentBanner" style="display:none;padding:.875rem 1.25rem;background:var(--sage-pale);border-top:1px solid #C8DFD0;">
+        <div style="display:flex;align-items:center;gap:.875rem;flex-wrap:wrap;">
+          <span style="font-size:1.3rem;"></span>
+          <div style="flex:1;">
+            <div style="font-weight:700;color:var(--sage);font-size:.875rem;" id="bannerText"></div>
+          </div>
+          <div style="display:flex;gap:.5rem;flex-shrink:0;">
+            <a href="/book/?reason=chat" class="btn btn-primary btn-sm">
+              {% if lang == 'kz' %}Жазылу{% else %}Записаться{% endif %}
+            </a>
+            <button onclick="document.getElementById('appointmentBanner').style.display='none'" class="btn btn-ghost btn-sm">
+              {% if lang == 'kz' %}Жоқ{% else %}Нет{% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <textarea class="chat-input" id="chatInput"
+          placeholder="{% if lang == 'kz' %}Хабарлама жазыңыз...{% else %}Напишите сообщение...{% endif %}"
+          rows="1" onkeydown="handleKey(event)"></textarea>
+        <button class="btn btn-primary" onclick="sendMessage()" id="sendBtn" style="padding:11px 18px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="white"/></svg>
+        </button>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const lang = '{{ lang }}';
+const csrfToken = '{{ csrf_token }}';
+const bannerTextRu = 'Похоже, тебе сейчас тяжело. Хочешь записаться к психологу?';
+const bannerTextKz = 'Саған қазір қиын сияқты. Психологқа жазылғың келе ме?';
+
+function getCurrentTime() {
+  const n = new Date();
+  return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+}
+
+function appendMessage(text, isUser) {
+  const c = document.getElementById('chatMessages');
+  const d = document.createElement('div');
+  d.className = 'message' + (isUser ? ' user' : '');
+  if (isUser) {
+    d.innerHTML = `<div class="message-avatar"></div><div><div class="message-bubble">${escHtml(text)}</div><div class="message-time">${getCurrentTime()}</div></div>`;
+  } else {
+    d.innerHTML = `<div class="message-avatar"></div><div><div class="message-bubble">${escHtml(text)}</div><div class="message-time">${getCurrentTime()}</div></div>`;
+  }
+  c.appendChild(d);
+  c.scrollTop = c.scrollHeight;
+}
+
+function showTyping() {
+  const c = document.getElementById('chatMessages');
+  const d = document.createElement('div');
+  d.className = 'message'; d.id = 'typing';
+  d.innerHTML = `<div class="message-avatar"></div><div><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+function removeTyping() { const e = document.getElementById('typing'); if(e) e.remove(); }
+
+function escHtml(t) { const d=document.createElement('div'); d.appendChild(document.createTextNode(t)); return d.innerHTML; }
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = ''; input.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+  appendMessage(text, true);
+  showTyping();
+  try {
+    const r = await fetch('/api/chat/', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken},
+      body: JSON.stringify({message: text})
+    });
+    const data = await r.json();
+    setTimeout(() => {
+      removeTyping();
+      appendMessage(data.response, false);
+      document.getElementById('sendBtn').disabled = false;
+      // Если бот определил тревогу — показываем баннер
+      if (data.suggest_appointment) {
+        const banner = document.getElementById('appointmentBanner');
+        document.getElementById('bannerText').textContent = lang === 'kz' ? bannerTextKz : bannerTextRu;
+        banner.style.display = 'block';
+      }
+    }, 700 + Math.random()*500);
+  } catch(e) {
+    removeTyping();
+    appendMessage(lang==='kz'?'Қате орын алды. Қайталаңыз.':'Произошла ошибка. Попробуйте снова.', false);
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
+function sendQuick(btn) {
+  document.getElementById('chatInput').value = btn.textContent.trim();
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  const ta = document.getElementById('chatInput');
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 120)+'px';
+}
+</script>
+{% endblock %}

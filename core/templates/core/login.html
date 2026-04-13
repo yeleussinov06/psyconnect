@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang == 'kz' %}Кіру{% else %}Войти{% endif %} — PsyConnect{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="icon"></div>
+    </div>
+    <h1 class="auth-title">{% if lang == 'kz' %}Кіру{% else %}Войти{% endif %}</h1>
+    <p class="auth-subtitle">{% if lang == 'kz' %}PsyConnect платформасына қош келдіңіз{% else %}Добро пожаловать в PsyConnect{% endif %}</p>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">{% if lang == 'kz' %}Логин{% else %}Логин{% endif %}</label>
+        <input type="text" name="username" class="form-control" placeholder="{% if lang == 'kz' %}Логинді енгізіңіз{% else %}Введите логин{% endif %}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{% if lang == 'kz' %}Құпия сөз{% else %}Пароль{% endif %}</label>
+        <input type="password" name="password" class="form-control" placeholder="{% if lang == 'kz' %}Құпия сөзді енгізіңіз{% else %}Введите пароль{% endif %}" required>
+      </div>
+      <button type="submit" class="btn btn-navy btn-block btn-lg" style="margin-top:0.5rem;">
+        {% if lang == 'kz' %}Кіру{% else %}Войти{% endif %} →
+      </button>
+    </form>
+
+    <div class="divider"><span>{% if lang == 'kz' %}немесе{% else %}или{% endif %}</span></div>
+
+    <a href="{% url 'register' %}" class="btn btn-outline btn-block" style="border-color:var(--border); color:var(--text);">
+      {% if lang == 'kz' %}Жаңа тіркелгі жасау{% else %}Создать новый аккаунт{% endif %}
+    </a>
+  </div>
+</div>
+{% endblock %}

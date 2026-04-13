@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang == 'kz' %}Тест{% else %}Тест{% endif %} — PsyConnect{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <aside class="sidebar">
+    <a href="{% url 'student_dashboard' %}" class="sidebar-link">
+      <div class="icon"></div>{% if lang == 'kz' %}Бақылау тақтасы{% else %}Дашборд{% endif %}
+    </a>
+    <a href="{% url 'emotion_diary' %}" class="sidebar-link">
+      <div class="icon"></div>{% if lang == 'kz' %}Эмоция күнделігі{% else %}Дневник эмоций{% endif %}
+    </a>
+    <a href="{% url 'test_center' %}" class="sidebar-link active">
+      <div class="icon"></div>{% if lang == 'kz' %}Тест орталығы{% else %}Тест центр{% endif %}
+    </a>
+    <a href="{% url 'ai_chat' %}" class="sidebar-link">
+      <div class="icon"></div>AI-чат
+    </a>
+    <div class="user-card">
+      <div class="user-avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+      <div class="user-info">
+        <div class="name">{{ user.get_full_name|default:user.username }}</div>
+        <div class="role">{% if lang == 'kz' %}Оқушы{% else %}Ученик{% endif %}</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <a href="{% url 'test_center' %}" style="color:var(--sage); text-decoration:none; font-size:0.9rem; font-weight:700;">
+        ← {% if lang == 'kz' %}Тесттерге оралу{% else %}Назад к тестам{% endif %}
+      </a>
+      <h1 class="page-title" style="margin-top:0.75rem;">
+        {% if lang == 'kz' %}Тест: {{ category }}{% else %}Тест: {{ category }}{% endif %}
+      </h1>
+      <p class="page-subtitle">
+        {% if lang == 'kz' %}Әр сұраққа 0-ден 4-ке дейін баға беріңіз{% else %}Оцените каждый вопрос от 0 до 4{% endif %}
+      </p>
+    </div>
+
+    <!-- SCALE LEGEND -->
+    <div class="card" style="margin-bottom:1.5rem; background: var(--amber-pale); border-color: rgba(244,185,66,0.3);">
+      <div style="display:flex; gap:1.5rem; flex-wrap:wrap; font-size:0.85rem; font-weight:700;">
+        <span>0 — {% if lang == 'kz' %}Ешқашан{% else %}Никогда{% endif %}</span>
+        <span>1 — {% if lang == 'kz' %}Сирек{% else %}Редко{% endif %}</span>
+        <span>2 — {% if lang == 'kz' %}Кейде{% else %}Иногда{% endif %}</span>
+        <span>3 — {% if lang == 'kz' %}Жиі{% else %}Часто{% endif %}</span>
+        <span>4 — {% if lang == 'kz' %}Әрқашан{% else %}Всегда{% endif %}</span>
+      </div>
+    </div>
+
+    <form method="post" id="testForm">
+      {% csrf_token %}
+      {% for q in questions %}
+      <div class="question-card" id="qcard{{ forloop.counter0 }}">
+        <div class="question-number">{{ forloop.counter }}</div>
+        <div class="question-text">
+          {% if lang == 'kz' %}{{ q.kz }}{% else %}{{ q.ru }}{% endif %}
+        </div>
+        <div class="scale-options">
+          <span class="scale-label">{% if lang == 'kz' %}Ешқашан{% else %}Никогда{% endif %}</span>
+          {% for val in "01234" %}
+          <label style="flex:1; display:block;">
+            <input type="radio" name="q{{ forloop.parentloop.counter0 }}" value="{{ val }}" style="display:none;" onchange="markAnswered({{ forloop.parentloop.counter0 }}, this)">
+            <div class="scale-btn" data-q="{{ forloop.parentloop.counter0 }}" data-val="{{ val }}">{{ val }}</div>
+          </label>
+          {% endfor %}
+          <span class="scale-label">{% if lang == 'kz' %}Әрқашан{% else %}Всегда{% endif %}</span>
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- PROGRESS BAR -->
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span style="font-weight:700; font-size:0.9rem;">{% if lang == 'kz' %}Прогресс{% else %}Прогресс{% endif %}</span>
+          <span id="progressText" style="font-weight:700; color:var(--sage); font-size:0.9rem;">0 / {{ questions|length }}</span>
+        </div>
+        <div class="progress-bar" style="height:12px;">
+          <div class="progress-fill" id="progressFill" style="width:0%;"></div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg btn-block" id="submitBtn" disabled>
+        {% if lang == 'kz' %}Нәтижені көру{% else %}Посмотреть результат{% endif %}
+      </button>
+    </form>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const totalQ = {{ questions|length }};
+const answered = new Set();
+
+function markAnswered(qIdx, input) {
+  answered.add(qIdx);
+  // highlight selected
+  document.querySelectorAll(`.scale-btn[data-q="${qIdx}"]`).forEach(b => b.classList.remove('selected'));
+  document.querySelector(`.scale-btn[data-q="${qIdx}"][data-val="${input.value}"]`).classList.add('selected');
+  // update progress
+  const pct = (answered.size / totalQ) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = answered.size + ' / ' + totalQ;
+  if (answered.size === totalQ) {
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitBtn').style.animation = 'pulse 1.5s ease';
+  }
+}
+</script>
+{% endblock %}

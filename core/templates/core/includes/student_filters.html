@@ -1,0 +1,40 @@
+<form method="get" id="filterForm">
+  {% if active_panel %}<input type="hidden" name="panel" value="{{ active_panel }}">{% endif %}
+  <div style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1.25rem;">
+
+    <div style="flex:1;min-width:200px;">
+      <label class="form-label">{% if lang == 'kz' %}Іздеу{% else %}Поиск{% endif %}</label>
+      <div style="position:relative;">
+        <input type="text" name="search" value="{{ search }}" class="form-control"
+          placeholder="{% if lang == 'kz' %}Аты-жөні...{% else %}Имя или фамилия...{% endif %}"
+          style="padding-left:2.5rem;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+          style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-3);">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </div>
+    </div>
+
+    <div style="min-width:150px;">
+      <label class="form-label">{% if lang == 'kz' %}Сынып{% else %}Класс{% endif %}</label>
+      <select name="class" class="form-control" onchange="this.form.submit()">
+        <option value="">{% if lang == 'kz' %}Барлығы{% else %}Все классы{% endif %}</option>
+        {% for cls in all_classes %}
+        <option value="{{ cls.name }}" {% if cls.name == class_filter %}selected{% endif %}>{{ cls.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="display:flex;gap:.5rem;padding-bottom:1px;">
+      <button type="submit" class="btn btn-primary btn-sm">{% if lang == 'kz' %}Іздеу{% else %}Найти{% endif %}</button>
+      {% if search or class_filter %}<a href="?{% if active_panel %}panel={{ active_panel }}{% endif %}" class="btn btn-ghost btn-sm">×</a>{% endif %}
+    </div>
+
+  </div>
+  {% if search or class_filter %}
+  <div style="display:flex;gap:.5rem;margin-top:-.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+    {% if class_filter %}<span class="badge badge-sage">{{ class_filter }} <a href="?{% if search %}search={{ search }}&{% endif %}{% if active_panel %}panel={{ active_panel }}{% endif %}" style="color:inherit;">×</a></span>{% endif %}
+    {% if search %}<span class="badge badge-sky">"{{ search }}" <a href="?{% if class_filter %}class={{ class_filter }}&{% endif %}{% if active_panel %}panel={{ active_panel }}{% endif %}" style="color:inherit;">×</a></span>{% endif %}
+  </div>
+  {% endif %}
+</form>
