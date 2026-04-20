@@ -287,3 +287,120 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.user.username} — {self.notif_type}"
+
+
+# ══════════════════════════════════════════════════════════════
+# ПСИХОЛОГИЧЕСКИЙ ТЕСТ-ЦЕНТР
+# ══════════════════════════════════════════════════════════════
+
+class PsychTest(models.Model):
+    """Тест созданный психологом"""
+    STATUS_CHOICES = [
+        ('draft',  'Черновик'),
+        ('active', 'Активен'),
+        ('closed', 'Закрыт'),
+    ]
+    SOURCE_CHOICES = [
+        ('manual', 'Конструктор'),
+        ('ai',     'ИИ генерация'),
+    ]
+    TOPIC_CHOICES = [
+        ('anxiety',    'Тревожность'),
+        ('depression', 'Депрессия'),
+        ('stress',     'Стресс'),
+        ('selfesteem', 'Самооценка'),
+        ('relations',  'Отношения'),
+        ('bullying',   'Буллинг'),
+        ('motivation', 'Мотивация'),
+        ('other',      'Другое'),
+    ]
+    DIFFICULTY_CHOICES = [
+        ('easy',   'Лёгкий'),
+        ('medium', 'Средний'),
+        ('hard',   'Сложный'),
+    ]
+
+    title        = models.CharField(max_length=200, verbose_name='Название')
+    description  = models.TextField(blank=True, verbose_name='Описание')
+    psychologist = models.ForeignKey(User, on_delete=models.CASCADE, related_name='psych_tests')
+    source       = models.CharField(max_length=10, choices=SOURCE_CHOICES, default='manual')
+    topic        = models.CharField(max_length=20, choices=TOPIC_CHOICES, default='anxiety')
+    difficulty   = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES, default='medium')
+    status       = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
+    target_class = models.ForeignKey(SchoolClass, null=True, blank=True, on_delete=models.SET_NULL, related_name='assigned_tests', verbose_name='Класс')
+    created_at   = models.DateTimeField(auto_now_add=True)
+    updated_at   = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Психологический тест'
+        verbose_name_plural = 'Психологические тесты'
+
+    def __str__(self):
+        return self.title
+
+    def question_count(self):
+        return self.questions.count()
+
+    def result_count(self):
+        return self.results.count()
+
+
+class PsychTestQuestion(models.Model):
+    """Вопрос теста"""
+    TYPE_CHOICES = [
+        ('radio',    'Один вариант'),
+        ('checkbox', 'Несколько вариантов'),
+        ('scale',    'Шкала 1-5'),
+        ('text',     'Открытый ответ'),
+    ]
+    test    = models.ForeignKey(PsychTest, on_delete=models.CASCADE, related_name='questions')
+    text    = models.TextField(verbose_name='Текст вопроса')
+    q_type  = models.CharField(max_length=10, choices=TYPE_CHOICES, default='radio')
+    options = models.JSONField(default=list, blank=True, verbose_name='Варианты ответов')
+    # Для radio/checkbox — список строк ["Никогда","Иногда","Часто","Всегда"]
+    # Для scale — пустой список (1-5 автоматически)
+    # Для text — пустой список
+    weight  = models.IntegerField(default=1, verbose_name='Вес вопроса')
+    order   = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = 'Вопрос теста'
+        verbose_name_plural = 'Вопросы теста'
+
+    def __str__(self):
+        return f"[{self.test.title}] {self.text[:60]}"
+
+
+class PsychTestResult(models.Model):
+    """Результат прохождения теста учеником"""
+    RISK_CHOICES = [
+        ('low',    'Низкий'),
+        ('medium', 'Средний'),
+        ('high',   'Высокий'),
+    ]
+    test      = models.ForeignKey(PsychTest, on_delete=models.CASCADE, related_name='results')
+    student   = models.ForeignKey(User, on_delete=models.CASCADE, related_name='psych_test_results')
+    answers   = models.JSONField(default=dict, verbose_name='Ответы')
+    # {question_id: answer_value}
+    score     = models.IntegerField(default=0, verbose_name='Балл')
+    max_score = models.IntegerField(default=0)
+    risk_level = models.CharField(max_length=10, choices=RISK_CHOICES, default='low')
+    ai_analysis  = models.TextField(blank=True, verbose_name='Анализ ИИ')
+    psy_conclusion = models.TextField(blank=True, verbose_name='Заключение психолога')
+    is_approved  = models.BooleanField(default=False, verbose_name='Утверждено')
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-completed_at']
+        unique_together = ('test', 'student')
+        verbose_name = 'Результат теста'
+        verbose_name_plural = 'Результаты тестов'
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} — {self.test.title}"
+
+    def percent(self):
+        if self.max_score == 0: return 0
+        return round(self.score / self.max_score * 100)

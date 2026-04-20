@@ -8,13 +8,13 @@
   <title>{% block title %}PsyConnect{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=6">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=8">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
 
 <!-- ═══ NAVBAR ═══════════════════════════════════════════════ -->
-<nav class="navbar">
+<nav class="navbar" id="mainNavbar">
   <a href="{% url 'landing' %}" class="navbar-brand">
     <div class="brand-icon">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -25,46 +25,51 @@
     <span class="brand-text">Psy<span>Connect</span></span>
   </a>
 
-  <!-- Centre links -->
-  <ul class="navbar-nav">
-    {% if user.is_authenticated %}
-      {% with role=user.profile.role %}
-        {% if role == 'student' %}
-          <li><a href="{% url 'student_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</a></li>
-          <li><a href="{% url 'emotion_diary' %}" class="nav-link">{% if lang == 'kz' %}Күнделік{% else %}Дневник{% endif %}</a></li>
-          <li><a href="{% url 'test_center' %}" class="nav-link">{% if lang == 'kz' %}Тесттер{% else %}Тесты{% endif %}</a></li>
-          <li><a href="{% url 'ai_chat' %}" class="nav-link">AI-чат</a></li>
-        {% elif role == 'teacher' %}
-          <li><a href="{% url 'teacher_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</a></li>
-          <li><a href="{% url 'articles' %}" class="nav-link">{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}</a></li>
-        {% elif role == 'parent' %}
-          <li><a href="{% url 'parent_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</a></li>
-          <li><a href="{% url 'articles' %}" class="nav-link">{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}</a></li>
-        {% elif role == 'psychologist' %}
-          <li><a href="{% url 'psychologist_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Панель{% else %}Панель{% endif %}</a></li>
-        {% endif %}
-      {% endwith %}
-      <li>
-        <a href="{% url 'notifications' %}" class="nav-link" style="position:relative;display:flex;align-items:center;" id="notifBell">
-          {% icon 'bell' 'nav-icon' %}
-          <span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#E8A598;color:white;border-radius:50%;width:17px;height:17px;font-size:.62rem;font-weight:800;align-items:center;justify-content:center;"></span>
-        </a>
-      </li>
-    {% else %}
-      <li><a href="{% url 'login' %}" class="nav-link">{% if lang == 'kz' %}Кіру{% else %}Войти{% endif %}</a></li>
-      <li><a href="{% url 'register' %}" class="btn btn-primary btn-sm" style="margin-left:4px;">{% if lang == 'kz' %}Тіркелу{% else %}Регистрация{% endif %}</a></li>
-    {% endif %}
-  </ul>
+  <!-- Collapsible area (nav links + lang switcher only) -->
+  <div class="navbar-collapse" id="navbarCollapse">
+    <!-- Centre links -->
+    <ul class="navbar-nav">
+      {% if user.is_authenticated %}
+        {% with role=user.profile.role %}
+          {% if role == 'student' %}
+            <li><a href="{% url 'student_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</a></li>
+            <li><a href="{% url 'emotion_diary' %}" class="nav-link">{% if lang == 'kz' %}Күнделік{% else %}Дневник{% endif %}</a></li>
+            <li><a href="{% url 'test_center' %}" class="nav-link">{% if lang == 'kz' %}Тесттер{% else %}Тесты{% endif %}</a></li>
+            <li><a href="{% url 'ai_chat' %}" class="nav-link">AI-чат</a></li>
+          {% elif role == 'teacher' %}
+            <li><a href="{% url 'teacher_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</a></li>
+            <li><a href="{% url 'articles' %}" class="nav-link">{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}</a></li>
+          {% elif role == 'parent' %}
+            <li><a href="{% url 'parent_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</a></li>
+            <li><a href="{% url 'articles' %}" class="nav-link">{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}</a></li>
+          {% elif role == 'psychologist' %}
+            <li><a href="{% url 'psychologist_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Панель{% else %}Панель{% endif %}</a></li>
+          {% endif %}
+        {% endwith %}
+        <li>
+          <a href="{% url 'notifications' %}" class="nav-link" style="position:relative;display:flex;align-items:center;" id="notifBell">
+            {% icon 'bell' 'nav-icon' %}
+            <span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#E8A598;color:white;border-radius:50%;width:17px;height:17px;font-size:.62rem;font-weight:800;align-items:center;justify-content:center;"></span>
+          </a>
+        </li>
+      {% else %}
+        <li><a href="{% url 'login' %}" class="nav-link">{% if lang == 'kz' %}Кіру{% else %}Войти{% endif %}</a></li>
+        <li><a href="{% url 'register' %}" class="btn btn-primary btn-sm" style="margin-left:4px;">{% if lang == 'kz' %}Тіркелу{% else %}Регистрация{% endif %}</a></li>
+      {% endif %}
+    </ul>
 
-  <!-- Right side -->
-  <div class="navbar-right">
-    <div class="lang-switcher">
-      <a href="{% url 'set_language' 'ru' %}" class="lang-btn {% if lang == 'ru' or not lang %}active{% endif %}">RU</a>
-      <a href="{% url 'set_language' 'kz' %}" class="lang-btn {% if lang == 'kz' %}active{% endif %}">KZ</a>
+    <!-- Lang switcher (inside collapse) -->
+    <div class="navbar-right">
+      <div class="lang-switcher">
+        <a href="{% url 'set_language' 'ru' %}" class="lang-btn {% if lang == 'ru' or not lang %}active{% endif %}">RU</a>
+        <a href="{% url 'set_language' 'kz' %}" class="lang-btn {% if lang == 'kz' %}active{% endif %}">KZ</a>
+      </div>
     </div>
+  </div>
 
+  <!-- Always visible: profile + hamburger (outside collapse) -->
+  <div class="navbar-always-visible">
     {% if user.is_authenticated %}
-    <!-- Profile dropdown -->
     <div class="navbar-profile-wrap" id="profileWrap">
       <button class="navbar-profile-btn" onclick="toggleProfileMenu()" type="button">
         <div class="nb-avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
@@ -88,8 +93,17 @@
       </div>
     </div>
     {% endif %}
+
+    <!-- Mobile hamburger toggle -->
+    <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileMenu()" type="button" aria-label="Меню">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
   </div>
 </nav>
+<!-- Mobile menu backdrop -->
+<div class="mobile-menu-backdrop" id="mobileBackdrop" onclick="toggleMobileMenu()"></div>
 
 {% block content %}{% endblock %}
 
@@ -101,6 +115,17 @@
 {% block extra_js %}{% endblock %}
 
 <script>
+// ── Mobile menu toggle ───────────────────────────
+function toggleMobileMenu() {
+  const collapse = document.getElementById('navbarCollapse');
+  const btn = document.getElementById('mobileMenuBtn');
+  const backdrop = document.getElementById('mobileBackdrop');
+  const isOpen = collapse.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  backdrop.classList.toggle('active', isOpen);
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+}
+
 // ── Profile dropdown ─────────────────────────────
 function toggleProfileMenu() {
   const menu = document.getElementById('profileMenu');
@@ -145,9 +170,12 @@ function updateToggleIcon(collapsed) {
 function initSidebar() {
   const sidebar = document.getElementById('appSidebar');
   if (!sidebar) return;
-  const collapsed = localStorage.getItem('sb_collapsed') === '1';
-  if (collapsed) sidebar.classList.add('sb-collapsed');
-  updateToggleIcon(collapsed);
+  // Don't apply collapsed state on mobile
+  if (window.innerWidth > 768) {
+    const collapsed = localStorage.getItem('sb_collapsed') === '1';
+    if (collapsed) sidebar.classList.add('sb-collapsed');
+    updateToggleIcon(collapsed);
+  }
 }
 
 function toggleSidebar() {
@@ -162,11 +190,29 @@ function toggleSidebar() {
 function toggleAccordion(id) {
   const sub = document.getElementById(id);
   if (!sub) return;
+  // On mobile — navigate directly to first sub-link instead of expanding
+  if (window.innerWidth <= 768) {
+    const firstLink = sub.querySelector('a');
+    if (firstLink) { window.location.href = firstLink.href; return; }
+  }
   const open = sub.classList.toggle('acc-open');
   const btn = sub.previousElementSibling;
   if (btn) btn.classList.toggle('acc-active', open);
 }
 document.addEventListener('DOMContentLoaded', initSidebar);
+
+// Close mobile menu on window resize (if going to desktop)
+window.addEventListener('resize', function() {
+  if (window.innerWidth > 768) {
+    const collapse = document.getElementById('navbarCollapse');
+    const btn = document.getElementById('mobileMenuBtn');
+    const backdrop = document.getElementById('mobileBackdrop');
+    if (collapse) collapse.classList.remove('open');
+    if (btn) btn.classList.remove('active');
+    if (backdrop) backdrop.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+});
 </script>
 </body>
 </html>

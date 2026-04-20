@@ -47,4 +47,16 @@ urlpatterns = [
     # Public
     path('anonymous/', views.anonymous_support, name='anonymous_support'),
     path('profile/', views.profile_view, name='profile'),
+
+    # Psychologist Test Center
+    path('psychologist/tests/', views.psych_test_list, name='psych_test_list'),
+    path('psychologist/tests/create/', views.psych_test_create, name='psych_test_create'),
+    path('psychologist/tests/<int:test_id>/', views.psych_test_detail, name='psych_test_detail'),
+    path('psychologist/tests/<int:test_id>/delete/', views.psych_test_delete, name='psych_test_delete'),
+    path('psychologist/tests/results/<int:result_id>/', views.psych_test_result_detail, name='psych_test_result_detail'),
+
+    # Student Psych Tests
+    path('student/psych-tests/', views.student_psych_tests, name='student_psych_tests'),
+    path('student/psych-tests/<int:test_id>/', views.student_take_psych_test, name='student_take_psych_test'),
+    path('student/psych-tests/<int:test_id>/done/', views.student_psych_test_done, name='student_psych_test_done'),
 ]

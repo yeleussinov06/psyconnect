@@ -23,6 +23,11 @@
     {% if pending_count %}<span class="badge badge-peach" style="margin-left:auto;font-size:.65rem;">{{ pending_count }}</span>{% endif %}
   </a>
 
+  <a href="{% url 'psych_test_list' %}" class="sidebar-link {% if active == 'tests' %}active{% endif %}">
+    <div class="icon">{% icon 'clipboard-document-check' %}</div>
+    <span class="sb-label">{% if lang == 'kz' %}Тест орталығы{% else %}Тест-центр{% endif %}</span>
+  </a>
+
   <!-- Расписание (аккордеон) -->
   <button class="acc-btn {% if active == 'schedule' %}acc-active{% endif %}" onclick="toggleAccordion('scheduleMenu')">
     <div class="icon">{% icon 'calendar-days' %}</div>

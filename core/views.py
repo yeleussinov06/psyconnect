@@ -73,8 +73,20 @@ def student_dashboard(request):
     lang = get_lang(request)
     emotions = EmotionEntry.objects.filter(user=request.user)[:7]
     recent_results = TestResult.objects.filter(user=request.user)[:3]
+    # Доступные психологические тесты
+    from .models import PsychTest, PsychTestResult
+    student_class = getattr(request.user.profile, 'school_class', None)
+    available_psych_tests = PsychTest.objects.filter(
+        status='active', target_class=student_class
+    ) if student_class else PsychTest.objects.none()
+    completed_psych_ids = list(PsychTestResult.objects.filter(
+        student=request.user
+    ).values_list('test_id', flat=True))
+    new_psych_tests = [t for t in available_psych_tests if t.id not in completed_psych_ids]
+
     return render(request, 'core/student/dashboard.html', {
-        'lang': lang, 'emotions': emotions, 'recent_results': recent_results,
+        'lang': lang,
+        'new_psych_tests': new_psych_tests, 'emotions': emotions, 'recent_results': recent_results,
         'emotion_count': EmotionEntry.objects.filter(user=request.user).count(),
         'test_count': TestResult.objects.filter(user=request.user).count(),
         'chat_count': ChatMessage.objects.filter(user=request.user).count(),
@@ -1308,4 +1320,369 @@ def parent_book_appointment(request):
         'reason_choices': reason_choices,
         'success': success,
         'error': error,
+    })
+
+
+# ══════════════════════════════════════════════════════════════
+# ПСИХОЛОГИЧЕСКИЙ ТЕСТ-ЦЕНТР
+# ══════════════════════════════════════════════════════════════
+
+@login_required
+def psych_test_list(request):
+    """Список тестов психолога"""
+    lang = get_lang(request)
+    if get_role(request.user) != 'psychologist': return role_redirect(request.user)
+    from .models import PsychTest, SchoolClass
+    tests = PsychTest.objects.filter(psychologist=request.user).prefetch_related('questions','results')
+    all_classes = sorted(SchoolClass.objects.all(), key=lambda c: _class_sort_key(c.name))
+    return render(request, 'core/psychologist/test_list.html', {
+        'lang': lang, 'tests': tests, 'all_classes': all_classes,
+    })
+
+
+@login_required
+def psych_test_create(request):
+    """Создание теста — конструктор или ИИ"""
+    lang = get_lang(request)
+    if get_role(request.user) != 'psychologist': return role_redirect(request.user)
+    from .models import PsychTest, PsychTestQuestion, SchoolClass
+    import json as json_mod
+
+    all_classes = sorted(SchoolClass.objects.all(), key=lambda c: _class_sort_key(c.name))
+    source = request.GET.get('source', 'manual')  # 'manual' или 'ai'
+
+    if request.method == 'POST':
+        title      = request.POST.get('title','').strip()
+        description= request.POST.get('description','').strip()
+        topic      = request.POST.get('topic','anxiety')
+        difficulty = request.POST.get('difficulty','medium')
+        class_id   = request.POST.get('target_class','')
+        source_post= request.POST.get('source','manual')
+
+        target_class = None
+        if class_id:
+            try: target_class = SchoolClass.objects.get(id=class_id)
+            except: pass
+
+        test = PsychTest.objects.create(
+            title=title, description=description,
+            psychologist=request.user, source=source_post,
+            topic=topic, difficulty=difficulty,
+            target_class=target_class, status='draft'
+        )
+
+        if source_post == 'ai':
+            # ── ИИ эмулятор — генерируем вопросы ──────────────────
+            ai_questions = _generate_ai_questions(topic, difficulty)
+            for i, q in enumerate(ai_questions):
+                PsychTestQuestion.objects.create(
+                    test=test, text=q['text'], q_type=q['type'],
+                    options=q.get('options',[]), weight=q.get('weight',1), order=i
+                )
+            test.status = 'draft'
+            test.save()
+        else:
+            # Конструктор — вопросы добавляются по одному
+            questions_json = request.POST.get('questions_json','[]')
+            try:
+                questions = json_mod.loads(questions_json)
+                for i, q in enumerate(questions):
+                    PsychTestQuestion.objects.create(
+                        test=test, text=q.get('text',''), q_type=q.get('type','radio'),
+                        options=q.get('options',[]), weight=int(q.get('weight',1)), order=i
+                    )
+            except: pass
+
+        return redirect('psych_test_detail', test_id=test.id)
+
+    return render(request, 'core/psychologist/test_create.html', {
+        'lang': lang, 'source': source, 'all_classes': all_classes,
+        'topic_choices': PsychTest.TOPIC_CHOICES,
+        'difficulty_choices': PsychTest.DIFFICULTY_CHOICES,
+    })
+
+
+def _generate_ai_questions(topic, difficulty):
+    """ИИ эмулятор — возвращает набор вопросов по теме"""
+    banks = {
+        'anxiety': [
+            {'text': 'Как часто вы чувствуете беспокойство без видимой причины?', 'type': 'scale', 'options': [], 'weight': 2},
+            {'text': 'Вам трудно расслабиться даже когда всё хорошо?', 'type': 'radio', 'options': ['Никогда','Иногда','Часто','Всегда'], 'weight': 2},
+            {'text': 'Возникают ли у вас мысли о плохом исходе событий?', 'type': 'radio', 'options': ['Никогда','Редко','Иногда','Часто'], 'weight': 2},
+            {'text': 'Как вы обычно себя чувствуете перед важным событием?', 'type': 'radio', 'options': ['Спокойно','Немного волнуюсь','Очень волнуюсь','Паникую'], 'weight': 1},
+            {'text': 'Есть ли у вас проблемы со сном из-за беспокойных мыслей?', 'type': 'radio', 'options': ['Никогда','Иногда','Часто','Каждую ночь'], 'weight': 2},
+            {'text': 'Опишите своими словами что вас беспокоит больше всего:', 'type': 'text', 'options': [], 'weight': 1},
+        ],
+        'stress': [
+            {'text': 'Как часто вы чувствуете, что у вас слишком много дел?', 'type': 'scale', 'options': [], 'weight': 2},
+            {'text': 'Успеваете ли вы выполнять домашние задания вовремя?', 'type': 'radio', 'options': ['Всегда','Обычно','Иногда нет','Редко'], 'weight': 1},
+            {'text': 'Как вы себя чувствуете в конце учебного дня?', 'type': 'radio', 'options': ['Бодро','Немного устал','Очень устал','Полностью истощён'], 'weight': 2},
+            {'text': 'Бывают ли у вас головные боли или боли в животе от стресса?', 'type': 'radio', 'options': ['Никогда','Иногда','Часто','Постоянно'], 'weight': 2},
+            {'text': 'Что помогает вам справляться со стрессом?', 'type': 'text', 'options': [], 'weight': 1},
+        ],
+        'selfesteem': [
+            {'text': 'Как вы оцениваете себя по сравнению с одноклассниками?', 'type': 'scale', 'options': [], 'weight': 2},
+            {'text': 'Вы довольны собой в целом?', 'type': 'radio', 'options': ['Очень доволен','Доволен','Не совсем','Совсем нет'], 'weight': 2},
+            {'text': 'Боитесь ли вы осуждения со стороны других?', 'type': 'radio', 'options': ['Никогда','Иногда','Часто','Постоянно'], 'weight': 2},
+            {'text': 'Какие качества в себе вам нравятся больше всего?', 'type': 'text', 'options': [], 'weight': 1},
+            {'text': 'Умеете ли вы принимать критику?', 'type': 'radio', 'options': ['Легко','С трудом','Очень тяжело','Не умею'], 'weight': 1},
+        ],
+        'bullying': [
+            {'text': 'Случалось ли, что одноклассники обижали вас словами или действиями?', 'type': 'radio', 'options': ['Никогда','Один раз','Иногда','Часто'], 'weight': 3},
+            {'text': 'Чувствуете ли вы себя в безопасности в школе?', 'type': 'scale', 'options': [], 'weight': 3},
+            {'text': 'Есть ли у вас близкие друзья в классе?', 'type': 'radio', 'options': ['Да, много','Есть несколько','Почти нет','Нет'], 'weight': 2},
+            {'text': 'Рассказывали ли вы взрослым о проблемах в школе?', 'type': 'radio', 'options': ['Да, всегда','Иногда','Редко','Никогда'], 'weight': 2},
+            {'text': 'Опишите ситуацию если вам некомфортно в коллективе:', 'type': 'text', 'options': [], 'weight': 1},
+        ],
+        'motivation': [
+            {'text': 'Насколько вам интересна учёба?', 'type': 'scale', 'options': [], 'weight': 2},
+            {'text': 'Есть ли предметы которые вам нравятся?', 'type': 'radio', 'options': ['Много','Несколько','Один-два','Нет'], 'weight': 1},
+            {'text': 'Хотите ли вы продолжать образование после школы?', 'type': 'radio', 'options': ['Очень хочу','Наверное да','Не уверен','Нет'], 'weight': 2},
+            {'text': 'Что мешает вам учиться лучше?', 'type': 'text', 'options': [], 'weight': 1},
+            {'text': 'Как часто вы откладываете домашние задания?', 'type': 'radio', 'options': ['Никогда','Иногда','Часто','Всегда'], 'weight': 2},
+        ],
+    }
+    questions = banks.get(topic, banks['anxiety'])
+    if difficulty == 'easy':
+        questions = questions[:4]
+    elif difficulty == 'hard':
+        extra = [
+            {'text': 'Как вы справляетесь с трудными ситуациями?', 'type': 'text', 'options': [], 'weight': 1},
+            {'text': 'Обращались ли вы за помощью к специалистам ранее?', 'type': 'radio', 'options': ['Нет','Один раз','Несколько раз','Регулярно'], 'weight': 2},
+        ]
+        questions = questions + extra
+    return questions
+
+
+@login_required
+def psych_test_detail(request, test_id):
+    """Детальный просмотр теста + назначение классу"""
+    lang = get_lang(request)
+    if get_role(request.user) != 'psychologist': return role_redirect(request.user)
+    from .models import PsychTest, SchoolClass
+
+    test = get_object_or_404(PsychTest, id=test_id, psychologist=request.user)
+    all_classes = sorted(SchoolClass.objects.all(), key=lambda c: _class_sort_key(c.name))
+    results = test.results.select_related('student').order_by('-completed_at')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'activate':
+            class_id = request.POST.get('target_class','')
+            if class_id:
+                try:
+                    test.target_class = SchoolClass.objects.get(id=class_id)
+                except: pass
+            test.status = 'active'
+            test.save()
+            # Уведомляем учеников класса
+            if test.target_class:
+                students = User.objects.filter(
+                    profile__role='student',
+                    profile__school_class=test.target_class
+                )
+                for student in students:
+                    create_notification(
+                        student, 'appointment_new',
+                        f'Психолог назначил вам тест: «{test.title}». Пройдите его в Тест-центре! 📋',
+                        '/student/psych-tests/'
+                    )
+        elif action == 'close':
+            test.status = 'closed'
+            test.save()
+        elif action == 'draft':
+            test.status = 'draft'
+            test.save()
+        return redirect('psych_test_detail', test_id=test.id)
+
+    return render(request, 'core/psychologist/test_detail.html', {
+        'lang': lang, 'test': test, 'results': results, 'all_classes': all_classes,
+    })
+
+
+@login_required
+def psych_test_result_detail(request, result_id):
+    """Результат конкретного ученика + заключение психолога"""
+    lang = get_lang(request)
+    if get_role(request.user) != 'psychologist': return role_redirect(request.user)
+    from .models import PsychTestResult
+
+    result = get_object_or_404(PsychTestResult, id=result_id, test__psychologist=request.user)
+
+    if request.method == 'POST':
+        conclusion = request.POST.get('conclusion','').strip()
+        result.psy_conclusion = conclusion
+        result.is_approved = True
+        result.save()
+        return redirect('psych_test_result_detail', result_id=result.id)
+
+    # Готовим данные для графика
+    questions = result.test.questions.all()
+    chart_data = []
+    for q in questions:
+        ans = result.answers.get(str(q.id), '')
+        if q.q_type == 'scale':
+            try: val = int(ans)
+            except: val = 0
+            chart_data.append({'label': q.text[:30]+'...', 'value': val, 'max': 5})
+        elif q.q_type in ['radio','checkbox']:
+            opts = q.options
+            if opts and ans in opts:
+                val = opts.index(ans) + 1
+                chart_data.append({'label': q.text[:30]+'...', 'value': val, 'max': len(opts)})
+
+    # Готовим ответы для отображения
+    answers_display = []
+    for q in questions:
+        ans = result.answers.get(str(q.id), '—')
+        answers_display.append({'question': q, 'answer': ans})
+
+    return render(request, 'core/psychologist/test_result_detail.html', {
+        'lang': lang, 'result': result, 'questions': questions,
+        'chart_data': json.dumps(chart_data),
+        'answers_display': answers_display,
+    })
+
+
+@login_required
+def psych_test_delete(request, test_id):
+    """Удалить тест"""
+    if get_role(request.user) != 'psychologist': return role_redirect(request.user)
+    from .models import PsychTest
+    test = get_object_or_404(PsychTest, id=test_id, psychologist=request.user)
+    if request.method == 'POST':
+        test.delete()
+    return redirect('psych_test_list')
+
+
+# ── УЧЕНИК — прохождение теста ────────────────────────────────
+
+@login_required
+def student_psych_tests(request):
+    """Список доступных тестов для ученика"""
+    lang = get_lang(request)
+    if get_role(request.user) != 'student': return role_redirect(request.user)
+    from .models import PsychTest, PsychTestResult
+
+    student_class = getattr(request.user.profile, 'school_class', None)
+    available_tests = PsychTest.objects.filter(
+        status='active',
+        target_class=student_class
+    ) if student_class else PsychTest.objects.none()
+
+    # Уже пройденные
+    completed_ids = PsychTestResult.objects.filter(
+        student=request.user
+    ).values_list('test_id', flat=True)
+
+    return render(request, 'core/student/psych_tests.html', {
+        'lang': lang,
+        'available_tests': available_tests,
+        'completed_ids': list(completed_ids),
+    })
+
+
+@login_required
+def student_take_psych_test(request, test_id):
+    """Прохождение теста учеником"""
+    lang = get_lang(request)
+    if get_role(request.user) != 'student': return role_redirect(request.user)
+    from .models import PsychTest, PsychTestResult
+
+    test = get_object_or_404(PsychTest, id=test_id, status='active')
+
+    # Уже прошёл?
+    if PsychTestResult.objects.filter(test=test, student=request.user).exists():
+        return redirect('student_psych_tests')
+
+    questions = test.questions.all()
+
+    if request.method == 'POST':
+        answers = {}
+        score = 0
+        max_score = 0
+        for q in questions:
+            key = f'q_{q.id}'
+            ans = request.POST.get(key, '')
+            answers[str(q.id)] = ans
+            # Подсчёт баллов
+            if q.q_type == 'scale':
+                try:
+                    val = int(ans)
+                    score += val * q.weight
+                    max_score += 5 * q.weight
+                except: max_score += 5 * q.weight
+            elif q.q_type in ['radio','checkbox']:
+                if q.options and ans in q.options:
+                    val = q.options.index(ans) + 1
+                    score += val * q.weight
+                max_score += len(q.options) * q.weight if q.options else 0
+
+        # Группа риска
+        pct = (score / max_score * 100) if max_score > 0 else 0
+        if pct >= 70: risk = 'high'
+        elif pct >= 40: risk = 'medium'
+        else: risk = 'low'
+
+        # ИИ анализ — эмулятор
+        ai_analysis = _generate_ai_analysis(test.topic, pct, risk)
+
+        PsychTestResult.objects.create(
+            test=test, student=request.user,
+            answers=answers, score=score, max_score=max_score,
+            risk_level=risk, ai_analysis=ai_analysis
+        )
+
+        # Уведомление психологу
+        create_notification(
+            test.psychologist, 'appointment_new',
+            f'{request.user.get_full_name() or request.user.username} прошёл тест «{test.title}» 📊',
+            f'/psychologist/tests/{test.id}/'
+        )
+
+        return redirect('student_psych_test_done', test_id=test.id)
+
+    return render(request, 'core/student/take_psych_test.html', {
+        'lang': lang, 'test': test, 'questions': questions,
+    })
+
+
+def _generate_ai_analysis(topic, percent, risk):
+    """ИИ эмулятор — генерирует текстовый анализ"""
+    templates = {
+        'high': {
+            'anxiety': 'Результаты теста указывают на высокий уровень тревожности. Ученик испытывает значительный эмоциональный дискомфорт, который может влиять на учёбу и социальные отношения. Рекомендуется индивидуальная консультация с психологом.',
+            'stress': 'Зафиксирован высокий уровень стресса. Ученик находится в состоянии хронического перегрузки. Необходимо снизить нагрузку и проработать стратегии совладания со стрессом.',
+            'selfesteem': 'Выявлен низкий уровень самооценки. Ученик испытывает трудности с принятием себя, что может приводить к избеганию социальных ситуаций. Рекомендуется работа по формированию позитивного образа "я".',
+            'bullying': 'Результаты свидетельствуют о возможных проблемах с безопасностью в коллективе. Требуется немедленное внимание — индивидуальная беседа с учеником и мониторинг ситуации в классе.',
+            'motivation': 'Выявлен критически низкий уровень учебной мотивации. Ученик нуждается в поиске внутренних ресурсов и поддержке в определении личных целей.',
+        },
+        'medium': {
+            'anxiety': 'Умеренный уровень тревожности в пределах нормы, однако требует наблюдения. Рекомендуется повторное тестирование через 2-3 недели.',
+            'stress': 'Средний уровень стресса. Ученик справляется, но иногда испытывает перегрузку. Рекомендуется беседа о способах управления нагрузкой.',
+            'selfesteem': 'Самооценка на среднем уровне. Есть зоны неуверенности, которые поддаются коррекции через групповые занятия.',
+            'bullying': 'Есть отдельные признаки дискомфорта в коллективе. Рекомендуется профилактическая беседа.',
+            'motivation': 'Мотивация неустойчива. Ученик может вдохновляться, но быстро теряет интерес. Нужна работа с целеполаганием.',
+        },
+        'low': {
+            'anxiety': 'Уровень тревожности в норме. Ученик демонстрирует хорошую эмоциональную устойчивость. Профилактические меры не требуются.',
+            'stress': 'Стрессоустойчивость на высоком уровне. Ученик эффективно справляется с нагрузками.',
+            'selfesteem': 'Самооценка адекватная и стабильная. Ученик уверен в себе и позитивно воспринимает окружающих.',
+            'bullying': 'Ученик чувствует себя в безопасности в коллективе, имеет дружеские связи.',
+            'motivation': 'Высокий уровень учебной мотивации. Ученик целеустремлён и заинтересован в обучении.',
+        }
+    }
+    text = templates.get(risk, {}).get(topic, f'Результат теста: {percent:.0f}%. Уровень риска: {risk}.')
+    return f"[ИИ Анализ — эмулятор]\n\nБалл: {percent:.0f}%\nГруппа риска: {'Высокий' if risk=='high' else 'Средний' if risk=='medium' else 'Низкий'}\n\n{text}"
+
+
+@login_required
+def student_psych_test_done(request, test_id):
+    """Страница после прохождения теста"""
+    lang = get_lang(request)
+    from .models import PsychTest, PsychTestResult
+    test = get_object_or_404(PsychTest, id=test_id)
+    result = get_object_or_404(PsychTestResult, test=test, student=request.user)
+    return render(request, 'core/student/psych_test_done.html', {
+        'lang': lang, 'test': test, 'result': result,
     })

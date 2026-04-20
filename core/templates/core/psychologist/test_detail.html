@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{{ test.title }} — PsyConnect{% endblock %}
+{% block extra_css %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "core/psychologist/sidebar.html" with active="tests" %}
+  <main class="main-content">
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+      <div>
+        <a href="{% url 'psych_test_list' %}" style="color:var(--sage);font-weight:700;text-decoration:none;font-size:.875rem;">← {% if lang == 'kz' %}Артқа{% else %}Назад{% endif %}</a>
+        <h1 class="page-title" style="margin-top:.5rem;">{{ test.title }}</h1>
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:.4rem;">
+          {% if test.status == 'active' %}
+          <span style="background:var(--sage-pale);color:var(--sage);padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:700;">● {% if lang == 'kz' %}Белсенді{% else %}Активен{% endif %}</span>
+          {% elif test.status == 'draft' %}
+          <span style="background:var(--amber-pale);color:var(--amber);padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:700;">○ {% if lang == 'kz' %}Жоба{% else %}Черновик{% endif %}</span>
+          {% else %}
+          <span style="background:var(--cream-dark);color:var(--text-3);padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:700;">✓ {% if lang == 'kz' %}Жабылды{% else %}Закрыт{% endif %}</span>
+          {% endif %}
+          {% if test.source == 'ai' %}<span style="background:#EDE9FE;color:#7C3AED;padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">🤖 ИИ</span>{% endif %}
+          <span style="font-size:.8rem;color:var(--text-3);">{{ test.get_topic_display }} · {{ test.question_count }} {% if lang == 'kz' %}сұрақ{% else %}вопросов{% endif %}</span>
+        </div>
+      </div>
+      <!-- Действия -->
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+        {% if test.status != 'active' %}
+        <form method="post" style="display:inline;">{% csrf_token %}<input type="hidden" name="action" value="activate">
+          {% if test.status == 'draft' %}
+          <div style="display:flex;gap:.5rem;align-items:center;">
+            <select name="target_class" class="form-control" style="min-width:120px;">
+              <option value="">{% if lang == 'kz' %}Класс таңдаңыз{% else %}Выберите класс{% endif %}</option>
+              {% for cls in all_classes %}<option value="{{ cls.id }}" {% if test.target_class and test.target_class.id == cls.id %}selected{% endif %}>{{ cls.name }}</option>{% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">▶ {% if lang == 'kz' %}Іске қосу{% else %}Активировать{% endif %}</button>
+          </div>
+        </form>
+        {% endif %}
+        {% endif %}
+        {% if test.status == 'active' %}
+        <form method="post" style="display:inline;">{% csrf_token %}<input type="hidden" name="action" value="close">
+          <button type="submit" class="btn btn-outline btn-sm">■ {% if lang == 'kz' %}Жабу{% else %}Закрыть{% endif %}</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{% url 'psych_test_delete' test.id %}" style="display:inline;" onsubmit="return confirm('{% if lang == "kz" %}Жою растаңыз?{% else %}Удалить тест?{% endif %}')">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm" style="background:var(--peach-pale);color:#C4614F;border:1px solid #F5C9C2;">{% if lang == 'kz' %}Жою{% else %}Удалить{% endif %}</button>
+        </form>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+
+      <!-- Вопросы -->
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">{% if lang == 'kz' %}Сұрақтар{% else %}Вопросы{% endif %} ({{ test.question_count }})</span></div>
+          {% for q in test.questions.all %}
+          <div style="padding:.75rem 0;border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:flex-start;gap:.75rem;">
+              <span style="width:24px;height:24px;background:var(--sage);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:.72rem;font-weight:700;flex-shrink:0;">{{ forloop.counter }}</span>
+              <div style="flex:1;">
+                <div style="font-size:.875rem;color:var(--text);font-weight:600;">{{ q.text }}</div>
+                <div style="display:flex;gap:.5rem;margin-top:.35rem;flex-wrap:wrap;">
+                  <span style="font-size:.7rem;background:var(--cream-dark);padding:2px 8px;border-radius:99px;color:var(--text-2);">{{ q.get_q_type_display }}</span>
+                  {% if q.options %}<span style="font-size:.7rem;color:var(--text-3);">{{ q.options|join:", " }}</span>{% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div style="text-align:center;padding:2rem;color:var(--text-3);">{% if lang == 'kz' %}Сұрақ жоқ{% else %}Нет вопросов{% endif %}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Результаты + статистика -->
+      <div>
+        <!-- Назначение -->
+        {% if test.target_class %}
+        <div class="card" style="margin-bottom:1rem;background:var(--sage-pale);border:1px solid #C8DFD0;">
+          <div style="display:flex;align-items:center;gap:.75rem;">
+            <div style="font-size:1.5rem;">🏫</div>
+            <div>
+              <div style="font-weight:700;color:var(--sage);">{{ test.target_class.name }}</div>
+              <div style="font-size:.8rem;color:var(--text-2);">{% if lang == 'kz' %}Тест жіберілді{% else %}Тест назначен классу{% endif %}</div>
+            </div>
+            <div style="margin-left:auto;font-size:.9rem;font-weight:700;color:var(--sage);">{{ results|length }}/{{ test.target_class.student_count }}</div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Результаты учеников -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">{% if lang == 'kz' %}Нәтижелер{% else %}Результаты{% endif %} ({{ results|length }})</span></div>
+          {% for r in results %}
+          <a href="{% url 'psych_test_result_detail' r.id %}" style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-bottom:1px solid var(--border);text-decoration:none;gap:.75rem;">
+            <div style="display:flex;align-items:center;gap:.75rem;">
+              <div class="user-avatar" style="width:32px;height:32px;font-size:.8rem;background:var(--sage);">{{ r.student.first_name|first|default:r.student.username|first|upper }}</div>
+              <div>
+                <div style="font-weight:600;font-size:.875rem;color:var(--text);">{{ r.student.get_full_name|default:r.student.username }}</div>
+                <div style="font-size:.75rem;color:var(--text-3);">{{ r.completed_at|date:"d.m.Y H:i" }}</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;">
+              <span style="font-size:.85rem;font-weight:700;color:var(--text);">{{ r.percent }}%</span>
+              {% if r.risk_level == 'high' %}
+              <span style="background:#FEE2E2;color:#DC2626;padding:2px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">{% if lang == 'kz' %}Жоғары{% else %}Высокий{% endif %}</span>
+              {% elif r.risk_level == 'medium' %}
+              <span style="background:#FEF3C7;color:#D97706;padding:2px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">{% if lang == 'kz' %}Орташа{% else %}Средний{% endif %}</span>
+              {% else %}
+              <span style="background:#D1FAE5;color:#065F46;padding:2px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">{% if lang == 'kz' %}Төмен{% else %}Низкий{% endif %}</span>
+              {% endif %}
+              {% if r.is_approved %}<span style="color:var(--sage);font-size:.75rem;">✓</span>{% endif %}
+            </div>
+          </a>
+          {% empty %}
+          <div style="text-align:center;padding:2rem;color:var(--text-3);font-size:.875rem;">{% if lang == 'kz' %}Нәтиже жоқ{% else %}Нет результатов{% endif %}</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+{% endblock %}

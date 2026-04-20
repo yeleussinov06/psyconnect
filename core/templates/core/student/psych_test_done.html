@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Тест аяқталды{% else %}Тест завершён{% endif %} — PsyConnect{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "core/student/sidebar.html" with active="psych_tests" %}
+  <main class="main-content">
+    <div style="max-width:500px;margin:3rem auto;text-align:center;">
+      <div style="width:80px;height:80px;background:var(--sage-pale);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:2.5rem;">✓</div>
+      <h1 style="font-weight:800;color:var(--text);margin-bottom:.75rem;">{% if lang == 'kz' %}Тест сәтті аяқталды!{% else %}Тест успешно завершён!{% endif %}</h1>
+      <p style="color:var(--text-2);font-size:.9rem;line-height:1.7;margin-bottom:.75rem;">
+        {% if lang == 'kz' %}Сіздің жауаптарыңыз психологқа жіберілді. Ол нәтижелерді талдап, сізге хабарлайды.{% else %}Ваши ответы отправлены психологу. Он проанализирует результаты и при необходимости свяжется с вами.{% endif %}
+      </p>
+
+      <!-- Краткий результат -->
+      <div class="card" style="margin:1.5rem 0;text-align:left;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+          <span style="font-size:.875rem;color:var(--text-2);">{{ test.title }}</span>
+          <span style="font-size:1.25rem;font-weight:800;color:var(--text);">{{ result.percent }}%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:{{ result.percent }}%;{% if result.risk_level == 'high' %}background:#EF4444;{% elif result.risk_level == 'medium' %}background:#F59E0B;{% endif %}"></div>
+        </div>
+        <div style="margin-top:.75rem;font-size:.82rem;color:var(--text-3);">
+          {% if result.risk_level == 'high' %}⚠️ {% if lang == 'kz' %}Психолог жақын арада хабарласады{% else %}Психолог свяжется с вами в ближайшее время{% endif %}
+          {% elif result.risk_level == 'medium' %}⚡ {% if lang == 'kz' %}Нәтижелер бақылауда{% else %}Результаты на контроле{% endif %}
+          {% else %}✓ {% if lang == 'kz' %}Жағдайыңыз жақсы{% else %}Всё в порядке{% endif %}{% endif %}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
+        <a href="{% url 'student_dashboard' %}" class="btn btn-primary">{% if lang == 'kz' %}Дашборд{% else %}На главную{% endif %}</a>
+        <a href="{% url 'student_psych_tests' %}" class="btn btn-outline">{% if lang == 'kz' %}Тесттерге{% else %}Все тесты{% endif %}</a>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

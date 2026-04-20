@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Менің тесттерім{% else %}Мои тесты{% endif %} — PsyConnect{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "core/student/sidebar.html" with active="psych_tests" %}
+  <main class="main-content">
+
+    <div class="page-header">
+      <h1 class="page-title">{% if lang == 'kz' %}Психологиялық тесттер{% else %}Психологические тесты{% endif %}</h1>
+      <p class="page-subtitle">{% if lang == 'kz' %}Психолог тапсырған тесттер{% else %}Тесты назначенные психологом{% endif %}</p>
+    </div>
+
+    {% if available_tests %}
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+      {% for test in available_tests %}
+      <div class="card" style="border-left:4px solid {% if test.id in completed_ids %}var(--sage){% else %}var(--amber){% endif %};">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.4rem;flex-wrap:wrap;">
+              <span style="font-weight:700;font-size:1rem;color:var(--text);">{{ test.title }}</span>
+              {% if test.id in completed_ids %}
+              <span style="background:var(--sage-pale);color:var(--sage);padding:2px 10px;border-radius:99px;font-size:.72rem;font-weight:700;">✓ {% if lang == 'kz' %}Өтілді{% else %}Пройден{% endif %}</span>
+              {% else %}
+              <span style="background:var(--amber-pale);color:var(--amber);padding:2px 10px;border-radius:99px;font-size:.72rem;font-weight:700;">● {% if lang == 'kz' %}Жаңа{% else %}Новый{% endif %}</span>
+              {% endif %}
+            </div>
+            <div style="display:flex;gap:1rem;font-size:.8rem;color:var(--text-2);flex-wrap:wrap;">
+              <span>📋 {{ test.question_count }} {% if lang == 'kz' %}сұрақ{% else %}вопросов{% endif %}</span>
+              <span>🎯 {{ test.get_topic_display }}</span>
+              <span>{% if test.difficulty == 'easy' %}🟢{% elif test.difficulty == 'medium' %}🟡{% else %}🔴{% endif %} {{ test.get_difficulty_display }}</span>
+            </div>
+            {% if test.description %}
+            <div style="font-size:.82rem;color:var(--text-2);margin-top:.5rem;">{{ test.description }}</div>
+            {% endif %}
+          </div>
+          {% if test.id not in completed_ids %}
+          <a href="{% url 'student_take_psych_test' test.id %}" class="btn btn-primary">
+            {% if lang == 'kz' %}Бастау{% else %}Начать тест{% endif %} →
+          </a>
+          {% else %}
+          <span style="color:var(--sage);font-size:.875rem;font-weight:600;">✓ {% if lang == 'kz' %}Аяқталды{% else %}Завершён{% endif %}</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="text-align:center;padding:4rem;">
+      <div style="font-size:3rem;margin-bottom:1rem;">📋</div>
+      <h3 style="font-weight:700;margin-bottom:.75rem;">{% if lang == 'kz' %}Тест жоқ{% else %}Нет доступных тестов{% endif %}</h3>
+      <p style="color:var(--text-3);font-size:.875rem;">{% if lang == 'kz' %}Психолог сізге тест тапсырғанда осында пайда болады{% else %}Когда психолог назначит тест вашему классу, он появится здесь{% endif %}</p>
+    </div>
+    {% endif %}
+
+  </main>
+</div>
+{% endblock %}
