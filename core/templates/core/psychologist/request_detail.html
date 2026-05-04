@@ -1,0 +1,328 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Кейс #{{ req.id }}{% else %}Кейс #{{ req.id }}{% endif %} — PsyConnect{% endblock %}
+
+{% block main_content %}
+<div class="page-header" style="margin-bottom:1.25rem;">
+  <a href="{% url 'psychologist_requests_list' %}" style="color:var(--sage);font-weight:700;text-decoration:none;font-size:.9rem;">
+    ← {% if lang == 'kz' %}Кейстер тізімі{% else %}Все кейсы{% endif %}
+  </a>
+  <div style="display:flex;align-items:center;gap:1rem;margin-top:.5rem;flex-wrap:wrap;">
+    <h1 class="page-title" style="margin:0;">
+      {% if lang == 'kz' %}Кейс #{{ req.id }}{% else %}Кейс #{{ req.id }}{% endif %}
+    </h1>
+    <span class="risk-badge risk-{{ req.effective_risk }}" style="font-size:.8rem;">
+      {{ req.get_effective_risk_display|default:req.effective_risk|upper }}
+    </span>
+    <span class="status-dot status-{{ req.status }}">{{ req.get_status_display }}</span>
+    {% if req.is_approved %}<span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700;">✓ {% if lang == 'kz' %}Бекітілген{% else %}Утверждено{% endif %}</span>{% endif %}
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 360px;gap:1.5rem;align-items:flex-start;">
+
+  <!-- ══ ЛЕВАЯ КОЛОНКА ══════════════════════════════════════ -->
+  <div>
+
+    <!-- Жалоба ученика -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header" style="justify-content:space-between;">
+        <span class="card-title">
+          <i data-lucide="message-square" style="width:15px;height:15px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}Оқушының өтініші{% else %}Обращение ученика{% endif %}
+        </span>
+        <div style="display:flex;gap:.5rem;align-items:center;">
+          {% if req.is_anonymous %}
+          <span style="font-size:.75rem;background:#f3f4f6;padding:2px 8px;border-radius:99px;color:#6b7280;font-weight:600;">
+            <i data-lucide="eye-off" style="width:11px;height:11px;vertical-align:middle;margin-right:2px;"></i>{% if lang == 'kz' %}Анонимді{% else %}Анонимно{% endif %}
+          </span>
+          {% endif %}
+          <span style="font-size:.78rem;color:var(--text-3);">{{ req.created_at|date:"d.m.Y H:i" }}</span>
+        </div>
+      </div>
+      <div style="margin-bottom:.75rem;">
+        <span style="display:inline-block;background:var(--cream-dark);border-radius:var(--r-sm);padding:3px 10px;font-size:.8rem;font-weight:600;color:var(--text-2);margin-bottom:.75rem;">
+          {{ req.get_category_display }}
+        </span>
+      </div>
+      <div style="background:var(--cream-dark);border-radius:var(--r-md);padding:1rem 1.125rem;font-size:.9rem;color:var(--text);line-height:1.65;white-space:pre-wrap;border-left:3px solid var(--sage);">{{ req.text }}</div>
+    </div>
+
+    <!-- ИИ-анализ -->
+    {% if req.ai_summary %}
+    <div class="card" style="margin-bottom:1.25rem;border-left:3px solid #8b5cf6;">
+      <div class="card-header" style="justify-content:space-between;">
+        <span class="card-title" style="color:#6d28d9;">
+          <i data-lucide="cpu" style="width:15px;height:15px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}ИИ Талдауы{% else %}ИИ-анализ{% endif %}
+        </span>
+        <div style="display:flex;gap:.5rem;align-items:center;">
+          {% if req.ai_tone %}<span class="tone-badge tone-{{ req.ai_tone }}">{{ req.get_ai_tone_display }}</span>{% endif %}
+          <span style="font-size:.72rem;color:var(--text-3);">{{ req.ai_analyzed_at|date:"d.m H:i" }}</span>
+        </div>
+      </div>
+
+      <!-- Теги -->
+      {% if req.ai_tags %}
+      <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem;">
+        {% for tag in req.ai_tags %}
+        <span style="background:#ede9fe;color:#6d28d9;padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:600;">{{ tag }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Текст резюме -->
+      <div style="font-size:.85rem;color:var(--text);line-height:1.7;">
+        {% for line in ai_lines %}
+          {% if line == '' %}<div style="height:.5rem;"></div>
+          {% elif line|slice:":11" == 'ТОНАЛЬНОСТЬ' or line|slice:":6" == 'УРОВЕНЬ' or line|slice:":7" == 'ИСТОРИЯ' or line|slice:":12" == 'РЕКОМЕНДАЦИИ' %}
+            <div style="font-weight:800;font-size:.78rem;color:#6d28d9;letter-spacing:.05em;margin-top:.25rem;">{{ line }}</div>
+          {% elif line|slice:":1" == '•' %}
+            <div style="padding-left:.75rem;color:var(--text-2);">{{ line }}</div>
+          {% elif line|slice:":1"|add:"" and line.0 >= '1' and line.0 <= '9' %}
+            <div style="padding-left:.5rem;">{{ line }}</div>
+          {% else %}
+            <div>{{ line }}</div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Форма заключения психолога -->
+    <div class="card" style="{% if req.is_approved %}border-left:3px solid var(--sage);{% endif %}">
+      <div class="card-header">
+        <span class="card-title">
+          <i data-lucide="pen-line" style="width:15px;height:15px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}Психолог қорытындысы{% else %}Заключение психолога{% endif %}
+        </span>
+        {% if req.assigned_to %}
+        <span style="font-size:.78rem;color:var(--text-3);">{{ req.assigned_to.get_full_name|default:req.assigned_to.username }}</span>
+        {% endif %}
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+
+        <!-- Коррекция риска -->
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label class="form-label" style="font-size:.82rem;">
+            {% if lang == 'kz' %}Тәуекел деңгейін нақтылау{% else %}Уточнить уровень риска{% endif %}
+            <span style="font-weight:400;color:var(--text-3);">({% if lang == 'kz' %}ИИ-ды жоққа шығарады{% else %}переопределяет ИИ{% endif %})</span>
+          </label>
+          <select name="psy_risk_override" class="form-control" style="max-width:220px;">
+            <option value="">{% if lang == 'kz' %}ИИ бағасы бойынша{% else %}По оценке ИИ{% endif %} ({{ req.ai_risk_level|default:"—" }})</option>
+            {% for val, label in risk_choices %}
+            <option value="{{ val }}" {% if req.psy_risk_override == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Заключение -->
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label class="form-label">
+            {% if lang == 'kz' %}Қорытынды{% else %}Заключение{% endif %}
+            <span style="color:#ef4444;">*</span>
+          </label>
+          <textarea name="psy_conclusion" class="form-control" rows="5" style="resize:vertical;"
+            placeholder="{% if lang == 'kz' %}Ученик туралы өз бағаңызды жазыңыз…{% else %}Ваша экспертная оценка состояния ученика…{% endif %}">{{ req.psy_conclusion }}</textarea>
+        </div>
+
+        <!-- Рекомендации -->
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label class="form-label">{% if lang == 'kz' %}Ұсыныстар{% else %}Рекомендации{% endif %}</label>
+          <textarea name="psy_recommendations" class="form-control" rows="3" style="resize:vertical;"
+            placeholder="{% if lang == 'kz' %}Одан әрі жұмыс жоспары…{% else %}План дальнейшей работы, что рекомендуется ученику / родителям…{% endif %}">{{ req.psy_recommendations }}</textarea>
+        </div>
+
+        <!-- Сообщение для родителя -->
+        <div class="form-group" style="margin-bottom:1.25rem;">
+          <label class="form-label">
+            {% if lang == 'kz' %}Ата-анаға хабарлама{% else %}Сообщение для родителя{% endif %}
+            <span style="font-weight:400;color:var(--text-3);font-size:.8rem;">
+              ({% if lang == 'kz' %}міндетті емес — бекіту кезінде жіберіледі{% else %}необязательно — отправится при утверждении{% endif %})
+            </span>
+          </label>
+          <textarea name="parent_message" class="form-control" rows="4" style="resize:vertical;"
+            placeholder="{% if lang == 'kz' %}Мысалы: Баланыздың жағдайы қарастырылды. Мамандардың ұсынысы…{% else %}Напр.: Обращение вашего ребёнка рассмотрено. По результатам беседы мы пришли к выводу…{% endif %}">{{ req.parent_message }}</textarea>
+          <p style="font-size:.75rem;color:var(--text-3);margin-top:.35rem;">
+            {% if lang == 'kz' %}Ата-ана тек осы мәтінді көреді. Клиникалық терминдерсіз, эмпатиялы тілде жазыңыз.
+            {% else %}Родитель увидит только этот текст. Пишите без клинических терминов, эмпатично.{% endif %}
+          </p>
+        </div>
+
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;">
+          <button type="submit" name="approve" value="0" class="btn btn-outline">
+            {% if lang == 'kz' %}Сақтау{% else %}Сохранить черновик{% endif %}
+          </button>
+          <button type="submit" name="approve" value="1" class="btn btn-primary"
+            onclick="return confirm('{% if lang == "kz" %}Бекіту және ата-анаға жіберу?{% else %}Утвердить и уведомить родителя?{% endif %}')">
+            <i data-lucide="check-circle" style="width:14px;height:14px;vertical-align:middle;margin-right:.3rem;"></i>
+            {% if lang == 'kz' %}Бекіту және жіберу{% else %}Утвердить и отправить родителю{% endif %}
+          </button>
+          {% if req.parent_notified %}
+          <span style="font-size:.78rem;color:#059669;font-weight:600;">
+            ✓ {% if lang == 'kz' %}Ата-ана хабарланды{% else %}Родитель уведомлён{% endif %} {{ req.parent_notified_at|date:"d.m H:i" }}
+          </span>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- ══ ПРАВАЯ КОЛОНКА ═════════════════════════════════════ -->
+  <div>
+
+    <!-- Карточка ученика -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header">
+        <span class="card-title">
+          <i data-lucide="user" style="width:14px;height:14px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}Оқушы{% else %}Ученик{% endif %}
+        </span>
+      </div>
+      {% if req.is_anonymous %}
+      <div style="color:var(--text-2);font-size:.88rem;">
+        <div style="font-weight:700;margin-bottom:.25rem;">*** ({% if lang == 'kz' %}анонимді{% else %}анонимно{% endif %})</div>
+        {% if student.profile.school_class %}<div style="color:var(--text-3);">{{ student.profile.school_class }}</div>{% endif %}
+      </div>
+      {% else %}
+      <div>
+        <div style="font-weight:800;font-size:.95rem;color:var(--text);margin-bottom:.2rem;">{{ student.get_full_name|default:student.username }}</div>
+        {% if student.profile.school_class %}<div style="font-size:.8rem;color:var(--text-3);">{{ student.profile.school_class }}</div>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Сигналы учителей -->
+    {% if observations %}
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header">
+        <span class="card-title" style="color:#d97706;">
+          <i data-lucide="alert-triangle" style="width:14px;height:14px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}Мұғалімдер сигналдары{% else %}Сигналы учителей{% endif %}
+        </span>
+        <span style="font-size:.75rem;color:var(--text-3);">{{ observations|length }}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.75rem;">
+        {% for obs in observations %}
+        <div style="border-left:3px solid {% if obs.urgency == 'critical' %}#7c3aed{% elif obs.urgency == 'high' %}#ef4444{% elif obs.urgency == 'medium' %}#f59e0b{% else %}#22c55e{% endif %};padding:.5rem .75rem;border-radius:0 var(--r-sm) var(--r-sm) 0;background:var(--cream-dark);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:.2rem;">
+            <span style="font-weight:700;font-size:.82rem;color:var(--text);">{{ obs.get_category_display }}</span>
+            <a href="{% url 'psychologist_observation_detail' obs.id %}" style="font-size:.72rem;color:var(--sage);font-weight:600;text-decoration:none;">→</a>
+          </div>
+          <div style="font-size:.78rem;color:var(--text-2);margin-bottom:.2rem;">{{ obs.teacher.get_full_name|default:obs.teacher.username }}</div>
+          <div style="font-size:.75rem;color:var(--text-3);">{{ obs.description|truncatechars:70 }}</div>
+          {% if obs.duration_days %}<div style="font-size:.72rem;color:var(--text-3);margin-top:.2rem;">{{ obs.duration_days }} {% if lang == 'kz' %}күн{% else %}дней{% endif %}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Эмоции за 7 дней -->
+    {% if recent_emotions %}
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header">
+        <span class="card-title">
+          <i data-lucide="heart" style="width:14px;height:14px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}Соңғы эмоциялар{% else %}Последние эмоции{% endif %}
+        </span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:.4rem;">
+        {% for em in recent_emotions %}
+        <span style="background:{% if em.emotion in 'anxious,sad,angry' %}#fee2e2{% elif em.emotion in 'happy,calm' %}#d1fae5{% else %}#f3f4f6{% endif %};color:{% if em.emotion in 'anxious,sad,angry' %}#b91c1c{% elif em.emotion in 'happy,calm' %}#065f46{% else %}#4b5563{% endif %};padding:3px 9px;border-radius:99px;font-size:.75rem;font-weight:600;">
+          {{ em.get_emotion_display }} <span style="opacity:.6;font-size:.7rem;">{{ em.created_at|date:"d.m" }}</span>
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Последний тест -->
+    {% if last_psych %}
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header">
+        <span class="card-title" style="font-size:.85rem;">
+          <i data-lucide="clipboard-list" style="width:14px;height:14px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}Соңғы тест{% else %}Последний тест{% endif %}
+        </span>
+      </div>
+      <div style="font-size:.85rem;color:var(--text);font-weight:700;margin-bottom:.25rem;">{{ last_psych.test.title|truncatechars:45 }}</div>
+      <div style="display:flex;gap:.5rem;align-items:center;font-size:.8rem;color:var(--text-2);">
+        <span class="risk-badge risk-{{ last_psych.risk_level }}">{{ last_psych.get_risk_level_display }}</span>
+        <span>{{ last_psych.percent }}%</span>
+        <span style="color:var(--text-3);">{{ last_psych.completed_at|date:"d.m.Y" }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- История обращений -->
+    {% if past_requests %}
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title" style="font-size:.85rem;">
+          <i data-lucide="history" style="width:14px;height:14px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}Алдыңғы өтініштер{% else %}Предыдущие обращения{% endif %}
+        </span>
+        <span style="font-size:.75rem;color:var(--text-3);">{{ past_requests|length }}</span>
+      </div>
+      {% for pr in past_requests %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;{% if not forloop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <div>
+          <a href="{% url 'psychologist_request_detail' pr.id %}" style="font-size:.82rem;font-weight:600;color:var(--sage);text-decoration:none;">{{ pr.get_category_display }}</a>
+          <div style="font-size:.72rem;color:var(--text-3);">{{ pr.created_at|date:"d.m.Y" }}</div>
+        </div>
+        <span class="risk-badge risk-{{ pr.effective_risk }}" style="font-size:.68rem;">{{ pr.effective_risk }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block dashboard_extra_js %}
+<style>
+.risk-badge {
+  display:inline-block;
+  padding:3px 10px;
+  border-radius:99px;
+  font-size:.72rem;
+  font-weight:800;
+}
+.risk-badge.risk-low      { background:#dcfce7; color:#15803d; }
+.risk-badge.risk-medium   { background:#fef3c7; color:#92400e; }
+.risk-badge.risk-high     { background:#fee2e2; color:#b91c1c; }
+.risk-badge.risk-critical { background:#f3e8ff; color:#6d28d9; }
+.tone-badge {
+  display:inline-block; padding:2px 8px;
+  border-radius:var(--r-sm); font-size:.75rem; font-weight:600;
+  background:var(--cream-dark); color:var(--text-2);
+}
+.tone-badge.tone-fear       { background:#fee2e2; color:#b91c1c; }
+.tone-badge.tone-aggression { background:#ffedd5; color:#c2410c; }
+.tone-badge.tone-depression { background:#ede9fe; color:#5b21b6; }
+.tone-badge.tone-anxiety    { background:#fef3c7; color:#92400e; }
+.tone-badge.tone-confusion  { background:#dbeafe; color:#1e40af; }
+.status-dot {
+  display:inline-block; padding:2px 8px;
+  border-radius:99px; font-size:.75rem; font-weight:600;
+}
+.status-dot.status-new          { background:#dbeafe; color:#1d4ed8; }
+.status-dot.status-ai_analyzed  { background:#ede9fe; color:#6d28d9; }
+.status-dot.status-in_review    { background:#fef3c7; color:#92400e; }
+.status-dot.status-concluded    { background:#dcfce7; color:#15803d; }
+.status-dot.status-archived     { background:#f3f4f6; color:#6b7280; }
+
+@media (max-width: 900px) {
+  div[style*="grid-template-columns:1fr 360px"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+</style>
+{% endblock %}

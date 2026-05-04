@@ -1,0 +1,151 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "PsyConnect" [ref=e3] [cursor=pointer]:
+      - /url: /landing/
+      - img [ref=e5]
+      - generic [ref=e8]: PsyConnect
+    - generic [ref=e9]:
+      - list [ref=e10]:
+        - listitem [ref=e11]:
+          - link "Дашборд" [ref=e12] [cursor=pointer]:
+            - /url: /teacher/
+        - listitem [ref=e13]:
+          - link "Статьи" [ref=e14] [cursor=pointer]:
+            - /url: /articles/
+        - listitem [ref=e15]:
+          - link [ref=e16] [cursor=pointer]:
+            - /url: /notifications/
+            - img [ref=e17]
+      - generic [ref=e20]:
+        - link "RU" [ref=e21] [cursor=pointer]:
+          - /url: /lang/ru/
+        - link "KZ" [ref=e22] [cursor=pointer]:
+          - /url: /lang/kz/
+    - generic [ref=e24]:
+      - button "У Учитель1 Учитель2" [ref=e25] [cursor=pointer]:
+        - generic [ref=e26]: У
+        - generic [ref=e27]: Учитель1 Учитель2
+        - img [ref=e28]
+      - generic:
+        - link "Профиль":
+          - /url: /profile/
+          - img
+          - text: Профиль
+        - link "Анонимно":
+          - /url: /anonymous/
+          - img
+          - text: Анонимно
+        - link "Выйти":
+          - /url: /logout/
+          - img
+          - text: Выйти
+  - generic [ref=e30]:
+    - complementary [ref=e31]:
+      - img "Logo" [ref=e33]
+      - navigation [ref=e34]:
+        - link "Дашборд" [ref=e35] [cursor=pointer]:
+          - /url: /teacher/
+          - img [ref=e36]
+        - link "Ученики" [ref=e41] [cursor=pointer]:
+          - /url: /teacher/?panel=students
+          - img [ref=e42]
+        - link "Эмоции" [ref=e47] [cursor=pointer]:
+          - /url: /teacher/?panel=emotions
+          - img [ref=e48]
+        - link "К психологу" [ref=e50] [cursor=pointer]:
+          - /url: /teacher/book/
+          - img [ref=e51]
+        - link "Статьи" [ref=e53] [cursor=pointer]:
+          - /url: /articles/
+          - img [ref=e54]
+        - link "Анонимно" [ref=e57] [cursor=pointer]:
+          - /url: /anonymous/
+          - img [ref=e58]
+      - generic [ref=e60]:
+        - link "Профиль" [ref=e61] [cursor=pointer]:
+          - /url: /profile/
+          - img [ref=e62]
+        - link "Выйти" [ref=e65] [cursor=pointer]:
+          - /url: /logout/
+          - img [ref=e66]
+    - complementary [ref=e69]:
+      - generic [ref=e70]:
+        - generic [ref=e71]: У
+        - paragraph [ref=e72]: Добрый день 👋
+        - heading "Учитель1 Учитель2" [level=2] [ref=e73]
+        - paragraph [ref=e74]: Панель учителя
+      - generic [ref=e76]:
+        - generic [ref=e77]:
+          - generic [ref=e78]: "11"
+          - generic [ref=e79]: Учеников
+        - generic [ref=e81]:
+          - generic [ref=e82]: "21"
+          - generic [ref=e83]: Эмоций
+        - generic [ref=e85]:
+          - generic [ref=e86]: "3"
+          - generic [ref=e87]: Тестов
+    - main [ref=e88]:
+      - generic [ref=e89]:
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - img [ref=e93]
+            - generic [ref=e98]:
+              - generic [ref=e99]: "11"
+              - generic [ref=e100]: Учеников
+          - generic [ref=e101]:
+            - img [ref=e103]
+            - generic [ref=e105]:
+              - generic [ref=e106]: "21"
+              - generic [ref=e107]: Записей эмоций
+          - generic [ref=e108]:
+            - img [ref=e110]
+            - generic [ref=e114]:
+              - generic [ref=e115]: "3"
+              - generic [ref=e116]: Результатов тестов
+        - generic [ref=e117]:
+          - generic [ref=e120]: Статистика эмоций (7 дней)
+          - generic [ref=e122]:
+            - generic [ref=e123]:
+              - generic [ref=e124]: Последние эмоции
+              - link "Все →" [ref=e125] [cursor=pointer]:
+                - /url: "#"
+            - generic [ref=e126]:
+              - img [ref=e128]
+              - generic [ref=e134]:
+                - strong [ref=e136]: maksat maksat
+                - generic [ref=e138]: 20.04.2026 15:08
+            - generic [ref=e139]:
+              - img [ref=e141]
+              - generic [ref=e144]:
+                - strong [ref=e146]: maksat maksat
+                - generic [ref=e148]: 20.04.2026 15:08
+            - generic [ref=e149]:
+              - img [ref=e151]
+              - generic [ref=e154]:
+                - strong [ref=e156]: Алиев1 Арман Сериков
+                - generic [ref=e158]: 17.04.2026 09:33
+            - generic [ref=e159]:
+              - img [ref=e161]
+              - generic [ref=e165]:
+                - strong [ref=e167]: Алиев1 Арман Сериков
+                - generic [ref=e168]: 17.04.2026 09:33
+            - generic [ref=e169]:
+              - img [ref=e171]
+              - generic [ref=e176]:
+                - strong [ref=e178]: Алиев1 Арман Сериков
+                - generic [ref=e179]: 17.04.2026 09:33
+            - generic [ref=e180]:
+              - img [ref=e182]
+              - generic [ref=e186]:
+                - strong [ref=e188]: Арман Арманов
+                - generic [ref=e189]: 17.04.2026 09:33
+        - generic [ref=e190]:
+          - generic [ref=e192]: Быстрые действия
+          - generic [ref=e193]:
+            - link "Ученики" [ref=e194] [cursor=pointer]:
+              - /url: "#"
+            - link "Эмоции" [ref=e195] [cursor=pointer]:
+              - /url: "#"
+            - link "Психологу" [ref=e196] [cursor=pointer]:
+              - /url: /anonymous/
+  - contentinfo [ref=e197]: PsyConnect · Платформа для школьного сообщества © 2025

@@ -1,11 +1,8 @@
-{% extends 'base.html' %}
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
 {% load icons %}
 {% block title %}{% if lang == 'kz' %}Нәтиже{% else %}Результат{% endif %} — PsyConnect{% endblock %}
-{% block content %}
-<div class="dashboard">
-  {% include "core/student/sidebar.html" with active="tests" %}
-
-  <main class="main-content">
+{% block main_content %}
     <div style="max-width:600px;margin:0 auto;">
 
       <!-- RESULT CARD -->
@@ -66,6 +63,4 @@
       {% endif %}
 
     </div>
-  </main>
-</div>
 {% endblock %}

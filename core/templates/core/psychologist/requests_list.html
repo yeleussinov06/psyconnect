@@ -1,0 +1,211 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Кейстер{% else %}Кейсы обращений{% endif %} — PsyConnect{% endblock %}
+
+{% block main_content %}
+<div class="page-header">
+  <h1 class="page-title">{% if lang == 'kz' %}Кейстер{% else %}Кейсы обращений{% endif %}</h1>
+  <p class="page-subtitle">{% if lang == 'kz' %}Оқушылардан келген өтініштер мен мұғалімдердің сигналдары{% else %}Обращения учеников и сигналы учителей{% endif %}</p>
+</div>
+
+<!-- Статистика -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+  <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-md);padding:1rem 1.25rem;">
+    <div style="font-size:1.75rem;font-weight:800;color:#3b82f6;line-height:1;">{{ stats.new }}</div>
+    <div style="font-size:.78rem;color:var(--text-2);margin-top:.25rem;font-weight:600;">{% if lang == 'kz' %}Жаңа{% else %}Новые{% endif %}</div>
+  </div>
+  <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-md);padding:1rem 1.25rem;">
+    <div style="font-size:1.75rem;font-weight:800;color:#f59e0b;line-height:1;">{{ stats.in_review }}</div>
+    <div style="font-size:.78rem;color:var(--text-2);margin-top:.25rem;font-weight:600;">{% if lang == 'kz' %}Қарастырылуда{% else %}В работе{% endif %}</div>
+  </div>
+  <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-md);padding:1rem 1.25rem;">
+    <div style="font-size:1.75rem;font-weight:800;color:#ef4444;line-height:1;">{{ stats.high_risk }}</div>
+    <div style="font-size:.78rem;color:var(--text-2);margin-top:.25rem;font-weight:600;">{% if lang == 'kz' %}Жоғары тәуекел{% else %}Высокий риск{% endif %}</div>
+  </div>
+  <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-md);padding:1rem 1.25rem;">
+    <div style="font-size:1.75rem;font-weight:800;color:var(--text);line-height:1;">{{ stats.total }}</div>
+    <div style="font-size:.78rem;color:var(--text-2);margin-top:.25rem;font-weight:600;">{% if lang == 'kz' %}Барлығы{% else %}Всего активных{% endif %}</div>
+  </div>
+</div>
+
+<!-- Фильтры + сигналы учителей -->
+<div style="display:flex;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center;">
+  <form method="get" style="display:flex;gap:.5rem;flex-wrap:wrap;flex:1;">
+    <select name="status" class="form-control" style="max-width:180px;font-size:.85rem;" onchange="this.form.submit()">
+      <option value="">{% if lang == 'kz' %}Барлық статус{% else %}Все статусы{% endif %}</option>
+      {% for val, label in status_choices %}
+      <option value="{{ val }}" {% if status_f == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="risk" class="form-control" style="max-width:180px;font-size:.85rem;" onchange="this.form.submit()">
+      <option value="">{% if lang == 'kz' %}Барлық тәуекел{% else %}Все уровни риска{% endif %}</option>
+      {% for val, label in risk_choices %}
+      <option value="{{ val }}" {% if risk_f == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    {% if status_f or risk_f %}
+    <a href="{% url 'psychologist_requests_list' %}" class="btn btn-outline" style="font-size:.82rem;padding:.4rem .9rem;">✕ {% if lang == 'kz' %}Тазалау{% else %}Сбросить{% endif %}</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Сигналы учителей -->
+{% if new_obs_count %}
+<div style="margin-bottom:1.25rem;">
+  <button onclick="toggleObs()" id="obsToggleBtn"
+    style="display:flex;align-items:center;gap:.5rem;background:#fef3c7;border:1.5px solid #fcd34d;border-radius:var(--r-md);padding:.5rem .875rem;font-size:.82rem;font-weight:700;color:#92400e;cursor:pointer;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+    {{ new_obs_count }} {% if lang == 'kz' %}мұғалім сигналы{% else %}сигнал(ов) учителей{% endif %}
+    <svg id="obsArrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="transition:transform .2s;"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+
+  <div id="obsList" style="display:none;margin-top:.5rem;display:flex;flex-direction:column;gap:.5rem;display:none;">
+    {% for obs in observations_list %}
+    <a href="{% url 'psychologist_observation_detail' obs.id %}"
+       style="display:flex;align-items:center;gap:1rem;background:var(--white);border:1.5px solid {% if obs.urgency == 'critical' %}#c4b5fd{% elif obs.urgency == 'high' %}#fca5a5{% elif obs.urgency == 'medium' %}#fcd34d{% else %}var(--border){% endif %};border-radius:var(--r-md);padding:.75rem 1rem;text-decoration:none;"
+       onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+      <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:{% if obs.urgency == 'critical' %}#7c3aed{% elif obs.urgency == 'high' %}#ef4444{% elif obs.urgency == 'medium' %}#f59e0b{% else %}#6b7280{% endif %};"></div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:.875rem;color:var(--text);">
+          {{ obs.student.get_full_name|default:obs.student.username }}
+          {% if obs.student.profile.school_class %}<span style="font-weight:400;color:var(--text-3);font-size:.78rem;"> · {{ obs.student.profile.school_class }}</span>{% endif %}
+        </div>
+        <div style="font-size:.78rem;color:var(--text-2);margin-top:.15rem;">
+          {{ obs.get_category_display }} · {% if lang == 'kz' %}Мұғалім:{% else %}Учитель:{% endif %} {{ obs.teacher.get_full_name|default:obs.teacher.username }}
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:.72rem;font-weight:700;color:{% if obs.urgency == 'critical' %}#7c3aed{% elif obs.urgency == 'high' %}#ef4444{% elif obs.urgency == 'medium' %}#92400e{% else %}#6b7280{% endif %};">{{ obs.get_urgency_display }}</div>
+        <div style="font-size:.7rem;color:var(--text-3);margin-top:.1rem;">{{ obs.created_at|date:"d.m.Y" }}</div>
+      </div>
+      <span style="color:var(--sage);font-size:.85rem;font-weight:700;flex-shrink:0;">→</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Список кейсов -->
+{% if requests_list %}
+<div class="card" style="padding:0;overflow:hidden;">
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="background:var(--cream-dark);border-bottom:1.5px solid var(--border);">
+        <th style="padding:.75rem 1rem;text-align:left;font-size:.78rem;font-weight:700;color:var(--text-2);">{% if lang == 'kz' %}ТӘУЕКЕЛ{% else %}РИСК{% endif %}</th>
+        <th style="padding:.75rem 1rem;text-align:left;font-size:.78rem;font-weight:700;color:var(--text-2);">{% if lang == 'kz' %}ОҚУШЫ{% else %}УЧЕНИК{% endif %}</th>
+        <th style="padding:.75rem 1rem;text-align:left;font-size:.78rem;font-weight:700;color:var(--text-2);">{% if lang == 'kz' %}ТАҚЫРЫП{% else %}ТЕМА{% endif %}</th>
+        <th style="padding:.75rem 1rem;text-align:left;font-size:.78rem;font-weight:700;color:var(--text-2);">{% if lang == 'kz' %}ТОНУС{% else %}ТОНАЛЬНОСТЬ{% endif %}</th>
+        <th style="padding:.75rem 1rem;text-align:left;font-size:.78rem;font-weight:700;color:var(--text-2);">{% if lang == 'kz' %}СТАТУС{% else %}СТАТУС{% endif %}</th>
+        <th style="padding:.75rem 1rem;text-align:left;font-size:.78rem;font-weight:700;color:var(--text-2);">{% if lang == 'kz' %}КҮНІ{% else %}ДАТА{% endif %}</th>
+        <th style="padding:.75rem 1rem;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in requests_list %}
+      <tr style="border-bottom:1px solid var(--border);transition:background .15s;" onmouseover="this.style.background='var(--cream-dark)'" onmouseout="this.style.background=''">
+        <td style="padding:.875rem 1rem;">
+          <span class="risk-badge risk-{{ r.effective_risk }}">{{ r.effective_risk|upper }}</span>
+        </td>
+        <td style="padding:.875rem 1rem;">
+          <div style="font-weight:700;font-size:.88rem;color:var(--text);">
+            {% if r.is_anonymous %}***{% else %}{{ r.student.get_full_name|default:r.student.username }}{% endif %}
+          </div>
+          {% if r.student.profile.school_class and not r.is_anonymous %}
+          <div style="font-size:.75rem;color:var(--text-3);">{{ r.student.profile.school_class }}</div>
+          {% endif %}
+        </td>
+        <td style="padding:.875rem 1rem;font-size:.85rem;color:var(--text);">{{ r.get_category_display }}</td>
+        <td style="padding:.875rem 1rem;">
+          {% if r.ai_tone %}
+          <span class="tone-badge tone-{{ r.ai_tone }}">{{ r.get_ai_tone_display }}</span>
+          {% else %}<span style="color:var(--text-3);font-size:.78rem;">—</span>{% endif %}
+        </td>
+        <td style="padding:.875rem 1rem;">
+          <span class="status-dot status-{{ r.status }}">{{ r.get_status_display }}</span>
+        </td>
+        <td style="padding:.875rem 1rem;font-size:.8rem;color:var(--text-3);">{{ r.created_at|date:"d.m.Y" }}</td>
+        <td style="padding:.875rem 1rem;">
+          <a href="{% url 'psychologist_request_detail' r.id %}" class="btn btn-outline" style="font-size:.78rem;padding:.35rem .8rem;">
+            {% if lang == 'kz' %}Ашу{% else %}Открыть{% endif %} →
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="card" style="text-align:center;padding:3.5rem;">
+  <i data-lucide="inbox" style="width:48px;height:48px;stroke-width:1;color:var(--text-3);margin-bottom:1rem;"></i>
+  <h3 style="font-weight:700;margin-bottom:.5rem;color:var(--text);">
+    {% if lang == 'kz' %}Кейстер жоқ{% else %}Кейсов нет{% endif %}
+  </h3>
+  <p style="color:var(--text-3);font-size:.875rem;">
+    {% if status_f or risk_f %}
+    {% if lang == 'kz' %}Бұл сүзгі бойынша ештеңе табылмады{% else %}Ничего не найдено по выбранным фильтрам{% endif %}
+    {% else %}
+    {% if lang == 'kz' %}Оқушылардың өтініштері келсе, осында көрінеді{% else %}Как только ученики подадут обращения — они появятся здесь{% endif %}
+    {% endif %}
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block dashboard_extra_js %}
+<script>
+function toggleObs() {
+  const list  = document.getElementById('obsList');
+  const arrow = document.getElementById('obsArrow');
+  const open  = list.style.display === 'none' || list.style.display === '';
+  list.style.display  = open ? 'flex' : 'none';
+  list.style.flexDirection = 'column';
+  list.style.gap = '.5rem';
+  arrow.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+</script>
+<style>
+.risk-badge {
+  display:inline-block;
+  padding:3px 10px;
+  border-radius:99px;
+  font-size:.72rem;
+  font-weight:800;
+  letter-spacing:.04em;
+}
+.risk-badge.risk-low      { background:#dcfce7; color:#15803d; }
+.risk-badge.risk-medium   { background:#fef3c7; color:#92400e; }
+.risk-badge.risk-high     { background:#fee2e2; color:#b91c1c; }
+.risk-badge.risk-critical { background:#f3e8ff; color:#6d28d9; }
+
+.tone-badge {
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:var(--r-sm);
+  font-size:.75rem;
+  font-weight:600;
+  background:var(--cream-dark);
+  color:var(--text-2);
+}
+.tone-badge.tone-fear       { background:#fee2e2; color:#b91c1c; }
+.tone-badge.tone-aggression { background:#ffedd5; color:#c2410c; }
+.tone-badge.tone-depression { background:#ede9fe; color:#5b21b6; }
+.tone-badge.tone-anxiety    { background:#fef3c7; color:#92400e; }
+.tone-badge.tone-confusion  { background:#dbeafe; color:#1e40af; }
+
+.status-dot {
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:99px;
+  font-size:.75rem;
+  font-weight:600;
+}
+.status-dot.status-new          { background:#dbeafe; color:#1d4ed8; }
+.status-dot.status-ai_analyzed  { background:#ede9fe; color:#6d28d9; }
+.status-dot.status-in_review    { background:#fef3c7; color:#92400e; }
+.status-dot.status-concluded    { background:#dcfce7; color:#15803d; }
+.status-dot.status-archived     { background:#f3f4f6; color:#6b7280; }
+</style>
+{% endblock %}

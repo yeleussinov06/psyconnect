@@ -1,30 +1,47 @@
-{% load icons %}
-<aside class="sidebar" id="appSidebar">
-  <button class="sb-toggle" id="sbToggleBtn" onclick="toggleSidebar()"></button>
-  <div class="sidebar-section-title sb-label">{% if lang == 'kz' %}МҰҒАЛІМ{% else %}УЧИТЕЛЬ{% endif %}</div>
+{% load static %}
+<aside class="psy-sidebar" id="appSidebar">
 
-  <a href="{% url 'teacher_dashboard' %}" class="sidebar-link {% if active == 'dashboard' %}active{% endif %}">
-    <div class="icon">{% icon 'home' %}</div>
-    <span class="sb-label">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</span>
-  </a>
+  <!-- Logo -->
+  <div class="psy-sb-logo">
+    <img src="{% static 'img/icons/Frame.png' %}" alt="Logo" width="32" height="32">
+  </div>
 
-  <a href="{% url 'teacher_dashboard' %}?panel=students" class="sidebar-link {% if active == 'students' %}active{% endif %}">
-    <div class="icon">{% icon 'users' %}</div>
-    <span class="sb-label">{% if lang == 'kz' %}Оқушылар{% else %}Ученики{% endif %}</span>
-  </a>
+  <nav class="psy-sb-nav">
+    <!-- Дашборд -->
+    <a href="{% url 'teacher_dashboard' %}" class="psy-sb-link {% if active == 'dashboard' or active == 'overview' %}active{% endif %}" title="{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+    </a>
 
-  <a href="{% url 'teacher_dashboard' %}?panel=emotions" class="sidebar-link {% if active == 'emotions' %}active{% endif %}">
-    <div class="icon">{% icon 'heart' %}</div>
-    <span class="sb-label">{% if lang == 'kz' %}Эмоциялар{% else %}Эмоции{% endif %}</span>
-  </a>
+    <!-- Ученики -->
+    <a href="{% url 'teacher_dashboard' %}?panel=students" class="psy-sb-link {% if active == 'students' %}active{% endif %}" title="{% if lang == 'kz' %}Оқушылар{% else %}Ученики{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </a>
 
-  <a href="{% url 'articles' %}" class="sidebar-link {% if active == 'articles' %}active{% endif %}">
-    <div class="icon">{% icon 'newspaper' %}</div>
-    <span class="sb-label">{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}</span>
-  </a>
+    <!-- Эмоции -->
+    <a href="{% url 'teacher_dashboard' %}?panel=emotions" class="psy-sb-link {% if active == 'emotions' %}active{% endif %}" title="{% if lang == 'kz' %}Эмоциялар{% else %}Эмоции{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+    </a>
 
-  <a href="{% url 'anonymous_support' %}" class="sidebar-link {% if active == 'anon' %}active{% endif %}">
-    <div class="icon">{% icon 'eye-slash' %}</div>
-    <span class="sb-label">{% if lang == 'kz' %}Анонимді хабар{% else %}Анонимное сообщение{% endif %}</span>
-  </a>
+    <!-- К психологу -->
+    <a href="{% url 'teacher_book_appointment' %}" class="psy-sb-link {% if active == 'book' %}active{% endif %}" title="{% if lang == 'kz' %}Психологқа жазылу{% else %}К психологу{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+    </a>
+
+    <!-- Сигнал о поведении -->
+    <a href="{% url 'teacher_new_observation' %}" class="psy-sb-link {% if active == 'observe' %}active{% endif %}" title="{% if lang == 'kz' %}Мінез-құлық сигналы{% else %}Сигнал психологу{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </a>
+
+    <!-- Статьи -->
+    <a href="{% url 'articles' %}" class="psy-sb-link {% if active == 'articles' %}active{% endif %}" title="{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0-2-2z"/><path d="M4 22a2 2 0 0 1-2-2V10"/><path d="M16 6H9"/><path d="M16 10H9"/><path d="M16 14H9"/></svg>
+    </a>
+
+    <!-- Анонимное сообщение -->
+    <a href="{% url 'anonymous_support' %}" class="psy-sb-link {% if active == 'anon' %}active{% endif %}" title="{% if lang == 'kz' %}Анонимді хабар{% else %}Анонимно{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+    </a>
+  </nav>
+
+
 </aside>

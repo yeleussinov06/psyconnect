@@ -1,0 +1,224 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "PsyConnect" [ref=e3] [cursor=pointer]:
+      - /url: /landing/
+      - img [ref=e5]
+      - generic [ref=e8]: PsyConnect
+    - generic [ref=e9]:
+      - list [ref=e10]:
+        - listitem [ref=e11]:
+          - link "Панель" [ref=e12] [cursor=pointer]:
+            - /url: /psychologist/
+        - listitem [ref=e13]:
+          - link [ref=e14] [cursor=pointer]:
+            - /url: /notifications/
+            - img [ref=e15]
+      - generic [ref=e18]:
+        - link "RU" [ref=e19] [cursor=pointer]:
+          - /url: /lang/ru/
+        - link "KZ" [ref=e20] [cursor=pointer]:
+          - /url: /lang/kz/
+    - generic [ref=e22]:
+      - button "С Сара Мара" [ref=e23] [cursor=pointer]:
+        - generic [ref=e24]: С
+        - generic [ref=e25]: Сара Мара
+        - img [ref=e26]
+      - generic:
+        - link "Профиль":
+          - /url: /profile/
+          - img
+          - text: Профиль
+        - link "Анонимно":
+          - /url: /anonymous/
+          - img
+          - text: Анонимно
+        - link "Выйти":
+          - /url: /logout/
+          - img
+          - text: Выйти
+  - generic [ref=e28]:
+    - complementary [ref=e29]:
+      - img "Logo" [ref=e31]
+      - navigation [ref=e32]:
+        - link "Обзор" [ref=e33] [cursor=pointer]:
+          - /url: /psychologist/
+          - img [ref=e34]
+        - link "Заявки" [ref=e39] [cursor=pointer]:
+          - /url: /psychologist/appointments/
+          - img [ref=e40]
+        - link "Тесты" [ref=e42] [cursor=pointer]:
+          - /url: /psychologist/tests/
+          - img [ref=e43]
+        - link "Ученики" [ref=e47] [cursor=pointer]:
+          - /url: /psychologist/?panel=students
+          - img [ref=e48]
+        - link "Расписание" [ref=e53] [cursor=pointer]:
+          - /url: /psychologist/schedule/
+          - img [ref=e54]
+        - link "Запросы" [ref=e57] [cursor=pointer]:
+          - /url: /psychologist/?panel=requests
+          - img [ref=e58]
+        - link "Эмоции" [ref=e60] [cursor=pointer]:
+          - /url: /psychologist/?panel=emotions
+          - img [ref=e61]
+      - generic [ref=e63]:
+        - link "Профиль" [ref=e64] [cursor=pointer]:
+          - /url: /profile/
+          - img [ref=e65]
+        - link "Выйти" [ref=e68] [cursor=pointer]:
+          - /url: /logout/
+          - img [ref=e69]
+    - main [ref=e72]:
+      - generic [ref=e73]:
+        - heading "Расписание" [level=1] [ref=e74]
+        - paragraph [ref=e75]: Пн-Пт 09:00–18:00 автоматически свободны. Отмечайте только занятое время.
+      - generic [ref=e76]:
+        - link "Пред. неделя" [ref=e77] [cursor=pointer]:
+          - /url: "?week=-1"
+          - img [ref=e78]
+          - text: Пред. неделя
+        - generic [ref=e80]: 20 Апрель — 24 Апрель 2026
+        - link "След. неделя" [ref=e81] [cursor=pointer]:
+          - /url: "?week=1"
+          - text: След. неделя
+          - img [ref=e82]
+        - link "Сегодня" [ref=e84] [cursor=pointer]:
+          - /url: "?week=0"
+      - table [ref=e87]:
+        - rowgroup [ref=e88]:
+          - row "Время Пн 20 Апр Вт 21 Апр Ср 22 Апр Чт 23 Апр Пт 24 Апр" [ref=e89]:
+            - columnheader "Время" [ref=e90]
+            - columnheader "Пн 20 Апр" [ref=e91]:
+              - generic [ref=e92]: Пн
+              - generic [ref=e93]: "20"
+              - generic [ref=e94]: Апр
+            - columnheader "Вт 21 Апр" [ref=e95]:
+              - generic [ref=e96]: Вт
+              - generic [ref=e97]: "21"
+              - generic [ref=e98]: Апр
+            - columnheader "Ср 22 Апр" [ref=e99]:
+              - generic [ref=e100]: Ср
+              - generic [ref=e101]: "22"
+              - generic [ref=e102]: Апр
+            - columnheader "Чт 23 Апр" [ref=e103]:
+              - generic [ref=e104]: Чт
+              - generic [ref=e105]: "23"
+              - generic [ref=e106]: Апр
+            - columnheader "Пт 24 Апр" [ref=e107]:
+              - generic [ref=e108]: Пт
+              - generic [ref=e109]: "24"
+              - generic [ref=e110]: Апр
+        - rowgroup [ref=e111]:
+          - row "9:00" [ref=e112]:
+            - cell "9:00" [ref=e113]
+            - cell [ref=e114]:
+              - button "Нажмите чтобы заблокировать" [ref=e116] [cursor=pointer]
+            - cell [ref=e117]:
+              - button "Нажмите чтобы заблокировать" [ref=e119] [cursor=pointer]
+            - cell [ref=e120]:
+              - button "Нажмите чтобы заблокировать" [ref=e122] [cursor=pointer]
+            - cell [ref=e123]:
+              - button "Нажмите чтобы заблокировать" [ref=e125] [cursor=pointer]
+            - cell [ref=e126]:
+              - button "Нажмите чтобы заблокировать" [ref=e128] [cursor=pointer]
+          - row "10:00" [ref=e129]:
+            - cell "10:00" [ref=e130]
+            - cell [ref=e131]:
+              - button "Нажмите чтобы заблокировать" [ref=e133] [cursor=pointer]
+            - cell [ref=e134]:
+              - button "Нажмите чтобы заблокировать" [ref=e136] [cursor=pointer]
+            - cell [ref=e137]:
+              - button "Нажмите чтобы заблокировать" [ref=e139] [cursor=pointer]
+            - cell [ref=e140]:
+              - button "Нажмите чтобы заблокировать" [ref=e142] [cursor=pointer]
+            - cell [ref=e143]:
+              - button "Нажмите чтобы заблокировать" [ref=e145] [cursor=pointer]
+          - row "11:00" [ref=e146]:
+            - cell "11:00" [ref=e147]
+            - cell [ref=e148]:
+              - button "Нажмите чтобы заблокировать" [ref=e150] [cursor=pointer]
+            - cell [ref=e151]:
+              - button "Нажмите чтобы заблокировать" [ref=e153] [cursor=pointer]
+            - cell [ref=e154]:
+              - button "Нажмите чтобы заблокировать" [ref=e156] [cursor=pointer]
+            - cell [ref=e157]:
+              - button "Нажмите чтобы заблокировать" [ref=e159] [cursor=pointer]
+            - cell [ref=e160]:
+              - button "Нажмите чтобы заблокировать" [ref=e162] [cursor=pointer]
+          - row "12:00" [ref=e163]:
+            - cell "12:00" [ref=e164]
+            - cell [ref=e165]:
+              - button "Нажмите чтобы заблокировать" [ref=e167] [cursor=pointer]
+            - cell [ref=e168]:
+              - button "Нажмите чтобы заблокировать" [ref=e170] [cursor=pointer]
+            - cell [ref=e171]:
+              - button "Нажмите чтобы заблокировать" [ref=e173] [cursor=pointer]
+            - cell [ref=e174]:
+              - button "Нажмите чтобы заблокировать" [ref=e176] [cursor=pointer]
+            - cell [ref=e177]:
+              - button "Нажмите чтобы заблокировать" [ref=e179] [cursor=pointer]
+          - row "13:00" [ref=e180]:
+            - cell "13:00" [ref=e181]
+            - cell [ref=e182]:
+              - button "Нажмите чтобы заблокировать" [ref=e184] [cursor=pointer]
+            - cell [ref=e185]:
+              - button "Нажмите чтобы заблокировать" [ref=e187] [cursor=pointer]
+            - cell [ref=e188]:
+              - button "Нажмите чтобы заблокировать" [ref=e190] [cursor=pointer]
+            - cell [ref=e191]:
+              - button "Нажмите чтобы заблокировать" [ref=e193] [cursor=pointer]
+            - cell [ref=e194]:
+              - button "Нажмите чтобы заблокировать" [ref=e196] [cursor=pointer]
+          - row "14:00" [ref=e197]:
+            - cell "14:00" [ref=e198]
+            - cell [ref=e199]:
+              - button "Нажмите чтобы заблокировать" [ref=e201] [cursor=pointer]
+            - cell [ref=e202]:
+              - button "Нажмите чтобы заблокировать" [ref=e204] [cursor=pointer]
+            - cell [ref=e205]:
+              - button "Нажмите чтобы заблокировать" [ref=e207] [cursor=pointer]
+            - cell [ref=e208]:
+              - button "Нажмите чтобы заблокировать" [ref=e210] [cursor=pointer]
+            - cell [ref=e211]:
+              - button "Нажмите чтобы заблокировать" [ref=e213] [cursor=pointer]
+          - row "15:00" [ref=e214]:
+            - cell "15:00" [ref=e215]
+            - cell [ref=e216]:
+              - button "Нажмите чтобы заблокировать" [ref=e218] [cursor=pointer]
+            - cell [ref=e219]:
+              - button "Нажмите чтобы заблокировать" [ref=e221] [cursor=pointer]
+            - cell [ref=e222]:
+              - button "Нажмите чтобы заблокировать" [ref=e224] [cursor=pointer]
+            - cell [ref=e225]:
+              - button "Нажмите чтобы заблокировать" [ref=e227] [cursor=pointer]
+            - cell [ref=e228]:
+              - button "Нажмите чтобы заблокировать" [ref=e230] [cursor=pointer]
+          - row "16:00" [ref=e231]:
+            - cell "16:00" [ref=e232]
+            - cell [ref=e233]:
+              - button "Нажмите чтобы заблокировать" [ref=e235] [cursor=pointer]
+            - cell [ref=e236]:
+              - button "Нажмите чтобы заблокировать" [ref=e238] [cursor=pointer]
+            - cell [ref=e239]:
+              - button "Нажмите чтобы заблокировать" [ref=e241] [cursor=pointer]
+            - cell [ref=e242]:
+              - button "Нажмите чтобы заблокировать" [ref=e244] [cursor=pointer]
+            - cell [ref=e245]:
+              - button "Нажмите чтобы заблокировать" [ref=e247] [cursor=pointer]
+          - row "17:00" [ref=e248]:
+            - cell "17:00" [ref=e249]
+            - cell [ref=e250]:
+              - button "Нажмите чтобы заблокировать" [ref=e252] [cursor=pointer]
+            - cell [ref=e253]:
+              - button "Нажмите чтобы заблокировать" [ref=e255] [cursor=pointer]
+            - cell [ref=e256]:
+              - button "Нажмите чтобы заблокировать" [ref=e258] [cursor=pointer]
+            - cell [ref=e259]:
+              - button "Нажмите чтобы заблокировать" [ref=e261] [cursor=pointer]
+            - cell [ref=e262]:
+              - button "Нажмите чтобы заблокировать" [ref=e264] [cursor=pointer]
+      - generic [ref=e265]:
+        - generic [ref=e266]: Подтверждённая запись
+        - generic [ref=e268]: Заблокировано вами
+        - generic [ref=e270]: Свободно (нажмите чтобы заблокировать)
+  - contentinfo [ref=e272]: PsyConnect · Платформа для школьного сообщества © 2025

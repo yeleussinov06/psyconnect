@@ -1,12 +1,10 @@
-{% extends 'base.html' %}
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
 {% load icons %}
 {% block title %}{% if lang == 'kz' %}Тест{% else %}Тест{% endif %} — PsyConnect{% endblock %}
+{% block main_content %}
 
-{% block content %}
-<div class="dashboard">
-  {% include "core/student/sidebar.html" with active="tests" %}
-
-  <main class="main-content">
+  <main class="psy-main">
     <div class="page-header">
       <a href="{% url 'test_center' %}" style="color:var(--sage); text-decoration:none; font-size:0.9rem; font-weight:700;">
         ← {% if lang == 'kz' %}Тесттерге оралу{% else %}Назад к тестам{% endif %}
@@ -66,11 +64,9 @@
         {% if lang == 'kz' %}Нәтижені көру{% else %}Посмотреть результат{% endif %}
       </button>
     </form>
-  </main>
-</div>
 {% endblock %}
 
-{% block extra_js %}
+{% block dashboard_extra_js %}
 <script>
 const totalQ = {{ questions|length }};
 const answered = new Set();

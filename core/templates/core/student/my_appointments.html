@@ -1,11 +1,8 @@
-{% extends 'base.html' %}
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
 {% load icons %}
 {% block title %}{% if lang == 'kz' %}Менің жазылымдарым{% else %}Мои записи{% endif %} — PsyConnect{% endblock %}
-{% block content %}
-<div class="dashboard">
-  {% include "core/student/sidebar.html" with active="appointments" %}
-
-  <main class="main-content">
+{% block main_content %}
     <div class="page-header">
       <h1 class="page-title">{% if lang == 'kz' %}Менің жазылымдарым{% else %}Мои записи{% endif %}</h1>
       <p class="page-subtitle">{% if lang == 'kz' %}Психологқа жазылымдар тарихы{% else %}История записей к психологу{% endif %}</p>
@@ -51,7 +48,7 @@
               {% if lang == 'kz' %}Жазылым себебі:{% else %}Причина записи:{% endif %}
               {% if apt.reason == 'test' %}{% if lang == 'kz' %}Тест нәтижесі бойынша{% else %}По результату теста{% endif %}
               {% elif apt.reason == 'chat' %}{% if lang == 'kz' %}AI-чат арқылы{% else %}Через AI-чат{% endif %}
-              {% else %}✋ {% if lang == 'kz' %}Өз бастамасымен{% else %}Самостоятельно{% endif %}{% endif %}
+              {% else %}<i data-lucide="user" style="width:12px;height:12px;vertical-align:middle;"></i> {% if lang == 'kz' %}Өз бастамасымен{% else %}Самостоятельно{% endif %}{% endif %}
             </div>
           </div>
           {% if apt.status == 'pending' %}
@@ -81,6 +78,4 @@
         </a>
       </div>
     {% endif %}
-  </main>
-</div>
 {% endblock %}

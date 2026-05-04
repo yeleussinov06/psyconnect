@@ -1,0 +1,315 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Оқушы туралы сигнал{% else %}Сигнал о поведении ученика{% endif %} — PsyConnect{% endblock %}
+
+{% block main_content %}
+<div class="page-header">
+  <a href="{% url 'teacher_dashboard' %}" style="color:var(--sage);font-weight:700;text-decoration:none;font-size:.9rem;">
+    ← {% if lang == 'kz' %}Артқа{% else %}Назад{% endif %}
+  </a>
+  <h1 class="page-title" style="margin-top:.5rem;">
+    {% if lang == 'kz' %}Мінез-құлық сигналы{% else %}Сигнал об изменении поведения{% endif %}
+  </h1>
+  <p class="page-subtitle">
+    {% if lang == 'kz' %}Психолог сіздің бақылауыңызды қосымша контекст ретінде пайдаланады.
+    {% else %}Психолог получит ваше наблюдение как дополнительный контекст к кейсу ученика.{% endif %}
+  </p>
+</div>
+
+{% if sent %}
+<!-- ── Успех ────────────────────────────────────────────── -->
+<div class="card" style="text-align:center;padding:3rem 2rem;">
+  <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#d1fae5,#a7f3d0);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+    <i data-lucide="check" style="width:30px;height:30px;color:#059669;stroke-width:2.5;"></i>
+  </div>
+  <h2 style="font-family:'Inter',sans-serif;font-weight:800;font-size:1.25rem;margin-bottom:.6rem;color:var(--text);">
+    {% if lang == 'kz' %}Сигнал жіберілді{% else %}Сигнал отправлен{% endif %}
+  </h2>
+  <p style="color:var(--text-2);font-size:.9rem;max-width:380px;margin:0 auto 1.75rem;">
+    {% if lang == 'kz' %}Психолог сіздің бақылауыңызды алды. Рахмет — бұл маңызды.
+    {% else %}Психолог получил ваше наблюдение и учтёт его при работе с учеником. Спасибо.{% endif %}
+  </p>
+  <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
+    <a href="{% url 'teacher_new_observation' %}" class="btn btn-primary">
+      {% if lang == 'kz' %}Тағы жіберу{% else %}Ещё один сигнал{% endif %}
+    </a>
+    <a href="{% url 'teacher_dashboard' %}" class="btn btn-outline">
+      {% if lang == 'kz' %}Дашборд{% else %}На дашборд{% endif %}
+    </a>
+  </div>
+</div>
+
+{% else %}
+<!-- ── Форма ─────────────────────────────────────────────── -->
+{% if error %}
+<div class="alert alert-error" style="margin-bottom:1.25rem;">
+  <i data-lucide="alert-triangle" style="width:15px;height:15px;vertical-align:middle;margin-right:.35rem;"></i>{{ error }}
+</div>
+{% endif %}
+
+{% if not students %}
+<div class="card" style="text-align:center;padding:3rem;">
+  <i data-lucide="backpack" style="width:48px;height:48px;stroke-width:1;color:var(--text-3);margin-bottom:1rem;"></i>
+  <h3 style="font-weight:700;margin-bottom:.5rem;">
+    {% if lang == 'kz' %}Оқушылар жоқ{% else %}Нет учеников{% endif %}
+  </h3>
+  <p style="color:var(--text-3);font-size:.875rem;">
+    {% if lang == 'kz' %}Сіздің сыныбыңызға оқушы тіркелмеген.
+    {% else %}К вашему классу не привязано ни одного ученика.{% endif %}
+  </p>
+</div>
+
+{% else %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:flex-start;">
+
+  <!-- Левая колонка: форма -->
+  <form method="post" id="obsForm">
+    {% csrf_token %}
+
+    <!-- Выбор ученика -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header">
+        <span class="card-title">
+          <i data-lucide="user" style="width:15px;height:15px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}Оқушы{% else %}Ученик{% endif %}
+          <span style="font-weight:400;color:var(--text-3);font-size:.8rem;margin-left:.3rem;">*</span>
+        </span>
+        {% if teacher_class %}<span style="font-size:.78rem;color:var(--text-3);">{{ teacher_class.name }}</span>{% endif %}
+      </div>
+      <select name="student_id" class="form-control" required>
+        <option value="" disabled selected>
+          {% if lang == 'kz' %}Оқушыны таңдаңыз…{% else %}Выберите ученика…{% endif %}
+        </option>
+        {% for s in students %}
+        <option value="{{ s.id }}">
+          {{ s.get_full_name|default:s.username }}{% if s.profile.school_class %} — {{ s.profile.school_class }}{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Тип наблюдения -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header">
+        <span class="card-title">
+          <i data-lucide="eye" style="width:15px;height:15px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}Бақылау түрі{% else %}Тип изменения{% endif %}
+        </span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+        {% for val, label in category_choices %}
+        <label class="reason-pill">
+          <input type="radio" name="category" value="{{ val }}" {% if forloop.first %}checked{% endif %} style="display:none;">
+          <span>{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Срочность -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header">
+        <span class="card-title">
+          <i data-lucide="zap" style="width:15px;height:15px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}Шұғылдық{% else %}Срочность{% endif %}
+        </span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.5rem;">
+        {% for val, label in urgency_choices %}
+        <label class="urgency-option">
+          <input type="radio" name="urgency" value="{{ val }}" {% if forloop.first %}checked{% endif %}>
+          <span class="urgency-dot urgency-{{ val }}"></span>
+          <span class="urgency-label">{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Описание -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-header">
+        <span class="card-title">
+          <i data-lucide="file-text" style="width:15px;height:15px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}Бақылау сипаттамасы{% else %}Описание наблюдения{% endif %}
+          <span style="font-weight:400;color:var(--text-3);font-size:.8rem;margin-left:.3rem;">*</span>
+        </span>
+      </div>
+      <textarea
+        name="description"
+        id="descText"
+        class="form-control"
+        rows="5"
+        style="resize:vertical;min-height:110px;"
+        maxlength="2000"
+        placeholder="{% if lang == 'kz' %}Мысалы: соңғы екі аптада бала сыныпта оқшауланып қалды, сабаққа қатысуы азайды, сұраққа жауап берместен қашып кетеді…{% else %}Например: последние две недели стал избегать одноклассников, замолчал на уроках, реагирует на замечания со слезами — раньше такого не было…{% endif %}"
+        oninput="updateObsCounter(this)"
+      ></textarea>
+      <div style="display:flex;justify-content:space-between;margin-top:.5rem;">
+        <span style="font-size:.75rem;color:var(--text-3);">
+          {% if lang == 'kz' %}Нақтырақ — жақсырақ{% else %}Чем конкретнее — тем полезнее{% endif %}
+        </span>
+        <span id="obsCount" style="font-size:.75rem;color:var(--text-3);">0 / 2000</span>
+      </div>
+    </div>
+
+    <!-- Продолжительность -->
+    <div class="card" style="margin-bottom:1.75rem;">
+      <div class="card-header">
+        <span class="card-title">
+          <i data-lucide="clock" style="width:15px;height:15px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}Ұзақтығы (күн){% else %}Продолжительность (дней){% endif %}
+          <span style="font-weight:400;color:var(--text-3);font-size:.8rem;margin-left:.3rem;">
+            {% if lang == 'kz' %}міндетті емес{% else %}необязательно{% endif %}
+          </span>
+        </span>
+      </div>
+      <input
+        type="number"
+        name="duration_days"
+        class="form-control"
+        min="1"
+        max="365"
+        style="max-width:140px;"
+        placeholder="{% if lang == 'kz' %}Мысалы: 14{% else %}Напр.: 14{% endif %}"
+      >
+      <p style="font-size:.78rem;color:var(--text-3);margin-top:.4rem;">
+        {% if lang == 'kz' %}Мінез-құлықтың қанша күн бойы өзгергені{% else %}Сколько дней длится изменение поведения{% endif %}
+      </p>
+    </div>
+
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      <button type="submit" id="obsSubmit" class="btn btn-primary btn-lg" disabled>
+        <i data-lucide="send" style="width:15px;height:15px;vertical-align:middle;margin-right:.4rem;"></i>
+        {% if lang == 'kz' %}Сигнал жіберу{% else %}Отправить сигнал{% endif %}
+      </button>
+      <a href="{% url 'teacher_dashboard' %}" class="btn btn-outline btn-lg">
+        {% if lang == 'kz' %}Болдырмау{% else %}Отмена{% endif %}
+      </a>
+    </div>
+  </form>
+
+  <!-- Правая колонка: история -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">
+          <i data-lucide="history" style="width:15px;height:15px;vertical-align:middle;margin-right:.3rem;"></i>
+          {% if lang == 'kz' %}Соңғы сигналдар{% else %}Последние сигналы{% endif %}
+        </span>
+      </div>
+
+      {% if recent_obs %}
+        <div style="display:flex;flex-direction:column;gap:.75rem;">
+          {% for obs in recent_obs %}
+          <div style="display:flex;gap:.75rem;align-items:flex-start;padding-bottom:.75rem;{% if not forloop.last %}border-bottom:1px solid var(--border);{% endif %}">
+            <div class="urgency-indicator urgency-{{ obs.urgency }}" style="flex-shrink:0;margin-top:3px;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.2rem;">
+                <span style="font-weight:700;font-size:.85rem;color:var(--text);">
+                  {{ obs.student.get_full_name|default:obs.student.username }}
+                </span>
+                <span style="font-size:.72rem;color:var(--text-3);">{{ obs.created_at|date:"d.m" }}</span>
+              </div>
+              <div style="font-size:.78rem;color:var(--text-2);margin-bottom:.25rem;">
+                {{ obs.get_category_display }}
+              </div>
+              <div style="font-size:.75rem;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                {{ obs.description|truncatechars:70 }}
+              </div>
+            </div>
+            {% if obs.is_reviewed %}
+            <div title="{% if lang == 'kz' %}Психолог қарады{% else %}Психолог просмотрел{% endif %}"
+                 style="flex-shrink:0;width:18px;height:18px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;">
+              <i data-lucide="check" style="width:10px;height:10px;color:#059669;stroke-width:3;"></i>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="text-align:center;padding:2rem;color:var(--text-3);">
+          <i data-lucide="inbox" style="width:32px;height:32px;stroke-width:1;margin-bottom:.75rem;"></i>
+          <p style="font-size:.85rem;margin:0;">
+            {% if lang == 'kz' %}Сигналдар жоқ{% else %}Сигналов пока нет{% endif %}
+          </p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endif %}
+{% endif %}
+
+{% endblock %}
+
+{% block dashboard_extra_js %}
+<style>
+.reason-pill { cursor:pointer; display:inline-block; }
+.reason-pill span {
+  display:inline-block;
+  padding:5px 12px;
+  border-radius:99px;
+  border:1.5px solid var(--border);
+  background:var(--white);
+  font-size:.8rem;
+  font-weight:600;
+  color:var(--text-2);
+  transition:all .18s;
+}
+.reason-pill input:checked + span {
+  background:var(--sage);
+  color:white;
+  border-color:var(--sage);
+  box-shadow:0 2px 6px rgba(74,124,89,.2);
+}
+.reason-pill:hover span { border-color:var(--sage); color:var(--sage); }
+
+.urgency-option {
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+  cursor:pointer;
+  padding:.4rem .5rem;
+  border-radius:var(--r-sm);
+  transition:background .15s;
+}
+.urgency-option:hover { background:var(--cream-dark); }
+.urgency-option input { accent-color:var(--sage); }
+.urgency-dot {
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+.urgency-indicator {
+  width:8px;
+  height:8px;
+  border-radius:50%;
+}
+.urgency-dot.urgency-low, .urgency-indicator.urgency-low       { background:#22c55e; }
+.urgency-dot.urgency-medium, .urgency-indicator.urgency-medium { background:#f59e0b; }
+.urgency-dot.urgency-high, .urgency-indicator.urgency-high     { background:#ef4444; }
+.urgency-dot.urgency-critical, .urgency-indicator.urgency-critical { background:#7c3aed; }
+.urgency-label { font-size:.85rem; font-weight:600; color:var(--text); }
+
+@media (max-width: 768px) {
+  div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+</style>
+<script>
+function updateObsCounter(el) {
+  const len = el.value.trim().length;
+  document.getElementById('obsCount').textContent = len + ' / 2000';
+  document.getElementById('obsSubmit').disabled = len < 10;
+}
+// Разблокировать кнопку при выборе студента (если описание уже заполнено)
+document.querySelector('select[name="student_id"]').addEventListener('change', function() {
+  const len = document.getElementById('descText').value.trim().length;
+  if (len >= 10) document.getElementById('obsSubmit').disabled = false;
+});
+</script>
+{% endblock %}

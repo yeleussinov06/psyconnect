@@ -148,3 +148,59 @@ class NotificationAdmin(admin.ModelAdmin):
     list_display = ['user', 'notif_type', 'is_read', 'created_at']
     list_filter  = ['notif_type', 'is_read']
     list_editable = ['is_read']
+
+
+from .models import StudentRequest, TeacherObservation
+
+@admin.register(StudentRequest)
+class StudentRequestAdmin(admin.ModelAdmin):
+    list_display  = [
+        'student_display', 'category', 'status',
+        'ai_risk_level', 'effective_risk_display',
+        'is_approved', 'assigned_to', 'created_at',
+    ]
+    list_filter   = ['status', 'category', 'ai_risk_level', 'psy_risk_override', 'is_approved', 'lang']
+    search_fields = ['student__username', 'student__first_name', 'student__last_name', 'text']
+    readonly_fields = [
+        'ai_tone', 'ai_risk_level', 'ai_summary', 'ai_tags', 'ai_analyzed_at',
+        'approved_at', 'parent_notified_at', 'created_at', 'updated_at',
+    ]
+    date_hierarchy = 'created_at'
+    fieldsets = [
+        ('Ученик', {'fields': ['student', 'category', 'text', 'is_anonymous', 'lang', 'status']}),
+        ('ИИ-анализ', {'fields': ['ai_tone', 'ai_risk_level', 'ai_summary', 'ai_tags', 'ai_analyzed_at'], 'classes': ['collapse']}),
+        ('Психолог', {'fields': ['assigned_to', 'psy_risk_override', 'psy_conclusion', 'psy_recommendations', 'is_approved', 'approved_at']}),
+        ('Родитель', {'fields': ['parent_message', 'parent_notified', 'parent_notified_at']}),
+        ('Служебное', {'fields': ['created_at', 'updated_at'], 'classes': ['collapse']}),
+    ]
+
+    def student_display(self, obj):
+        return '***' if obj.is_anonymous else obj.student.get_full_name() or obj.student.username
+    student_display.short_description = 'Ученик'
+
+    def effective_risk_display(self, obj):
+        labels = {'low': 'Низкий', 'medium': 'Средний', 'high': 'Высокий', 'critical': '⚠ Критический'}
+        return labels.get(obj.effective_risk, '—')
+    effective_risk_display.short_description = 'Финальный риск'
+
+
+@admin.register(TeacherObservation)
+class TeacherObservationAdmin(admin.ModelAdmin):
+    list_display  = [
+        'teacher', 'student', 'category', 'urgency',
+        'duration_days', 'is_reviewed', 'linked_request', 'created_at',
+    ]
+    list_filter   = ['urgency', 'category', 'is_reviewed']
+    search_fields = [
+        'teacher__username', 'teacher__first_name',
+        'student__username', 'student__first_name', 'description',
+    ]
+    readonly_fields = ['reviewed_at', 'created_at', 'updated_at']
+    raw_id_fields   = ['linked_request']
+    date_hierarchy  = 'created_at'
+    fieldsets = [
+        ('Сигнал', {'fields': ['teacher', 'student', 'category', 'urgency', 'description', 'duration_days']}),
+        ('Связь', {'fields': ['linked_request']}),
+        ('Психолог', {'fields': ['is_reviewed', 'reviewed_by', 'reviewed_at', 'psy_note']}),
+        ('Служебное', {'fields': ['created_at', 'updated_at'], 'classes': ['collapse']}),
+    ]

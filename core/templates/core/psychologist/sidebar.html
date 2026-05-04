@@ -1,70 +1,54 @@
-{% load icons %}
-<aside class="sidebar" id="appSidebar">
+{% load static %}
+<aside class="psy-sidebar" id="appSidebar">
 
-  <!-- Collapse toggle -->
-  <button class="sb-toggle" onclick="toggleSidebar()" title="Свернуть/развернуть">
-    <svg id="sbIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M15 18l-6-6 6-6"/>
-    </svg>
-  </button>
-
-  <div class="sidebar-section-title">ПСИХОЛОГ</div>
-
-  <!-- Обзор -->
-  <a href="{% url 'psychologist_dashboard' %}" class="sidebar-link {% if active == 'overview' %}active{% endif %}">
-    <div class="icon">{% icon 'home' %}</div>
-    <span class="sb-label">{% if lang == 'kz' %}Шолу{% else %}Обзор{% endif %}</span>
-  </a>
-
-  <!-- Заявки на приём -->
-  <a href="{% url 'psychologist_appointments' %}" class="sidebar-link {% if active == 'appointments' %}active{% endif %}">
-    <div class="icon">{% icon 'inbox' %}</div>
-    <span class="sb-label">{% if lang == 'kz' %}Жазылымдар{% else %}Заявки на приём{% endif %}</span>
-    {% if pending_count %}<span class="badge badge-peach" style="margin-left:auto;font-size:.65rem;">{{ pending_count }}</span>{% endif %}
-  </a>
-
-  <a href="{% url 'psych_test_list' %}" class="sidebar-link {% if active == 'tests' %}active{% endif %}">
-    <div class="icon">{% icon 'clipboard-document-check' %}</div>
-    <span class="sb-label">{% if lang == 'kz' %}Тест орталығы{% else %}Тест-центр{% endif %}</span>
-  </a>
-
-  <!-- Расписание (аккордеон) -->
-  <button class="acc-btn {% if active == 'schedule' %}acc-active{% endif %}" onclick="toggleAccordion('scheduleMenu')">
-    <div class="icon">{% icon 'calendar-days' %}</div>
-    <span class="sb-label">{% if lang == 'kz' %}Расписание{% else %}Расписание{% endif %}</span>
-    <svg class="acc-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-  </button>
-  <div class="acc-sub {% if active == 'schedule' %}acc-open{% endif %}" id="scheduleMenu">
-    <a href="{% url 'manage_schedule' %}" class="acc-sub-link {% if active == 'schedule' %}active{% endif %}">
-      {% if lang == 'kz' %}Менің расписаниям{% else %}Моё расписание{% endif %}
-    </a>
+  <!-- Logo -->
+  <div class="psy-sb-logo">
+    <img src="{% static 'img/icons/Frame.png' %}" alt="Logo" width="32" height="32">
   </div>
 
-  <!-- Ученики и мониторинг (аккордеон) -->
-  <button class="acc-btn {% if active == 'students' or active == 'emotions' %}acc-active{% endif %}" onclick="toggleAccordion('studentsMenu')">
-    <div class="icon">{% icon 'users' %}</div>
-    <span class="sb-label">{% if lang == 'kz' %}Оқушылар{% else %}Ученики{% endif %}</span>
-    <svg class="acc-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-  </button>
-  <div class="acc-sub {% if active == 'students' or active == 'emotions' %}acc-open{% endif %}" id="studentsMenu">
-    <a href="{% url 'psychologist_dashboard' %}?panel=students" class="acc-sub-link {% if active == 'students' %}active{% endif %}">
-      {% if lang == 'kz' %}Тізім{% else %}Список учеников{% endif %}
+  <nav class="psy-sb-nav">
+    <!-- Обзор -->
+    <a href="{% url 'psychologist_dashboard' %}" class="psy-sb-link {% if active == 'overview' %}active{% endif %}" title="{% if lang == 'kz' %}Шолу{% else %}Обзор{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
     </a>
-    <a href="{% url 'psychologist_dashboard' %}?panel=emotions" class="acc-sub-link {% if active == 'emotions' %}active{% endif %}">
-      {% if lang == 'kz' %}Эмоция мониторинг{% else %}Мониторинг эмоций{% endif %}
-    </a>
-  </div>
 
-  <!-- Анонимные запросы (аккордеон) -->
-  <button class="acc-btn {% if active == 'requests' %}acc-active{% endif %}" onclick="toggleAccordion('requestsMenu')">
-    <div class="icon">{% icon 'eye-slash' %}</div>
-    <span class="sb-label">{% if lang == 'kz' %}Анонимді{% else %}Анонимные запросы{% endif %}</span>
-    <svg class="acc-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-  </button>
-  <div class="acc-sub {% if active == 'requests' %}acc-open{% endif %}" id="requestsMenu">
-    <a href="{% url 'psychologist_dashboard' %}?panel=requests" class="acc-sub-link {% if active == 'requests' %}active{% endif %}">
-      {% if lang == 'kz' %}Барлық сұраулар{% else %}Все запросы{% endif %}
+    <!-- Заявки на приём -->
+    <a href="{% url 'psychologist_appointments' %}" class="psy-sb-link {% if active == 'appointments' %}active{% endif %}" title="{% if lang == 'kz' %}Жазылымдар{% else %}Заявки{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+      {% if pending_count %}<span class="psy-sb-badge">{{ pending_count }}</span>{% endif %}
     </a>
-  </div>
+
+    <!-- Тест-центр -->
+    <a href="{% url 'psych_test_list' %}" class="psy-sb-link {% if active == 'tests' %}active{% endif %}" title="{% if lang == 'kz' %}Тест орталығы{% else %}Тесты{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+    </a>
+
+    <!-- Ученики -->
+    <a href="{% url 'psychologist_dashboard' %}?panel=students" class="psy-sb-link {% if active == 'students' %}active{% endif %}" title="{% if lang == 'kz' %}Оқушылар{% else %}Ученики{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </a>
+
+    <!-- Расписание -->
+    <a href="{% url 'manage_schedule' %}" class="psy-sb-link {% if active == 'schedule' %}active{% endif %}" title="{% if lang == 'kz' %}Кесте{% else %}Расписание{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </a>
+
+    <!-- Кейсы обращений -->
+    <a href="{% url 'psychologist_requests_list' %}" class="psy-sb-link {% if active == 'cases' %}active{% endif %}" title="{% if lang == 'kz' %}Кейстер{% else %}Кейсы{% endif %}" style="position:relative;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      {% if new_cases_count %}<span class="psy-sb-badge">{{ new_cases_count }}</span>{% endif %}
+    </a>
+
+    <!-- Анонимные запросы -->
+    <a href="{% url 'psychologist_dashboard' %}?panel=requests" class="psy-sb-link {% if active == 'requests' %}active{% endif %}" title="{% if lang == 'kz' %}Анонимді{% else %}Анонимные{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+    </a>
+
+    <!-- Эмоции -->
+    <a href="{% url 'psychologist_dashboard' %}?panel=emotions" class="psy-sb-link {% if active == 'emotions' %}active{% endif %}" title="{% if lang == 'kz' %}Эмоциялар{% else %}Эмоции{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+    </a>
+  </nav>
+
 
 </aside>

@@ -1,0 +1,114 @@
+{% load static %}
+<aside class="psy-info-panel">
+
+  <!-- Avatar + Greeting -->
+  <div class="psy-ip-top">
+    <div class="psy-ip-avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+    <p class="psy-ip-greeting">{% if lang == 'kz' %}Сәлем{% else %}Здравствуйте{% endif %}</p>
+    <h2 class="psy-ip-name">{{ user.get_full_name|default:user.username }}</h2>
+    <p class="psy-ip-sub">{% if lang == 'kz' %}Балаңыздың жағдайын бақылаңыз{% else %}Следите за состоянием ребёнка{% endif %}</p>
+  </div>
+
+  <!-- Child Switcher Widget -->
+  <div class="psy-ip-widget">
+    <div class="psy-ip-widget-label">
+      <i data-lucide="users"></i>
+      {% if lang == 'kz' %}Менің балаларым{% else %}Мои дети{% endif %}
+    </div>
+    {% if children_data %}
+    <div class="psy-ip-child-switcher" id="childSwitcher">
+      {% for child in children_data %}
+      <button class="psy-ip-child-btn {% if forloop.first %}active{% endif %}"
+              data-idx="{{ forloop.counter0 }}"
+              type="button"
+              title="{{ child.user.get_full_name|default:child.user.username }}">
+        <span class="psy-ip-child-av">{{ child.user.first_name|first|default:child.user.username|first|upper }}</span>
+        {% if child.has_alert %}<span class="psy-ip-child-alert-dot"></span>{% endif %}
+      </button>
+      {% endfor %}
+    </div>
+
+    <!-- Status cards per child -->
+    {% for child in children_data %}
+    <div class="psy-ip-child-status {% if not forloop.first %}psy-ip-hidden{% endif %}" id="childStatus{{ forloop.counter0 }}">
+      <span class="psy-ip-status-name">{{ child.user.first_name|default:child.user.username }}</span>:
+      <span class="psy-ip-status-em{% if child.last_emotion %} psy-ip-em-{{ child.last_emotion.emotion }}{% endif %}">
+        {% if child.last_emotion %}
+          {% if lang == 'kz' %}
+            {% if child.last_emotion.emotion == 'happy' %}Қуанышты{% elif child.last_emotion.emotion == 'calm' %}Тыныш{% elif child.last_emotion.emotion == 'anxious' %}Алаңды{% elif child.last_emotion.emotion == 'sad' %}Күйінішті{% elif child.last_emotion.emotion == 'angry' %}Ашулы{% elif child.last_emotion.emotion == 'tired' %}Шаршаған{% else %}Белгісіз{% endif %}
+          {% else %}
+            {% if child.last_emotion.emotion == 'happy' %}Радостен{% elif child.last_emotion.emotion == 'calm' %}Спокоен{% elif child.last_emotion.emotion == 'anxious' %}Тревожно{% elif child.last_emotion.emotion == 'sad' %}Грустно{% elif child.last_emotion.emotion == 'angry' %}Раздражён{% elif child.last_emotion.emotion == 'tired' %}Устал{% else %}Неизвестно{% endif %}
+          {% endif %}
+        {% else %}
+          {% if lang == 'kz' %}Деректер жоқ{% else %}Нет данных{% endif %}
+        {% endif %}
+      </span>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <p class="psy-ip-empty-hint">
+      {% if lang == 'kz' %}Бала қосылмаған{% else %}Дети не добавлены{% endif %}
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- Ask Psychologist -->
+  <a href="{% url 'parent_book_appointment' %}" class="psy-ip-ask-btn">
+    <i data-lucide="message-circle"></i>
+    {% if lang == 'kz' %}Психологтан сұрау{% else %}Спросить психолога{% endif %}
+  </a>
+
+  <!-- Tip of Day -->
+  <div class="psy-ip-tip-block">
+    <p class="psy-ip-tip-label">
+      <i data-lucide="lightbulb"></i>
+      {% if lang == 'kz' %}Күнделікті кеңес{% else %}Совет дня{% endif %}
+    </p>
+    <p class="psy-ip-tip-text">
+      {% if lang == 'kz' %}
+        Балаңызбен 10 минут тыныш әңгімелесу — ең күшті психологиялық қолдау.
+      {% else %}
+        10 минут спокойного разговора с ребёнком — лучшая психологическая поддержка.
+      {% endif %}
+    </p>
+  </div>
+
+  <div class="psy-ip-spacer"></div>
+
+  <!-- Mini Stats -->
+  <div class="psy-ip-mini-stats">
+    <div class="psy-ip-mini-stat">
+      <span class="psy-ip-mini-val">{{ children_data|length|default:"—" }}</span>
+      <span class="psy-ip-mini-lbl">{% if lang == 'kz' %}Бала{% else %}Детей{% endif %}</span>
+    </div>
+    <div class="psy-ip-mini-sep"></div>
+    <div class="psy-ip-mini-stat">
+      <span class="psy-ip-mini-val">{{ articles|length|default:"—" }}</span>
+      <span class="psy-ip-mini-lbl">{% if lang == 'kz' %}Мақала{% else %}Статей{% endif %}</span>
+    </div>
+    <div class="psy-ip-mini-sep"></div>
+    <div class="psy-ip-mini-stat">
+      <span class="psy-ip-mini-val">{{ notifications_count|default:"0" }}</span>
+      <span class="psy-ip-mini-lbl">{% if lang == 'kz' %}Хабар{% else %}Уведомл.{% endif %}</span>
+    </div>
+  </div>
+
+</aside>
+
+<script>
+(function(){
+  var buttons = document.querySelectorAll('.psy-ip-child-btn');
+  buttons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var idx = this.getAttribute('data-idx');
+      buttons.forEach(function(b){ b.classList.remove('active'); });
+      this.classList.add('active');
+      document.querySelectorAll('[id^="childStatus"]').forEach(function(el){ el.classList.add('psy-ip-hidden'); });
+      var status = document.getElementById('childStatus' + idx);
+      if (status) status.classList.remove('psy-ip-hidden');
+    });
+  });
+  if (window.lucide) lucide.createIcons();
+})();
+</script>

@@ -1,0 +1,137 @@
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
+{% load icons %}
+{% block title %}{% if lang == 'kz' %}Психолог қорытындысы{% else %}Заключение психолога{% endif %} — PsyConnect{% endblock %}
+
+{% block main_content %}
+
+<div class="page-header">
+  <a href="{% url 'parent_dashboard' %}#conclusions" style="color:var(--sage);font-weight:700;text-decoration:none;font-size:.9rem;">
+    ← {% if lang == 'kz' %}Артқа{% else %}Назад{% endif %}
+  </a>
+  <h1 class="page-title" style="margin-top:.5rem;">
+    {% if lang == 'kz' %}Психолог қорытындысы{% else %}Заключение психолога{% endif %}
+  </h1>
+</div>
+
+<!-- Метаданные -->
+<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+  <div style="display:flex;align-items:center;gap:.625rem;">
+    <div class="user-avatar" style="width:40px;height:40px;font-size:1rem;background:linear-gradient(135deg,var(--sage),var(--sky));">
+      {{ req.student.first_name|first|default:req.student.username|first|upper }}
+    </div>
+    <div>
+      <div style="font-weight:800;font-size:.95rem;color:var(--text);">{{ req.student.get_full_name|default:req.student.username }}</div>
+      {% if req.student.profile.school_class %}<div style="font-size:.75rem;color:var(--text-3);">{{ req.student.profile.school_class }}</div>{% endif %}
+    </div>
+  </div>
+  <div style="height:24px;width:1px;background:var(--border);"></div>
+  <div style="font-size:.82rem;color:var(--text-2);">
+    <span style="font-weight:600;">{% if lang == 'kz' %}Тақырып:{% else %}Тема:{% endif %}</span> {{ req.get_category_display }}
+  </div>
+  <div style="height:24px;width:1px;background:var(--border);"></div>
+  <div style="font-size:.82rem;color:var(--text-3);">{{ req.approved_at|date:"d F Y" }}</div>
+  {% if req.assigned_to %}
+  <div style="height:24px;width:1px;background:var(--border);"></div>
+  <div style="font-size:.82rem;color:var(--text-2);">
+    <span style="font-weight:600;">{% if lang == 'kz' %}Психолог:{% else %}Психолог:{% endif %}</span> {{ req.assigned_to.get_full_name|default:req.assigned_to.username }}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Основное сообщение -->
+{% if req.parent_message %}
+<div class="card" style="margin-bottom:1.5rem;border-left:4px solid var(--sage);">
+  <div style="display:flex;align-items:center;gap:.625rem;margin-bottom:1rem;">
+    <div style="width:36px;height:36px;border-radius:50%;background:var(--sage-pale);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="1.75" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <span style="font-weight:700;font-size:.9rem;color:var(--sage);">
+      {% if lang == 'kz' %}Психологтан хабарлама{% else %}Сообщение от психолога{% endif %}
+    </span>
+  </div>
+  <div style="font-size:.95rem;color:var(--text);line-height:1.75;white-space:pre-wrap;">{{ req.parent_message }}</div>
+</div>
+{% else %}
+<div class="card" style="margin-bottom:1.5rem;border-left:4px solid var(--sage);">
+  <div style="color:var(--text-2);font-size:.9rem;line-height:1.65;font-style:italic;">
+    {% if lang == 'kz' %}Психолог баланыздың өтінішін қарастырып, жеке кездесу өткізді. Нақты ұсыныстарды психологтан тікелей сұрауыңызды өтінеміз.
+    {% else %}Психолог рассмотрел обращение вашего ребёнка и провёл индивидуальную беседу. За подробностями обратитесь к психологу напрямую.{% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Рекомендации -->
+{% if req.psy_recommendations %}
+<div class="card" style="margin-bottom:1.5rem;">
+  <div class="card-header">
+    <span class="card-title">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" style="vertical-align:middle;margin-right:.3rem;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      {% if lang == 'kz' %}Ұсыныстар{% else %}Рекомендации{% endif %}
+    </span>
+  </div>
+  <div style="font-size:.9rem;color:var(--text);line-height:1.75;white-space:pre-wrap;">{{ req.psy_recommendations }}</div>
+</div>
+{% endif %}
+
+<!-- Что делать дальше -->
+<div class="card" style="margin-bottom:1.5rem;background:linear-gradient(135deg,var(--sage-pale),var(--cream-dark));">
+  <div class="card-header">
+    <span class="card-title">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" style="vertical-align:middle;margin-right:.3rem;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+      {% if lang == 'kz' %}Не істеу керек?{% else %}Что делать дальше?{% endif %}
+    </span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:.75rem;">
+    <div style="display:flex;align-items:flex-start;gap:.75rem;">
+      <div style="width:28px;height:28px;border-radius:50%;background:white;border:1.5px solid var(--sage);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:.8rem;color:var(--sage);">1</div>
+      <div style="font-size:.875rem;color:var(--text);line-height:1.55;padding-top:4px;">
+        {% if lang == 'kz' %}Баланызбен сабырлы сөйлесіп, оны тыңдаңыз. Сын айтпай, тек қолдаңыз.
+        {% else %}Поговорите с ребёнком спокойно, выслушайте его. Без критики — только поддержка.{% endif %}
+      </div>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:.75rem;">
+      <div style="width:28px;height:28px;border-radius:50%;background:white;border:1.5px solid var(--sage);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:.8rem;color:var(--sage);">2</div>
+      <div style="font-size:.875rem;color:var(--text);line-height:1.55;padding-top:4px;">
+        {% if lang == 'kz' %}Психологтың ұсынысын орындаңыз. Қажет болса, психологпен бірге кездесуге жазылыңыз.
+        {% else %}Следуйте рекомендациям психолога. При необходимости запишитесь на совместную встречу.{% endif %}
+      </div>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:.75rem;">
+      <div style="width:28px;height:28px;border-radius:50%;background:white;border:1.5px solid var(--sage);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:.8rem;color:var(--sage);">3</div>
+      <div style="font-size:.875rem;color:var(--text);line-height:1.55;padding-top:4px;">
+        {% if lang == 'kz' %}Баланың өзгерістерін бақылаңыз. Жаңа алаңдаушылықтар болса — жазыңыз.
+        {% else %}Наблюдайте за изменениями. Если появятся новые поводы для беспокойства — напишите снова.{% endif %}
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:1.25rem;">
+    <a href="{% url 'parent_book_appointment' %}?child={{ req.student.id }}" class="btn btn-primary btn-sm">
+      {% if lang == 'kz' %}Психологқа жазылу{% else %}Записаться к психологу{% endif %}
+    </a>
+  </div>
+</div>
+
+<!-- Другие заключения -->
+{% if other_conclusions %}
+<div style="margin-top:.5rem;">
+  <h3 style="font-family:'Inter',sans-serif;font-weight:700;font-size:.9rem;color:var(--text-2);margin-bottom:.875rem;">
+    {% if lang == 'kz' %}Бұрынғы қорытындылар{% else %}Предыдущие заключения{% endif %}
+  </h3>
+  <div style="display:flex;flex-direction:column;gap:.5rem;">
+    {% for oc in other_conclusions %}
+    <a href="{% url 'parent_conclusion_view' oc.id %}"
+       style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-md);text-decoration:none;transition:border-color .18s;"
+       onmouseover="this.style.borderColor='var(--sage)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div>
+        <div style="font-weight:700;font-size:.875rem;color:var(--text);">{{ oc.get_category_display }}</div>
+        <div style="font-size:.75rem;color:var(--text-3);">{{ oc.approved_at|date:"d.m.Y" }}</div>
+      </div>
+      <span style="font-size:.82rem;color:var(--sage);font-weight:700;">→</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

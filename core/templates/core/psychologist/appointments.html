@@ -1,139 +1,137 @@
-{% extends 'base.html' %}
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
 {% load icons %}
 {% block title %}{% if lang == 'kz' %}Жазылымдар{% else %}Заявки{% endif %} — PsyConnect{% endblock %}
-{% block content %}
-<div class="dashboard">
-  {% include "core/psychologist/sidebar.html" with active="appointments" %}
 
-  <main class="main-content">
-    <div class="page-header">
-      <h1 class="page-title">{% if lang == 'kz' %}Жазылымдар{% else %}Заявки на приём{% endif %}</h1>
+{% block main_content %}
+    <div class="psy-panel-header">
+      <h1>{% if lang == 'kz' %}Жазылымдар{% else %}Заявки на приём{% endif %}</h1>
+      <p>{% if lang == 'kz' %}Барлық кіріс жазылымдар{% else %}Все входящие записи{% endif %}</p>
     </div>
 
-    <!-- PENDING -->
-    <div class="card" style="margin-bottom:1.5rem;border-left:4px solid var(--amber);">
-      <div class="card-header">
-        <span class="card-title">{% if lang == 'kz' %}Күтіп тұрған жазылымдар{% else %}Ожидают подтверждения{% endif %}</span>
-        {% if pending %}<span class="badge badge-amber">{{ pending|length }}</span>{% endif %}
+    <!-- ── PENDING ── -->
+    <div class="psy-card" style="margin-bottom:16px;border-left:4px solid #E8944A;">
+      <div class="psy-card-head">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8944A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="psy-card-title">{% if lang == 'kz' %}Күтіп тұрған жазылымдар{% else %}Ожидают подтверждения{% endif %}</span>
+        {% if pending %}<span class="psy-badge-amber">{{ pending|length }}</span>{% endif %}
       </div>
+
       {% for apt in pending %}
-      <div style="background:var(--amber-pale);border-radius:var(--r-md);padding:1.25rem;margin-bottom:1rem;border:1px solid #F5D8BE;">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+      <div style="background:#FFF7ED;border-radius:20px;padding:18px 20px;margin-bottom:12px;border:1px solid #FED7AA;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:14px;flex-wrap:wrap;">
           <div>
-            <div style="font-weight:800;color:var(--text);font-size:1rem;margin-bottom:.35rem;">
+            <div style="font-weight:800;color:#1A2B25;font-size:0.95rem;margin-bottom:5px;">
               {{ apt.student.get_full_name|default:apt.student.username }}
             </div>
-            <div style="font-size:.875rem;color:var(--text-2);">
-              {{ apt.slot.date|date:"d F Y" }} &nbsp;·&nbsp; 🕐 {{ apt.slot.time_start|time:"H:i" }}-{{ apt.slot.time_end|time:"H:i" }}
+            <div style="font-size:0.82rem;color:#4A5A52;display:flex;align-items:center;gap:6px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              {{ apt.slot.date|date:"d F Y" }} &nbsp;·&nbsp;
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              {{ apt.slot.time_start|time:"H:i" }}–{{ apt.slot.time_end|time:"H:i" }}
             </div>
-            {% if apt.reason == 'test' %}
-            <span style="display:inline-block;margin-top:6px;background:#FEF3C7;color:#D97706;padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:700;">📋 {% if lang == 'kz' %}Тест нәтижесі{% else %}По результату теста{% endif %}</span>
-            {% elif apt.reason == 'chat' %}
-            <span style="display:inline-block;margin-top:6px;background:#EFF6FF;color:#2563EB;padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:700;">🤖 {% if lang == 'kz' %}AI-чат{% else %}Через AI-чат{% endif %}</span>
-            {% elif apt.reason == 'anxiety' %}
-            <span style="display:inline-block;margin-top:6px;background:#FEE2E2;color:#DC2626;padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:700;">😰 {% if lang == 'kz' %}Мазасыздану{% else %}Тревога{% endif %}</span>
-            {% elif apt.reason == 'family' %}
-            <span style="display:inline-block;margin-top:6px;background:#EDE9FE;color:#7C3AED;padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:700;">👨‍👩‍👧 {% if lang == 'kz' %}Отбасы{% else %}Семья{% endif %}</span>
-            {% elif apt.reason == 'study' %}
-            <span style="display:inline-block;margin-top:6px;background:#DBEAFE;color:#1D4ED8;padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:700;">📚 {% if lang == 'kz' %}Оқу{% else %}Учёба{% endif %}</span>
-            {% elif apt.reason == 'bullying' %}
-            <span style="display:inline-block;margin-top:6px;background:#FEE2E2;color:#DC2626;padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:700;">🔴 {% if lang == 'kz' %}Буллинг{% else %}Буллинг{% endif %}</span>
-            {% elif apt.reason == 'behavior' %}
-            <span style="display:inline-block;margin-top:6px;background:#FEF9C3;color:#854D0E;padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:700;">⚡ {% if lang == 'kz' %}Мінез{% else %}Поведение{% endif %}</span>
-            {% elif apt.reason == 'other' %}
-            <span style="display:inline-block;margin-top:6px;background:var(--cream-dark);color:var(--text-2);padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:700;">✏️ {% if lang == 'kz' %}Басқа{% else %}Другое{% endif %}</span>
-            {% endif %}
+            <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">
+              {% if apt.reason == 'test' %}<span class="psy-badge-amber">{% if lang == 'kz' %}Тест нәтижесі{% else %}По результату теста{% endif %}</span>
+              {% elif apt.reason == 'chat' %}<span style="background:#EFF6FF;color:#2563EB;padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">AI-чат</span>
+              {% elif apt.reason == 'anxiety' %}<span style="background:#FEE2E2;color:#DC2626;padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">{% if lang == 'kz' %}Мазасыздану{% else %}Тревога{% endif %}</span>
+              {% elif apt.reason == 'family' %}<span style="background:#EDE9FE;color:#7C3AED;padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">{% if lang == 'kz' %}Отбасы{% else %}Семья{% endif %}</span>
+              {% elif apt.reason == 'study' %}<span style="background:#DBEAFE;color:#1D4ED8;padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">{% if lang == 'kz' %}Оқу{% else %}Учёба{% endif %}</span>
+              {% elif apt.reason == 'bullying' %}<span style="background:#FEE2E2;color:#DC2626;padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">{% if lang == 'kz' %}Буллинг{% else %}Буллинг{% endif %}</span>
+              {% elif apt.reason == 'behavior' %}<span style="background:#FEF9C3;color:#854D0E;padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">{% if lang == 'kz' %}Мінез{% else %}Поведение{% endif %}</span>
+              {% elif apt.reason == 'other' %}<span class="psy-badge-sage">{% if lang == 'kz' %}Басқа{% else %}Другое{% endif %}</span>
+              {% endif %}
+            </div>
             {% if apt.student_note %}
-            <div style="margin-top:.75rem;background:white;border-radius:var(--r-sm);padding:.75rem;font-size:.83rem;color:var(--text-2);">
+            <div style="margin-top:10px;background:#fff;border-radius:12px;padding:10px 14px;font-size:0.82rem;color:#4A5A52;border:1px solid #FED7AA;">
               {{ apt.student_note }}
             </div>
             {% endif %}
           </div>
         </div>
-        <form method="post" style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap;">
+        <form method="post" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
           {% csrf_token %}
           <input type="hidden" name="appointment_id" value="{{ apt.id }}">
           <div style="flex:1;min-width:200px;">
-            <label class="form-label">{% if lang == 'kz' %}Комментарий (міндетті емес){% else %}Комментарий (необязательно){% endif %}</label>
-            <input type="text" name="note" class="form-control" placeholder="{% if lang == 'kz' %}Жауабыңыз...{% else %}Ваш ответ...{% endif %}">
+            <label style="display:block;font-size:0.75rem;font-weight:600;color:#4A5A52;margin-bottom:5px;">
+              {% if lang == 'kz' %}Комментарий (міндетті емес){% else %}Комментарий (необязательно){% endif %}
+            </label>
+            <input type="text" name="note" style="width:100%;border:1.5px solid #DEE5DF;border-radius:12px;padding:9px 14px;font-size:0.85rem;outline:none;font-family:inherit;color:#1A2B25;" placeholder="{% if lang == 'kz' %}Жауабыңыз...{% else %}Ваш ответ...{% endif %}">
           </div>
-          <button type="submit" name="action" value="confirm" class="btn btn-primary">
+          <button type="submit" name="action" value="confirm" style="background:#2D8C5A;color:#fff;border:none;border-radius:12px;padding:10px 20px;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">
             {% if lang == 'kz' %}Растау{% else %}Подтвердить{% endif %}
           </button>
-          <button type="submit" name="action" value="reject" class="btn btn-sm" style="background:var(--peach-pale);color:#C4614F;border:1.5px solid #F5C9C2;">
+          <button type="submit" name="action" value="reject" style="background:#FEE2E2;color:#C4614F;border:1.5px solid #FECACA;border-radius:12px;padding:10px 16px;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">
             {% if lang == 'kz' %}Қабылдамау{% else %}Отклонить{% endif %}
           </button>
         </form>
       </div>
       {% empty %}
-      <div style="text-align:center;padding:1.5rem;color:var(--text-3);font-size:.875rem;">
-        {% if lang == 'kz' %}Күтіп тұрған жазылым жоқ{% else %}Нет заявок в ожидании{% endif %}
-      </div>
+      <div class="psy-empty">{% if lang == 'kz' %}Күтіп тұрған жазылым жоқ{% else %}Нет заявок в ожидании{% endif %}</div>
       {% endfor %}
     </div>
 
-    <!-- CONFIRMED -->
-    <div class="card" style="margin-bottom:1.5rem;border-left:4px solid var(--sage);">
-      <div class="card-header">
-        <span class="card-title">{% if lang == 'kz' %}Расталған жазылымдар{% else %}Подтверждённые{% endif %}</span>
-        {% if confirmed %}<span class="badge badge-sage">{{ confirmed|length }}</span>{% endif %}
+    <!-- ── CONFIRMED ── -->
+    <div class="psy-card" style="margin-bottom:16px;border-left:4px solid #2D8C5A;">
+      <div class="psy-card-head">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2D8C5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <span class="psy-card-title">{% if lang == 'kz' %}Расталған жазылымдар{% else %}Подтверждённые{% endif %}</span>
+        {% if confirmed %}<span class="psy-badge-sage">{{ confirmed|length }}</span>{% endif %}
       </div>
+
       {% for apt in confirmed %}
-      <div style="padding:.875rem 0;border-bottom:1px solid var(--border);">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-          <div>
-            <div style="font-weight:700;color:var(--text);">{{ apt.student.get_full_name|default:apt.student.username }}</div>
-            <div style="font-size:.83rem;color:var(--text-2);margin-top:2px;">{{ apt.slot.date|date:"d F Y" }} &nbsp;·&nbsp; {{ apt.slot.time_start|time:"H:i" }}-{{ apt.slot.time_end|time:"H:i" }}</div>
-            {% if apt.reason %}
-            <div style="font-size:.78rem;color:var(--text-3);margin-top:4px;">
-              {% if lang == 'kz' %}Өтіну себебі:{% else %}Причина обращения:{% endif %}
-              <span style="color:var(--text-2);font-weight:500;">
-                {% if apt.reason == 'test' %}{% if lang == 'kz' %}Тест нәтижесі{% else %}По результату теста{% endif %}
-                {% elif apt.reason == 'chat' %}{% if lang == 'kz' %}AI-чат арқылы{% else %}Через AI-чат{% endif %}
-                {% elif apt.reason == 'anxiety' %}{% if lang == 'kz' %}Мазасыздану{% else %}Тревожность{% endif %}
-                {% elif apt.reason == 'family' %}{% if lang == 'kz' %}Отбасылық мәселелер{% else %}Семейные проблемы{% endif %}
-                {% elif apt.reason == 'study' %}{% if lang == 'kz' %}Оқу мәселелері{% else %}Учёба{% endif %}
-                {% else %}{{ apt.reason }}{% endif %}
-              </span>
-            </div>
-            {% endif %}
-            {% if apt.student_note %}
-            <div style="font-size:.78rem;color:var(--text-3);margin-top:3px;font-style:italic;">"{{ apt.student_note|truncatechars:60 }}"</div>
-            {% endif %}
-          </div>
-          <!-- Статический лейбл вместо кнопки -->
-          <span style="background:var(--sage-pale);color:var(--sage);padding:4px 12px;border-radius:99px;font-size:.75rem;font-weight:700;flex-shrink:0;">
-            ✓ {% if lang == 'kz' %}Расталды{% else %}Подтверждено{% endif %}
-          </span>
-        </div>
-      </div>
-      {% empty %}
-      <div style="text-align:center;padding:1.5rem;color:var(--text-3);font-size:.875rem;">
-        {% if lang == 'kz' %}Расталған жазылым жоқ{% else %}Нет подтверждённых записей{% endif %}
-      </div>
-      {% endfor %}
-    </div>
-
-    <!-- ARCHIVE -->
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">{% if lang == 'kz' %}Архив жазылымдар{% else %}Архив записей{% endif %}</span>
-        {% if archive %}<span class="badge" style="background:var(--cream-dark);color:var(--text-2);">{{ archive|length }}</span>{% endif %}
-      </div>
-      {% for apt in archive %}
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:.875rem 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.75rem;">
-        <div style="display:flex;align-items:center;gap:.875rem;">
-          <div class="user-avatar" style="width:34px;height:34px;font-size:.85rem;background:{% if apt.status == 'confirmed' %}var(--sage){% elif apt.status == 'rejected' %}var(--peach){% else %}var(--text-3){% endif %};">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:12px 0;border-bottom:1px solid #F0F5F1;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:38px;height:38px;border-radius:12px;background:#D1FAE5;color:#065F46;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;flex-shrink:0;">
             {{ apt.student.first_name|first|default:apt.student.username|first|upper }}
           </div>
           <div>
-            <div style="font-weight:600;color:var(--text);font-size:.875rem;">{{ apt.student.get_full_name|default:apt.student.username }}</div>
-            <div style="font-size:.78rem;color:var(--text-3);margin-top:2px;">
-              {{ apt.slot.date|date:"d.m.Y" }} · {{ apt.slot.time_start|time:"H:i" }}-{{ apt.slot.time_end|time:"H:i" }}
-              {% if apt.student.profile.school_class %}· <span style="color:var(--text-2);">{{ apt.student.profile.school_class }}</span>{% endif %}
+            <div style="font-weight:700;color:#1A2B25;font-size:0.88rem;">{{ apt.student.get_full_name|default:apt.student.username }}</div>
+            <div style="font-size:0.78rem;color:#8E9C95;margin-top:2px;">
+              {{ apt.slot.date|date:"d F Y" }} · {{ apt.slot.time_start|time:"H:i" }}–{{ apt.slot.time_end|time:"H:i" }}
             </div>
             {% if apt.reason %}
-            <div style="font-size:.72rem;color:var(--text-3);margin-top:2px;">
+            <div style="font-size:0.75rem;color:#4A5A52;margin-top:3px;">
+              {% if apt.reason == 'test' %}{% if lang == 'kz' %}Тест нәтижесі{% else %}По результату теста{% endif %}
+              {% elif apt.reason == 'chat' %}AI-чат
+              {% elif apt.reason == 'anxiety' %}{% if lang == 'kz' %}Мазасыздану{% else %}Тревожность{% endif %}
+              {% elif apt.reason == 'family' %}{% if lang == 'kz' %}Отбасы{% else %}Семья{% endif %}
+              {% elif apt.reason == 'study' %}{% if lang == 'kz' %}Оқу{% else %}Учёба{% endif %}
+              {% else %}{{ apt.reason }}{% endif %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        <span class="psy-badge-sage" style="flex-shrink:0;padding:5px 14px;">
+          ✓ {% if lang == 'kz' %}Расталды{% else %}Подтверждено{% endif %}
+        </span>
+      </div>
+      {% empty %}
+      <div class="psy-empty">{% if lang == 'kz' %}Расталған жазылым жоқ{% else %}Нет подтверждённых записей{% endif %}</div>
+      {% endfor %}
+    </div>
+
+    <!-- ── ARCHIVE ── -->
+    <div class="psy-card">
+      <div class="psy-card-head">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8E9C95" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+        <span class="psy-card-title">{% if lang == 'kz' %}Архив жазылымдар{% else %}Архив записей{% endif %}</span>
+        {% if archive %}<span style="background:#F0F5F1;color:#8E9C95;padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">{{ archive|length }}</span>{% endif %}
+      </div>
+
+      {% for apt in archive %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #F5F8F6;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="psy-risk-avatar" style="background:{% if apt.status == 'confirmed' %}#D1FAE5{% elif apt.status == 'rejected' %}#FEE2E2{% else %}#F0F5F1{% endif %};color:{% if apt.status == 'confirmed' %}#065F46{% elif apt.status == 'rejected' %}#DC2626{% else %}#8E9C95{% endif %};">
+            {{ apt.student.first_name|first|default:apt.student.username|first|upper }}
+          </div>
+          <div>
+            <div style="font-weight:600;color:#1A2B25;font-size:0.85rem;">{{ apt.student.get_full_name|default:apt.student.username }}</div>
+            <div style="font-size:0.75rem;color:#8E9C95;margin-top:2px;">
+              {{ apt.slot.date|date:"d.m.Y" }} · {{ apt.slot.time_start|time:"H:i" }}–{{ apt.slot.time_end|time:"H:i" }}
+              {% if apt.student.profile.school_class %} · {{ apt.student.profile.school_class }}{% endif %}
+            </div>
+            {% if apt.reason %}
+            <div style="font-size:0.72rem;color:#8E9C95;margin-top:2px;">
               {% if apt.reason == 'anxiety' %}{% if lang == 'kz' %}Мазасыздану{% else %}Тревожность{% endif %}
               {% elif apt.reason == 'bullying' %}{% if lang == 'kz' %}Буллинг{% else %}Буллинг{% endif %}
               {% elif apt.reason == 'family' %}{% if lang == 'kz' %}Отбасы{% else %}Семья{% endif %}
@@ -143,36 +141,26 @@
             </div>
             {% endif %}
             {% if apt.psychologist_note %}
-            <div style="font-size:.72rem;color:var(--text-3);margin-top:2px;font-style:italic;">
-              💬 {{ apt.psychologist_note|truncatechars:50 }}
+            <div style="font-size:0.72rem;color:#8E9C95;margin-top:2px;font-style:italic;">
+              <i data-lucide="message-square" style="width:12px;height:12px;vertical-align:middle;"></i> {{ apt.psychologist_note|truncatechars:50 }}
             </div>
             {% endif %}
           </div>
         </div>
-        <div style="text-align:right;flex-shrink:0;">
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
           {% if apt.status == 'confirmed' %}
-          <span style="background:var(--sage-pale);color:var(--sage);padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700;">
-            ✓ {% if lang == 'kz' %}Болды{% else %}Состоялась{% endif %}
-          </span>
+          <span class="psy-badge-sage">✓ {% if lang == 'kz' %}Болды{% else %}Состоялась{% endif %}</span>
           {% elif apt.status == 'rejected' %}
-          <span style="background:var(--peach-pale);color:#C4614F;padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700;">
-            ✕ {% if lang == 'kz' %}Қабылданбады{% else %}Отклонена{% endif %}
-          </span>
+          <span style="background:#FEE2E2;color:#DC2626;padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">✕ {% if lang == 'kz' %}Қабылданбады{% else %}Отклонена{% endif %}</span>
           {% else %}
-          <span style="background:var(--cream-dark);color:var(--text-3);padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700;">
-            {{ apt.get_status_display }}
-          </span>
+          <span style="background:#F0F5F1;color:#8E9C95;padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">{{ apt.get_status_display }}</span>
           {% endif %}
-          <div style="font-size:.7rem;color:var(--text-3);margin-top:4px;">{{ apt.created_at|date:"d.m.Y" }}</div>
+          <span style="font-size:0.68rem;color:#8E9C95;">{{ apt.created_at|date:"d.m.Y" }}</span>
         </div>
       </div>
       {% empty %}
-      <div style="text-align:center;padding:2rem;color:var(--text-3);font-size:.875rem;">
-        {% if lang == 'kz' %}Архивте жазылым жоқ{% else %}Архив пуст{% endif %}
-      </div>
+      <div class="psy-empty">{% if lang == 'kz' %}Архивте жазылым жоқ{% else %}Архив пуст{% endif %}</div>
       {% endfor %}
     </div>
 
-  </main>
-</div>
 {% endblock %}

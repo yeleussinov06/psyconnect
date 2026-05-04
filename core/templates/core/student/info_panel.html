@@ -1,0 +1,78 @@
+{% load static %}
+<aside class="psy-info-panel">
+
+  <!-- Avatar + Greeting -->
+  <div class="psy-ip-top">
+    <div class="psy-ip-avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+    <p class="psy-ip-greeting">{% if lang == 'kz' %}Сәлем{% else %}Привет{% endif %}</p>
+    <h2 class="psy-ip-name">{{ user.first_name|default:user.username }}</h2>
+    <p class="psy-ip-sub">{% if lang == 'kz' %}Бүгін қалайсың?{% else %}Как твои дела сегодня?{% endif %}</p>
+  </div>
+
+  <!-- Mood Tracker Widget -->
+  <a href="{% url 'emotion_diary' %}" class="psy-ip-mood-btn">
+    <div class="psy-ip-mood-icon">
+      <i data-lucide="smile-plus"></i>
+    </div>
+    <div class="psy-ip-mood-body">
+      <p class="psy-ip-mood-title">{% if lang == 'kz' %}Қазір қалайсың?{% else %}Как ты сейчас?{% endif %}</p>
+      <p class="psy-ip-mood-hint">{% if lang == 'kz' %}Күйіңді белгіле{% else %}Отметь своё настроение{% endif %}</p>
+    </div>
+    <i data-lucide="chevron-right"></i>
+  </a>
+
+  <!-- Streak Indicator -->
+  <div class="psy-ip-widget">
+    <div class="psy-ip-streak-row">
+      <div class="psy-ip-streak-icon">
+        <i data-lucide="flame"></i>
+      </div>
+      <div class="psy-ip-streak-body">
+        <p class="psy-ip-streak-val">{{ diary_streak }} {% if lang == 'kz' %}күн{% else %}дн.{% endif %}</p>
+        <p class="psy-ip-streak-lbl">{% if lang == 'kz' %}Жазба серіясы{% else %}Стрик дневника{% endif %}</p>
+      </div>
+      {% if diary_streak >= 3 %}
+      <span class="psy-ip-streak-badge">
+        {% if diary_streak >= 7 %}
+          {% if lang == 'kz' %}Аптаның батыры!{% else %}Герой недели!{% endif %}
+        {% else %}
+          {% if lang == 'kz' %}Жалғастыр!{% else %}Так держать!{% endif %}
+        {% endif %}
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- SOS Button -->
+  <a href="{% url 'anonymous_support' %}" class="psy-ip-sos-btn">
+    <i data-lucide="phone-call"></i>
+    <span>
+      <strong>SOS</strong> — {% if lang == 'kz' %}Жанымдағы көмек{% else %}Помощь рядом{% endif %}
+    </span>
+  </a>
+
+  <div class="psy-ip-spacer"></div>
+
+  <!-- Mini Stats -->
+  <div class="psy-ip-mini-stats">
+    <div class="psy-ip-mini-stat">
+      <span class="psy-ip-mini-val">{{ emotion_count|default:"—" }}</span>
+      <span class="psy-ip-mini-lbl">{% if lang == 'kz' %}Жазба{% else %}Эмоций{% endif %}</span>
+    </div>
+    <div class="psy-ip-mini-sep"></div>
+    <div class="psy-ip-mini-stat">
+      <span class="psy-ip-mini-val">{{ test_count|default:"—" }}</span>
+      <span class="psy-ip-mini-lbl">{% if lang == 'kz' %}Тест{% else %}Тестов{% endif %}</span>
+    </div>
+    <div class="psy-ip-mini-sep"></div>
+    <div class="psy-ip-mini-stat">
+      <span class="psy-ip-mini-val">{{ chat_count|default:"—" }}</span>
+      <span class="psy-ip-mini-lbl">{% if lang == 'kz' %}Хабар{% else %}Чат{% endif %}</span>
+    </div>
+  </div>
+
+</aside>
+
+<script>
+if (window.lucide) lucide.createIcons();
+</script>

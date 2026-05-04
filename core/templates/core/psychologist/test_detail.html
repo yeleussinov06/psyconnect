@@ -1,11 +1,8 @@
-{% extends 'base.html' %}
+{% extends 'core/base_dashboard.html' %}
 {% load icons %}
 {% block title %}{{ test.title }} — PsyConnect{% endblock %}
-{% block extra_css %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
-{% block content %}
-<div class="dashboard">
-  {% include "core/psychologist/sidebar.html" with active="tests" %}
-  <main class="main-content">
+{% block dashboard_extra_css %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+{% block main_content %}
 
     <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
       <div>
@@ -19,7 +16,7 @@
           {% else %}
           <span style="background:var(--cream-dark);color:var(--text-3);padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:700;">✓ {% if lang == 'kz' %}Жабылды{% else %}Закрыт{% endif %}</span>
           {% endif %}
-          {% if test.source == 'ai' %}<span style="background:#EDE9FE;color:#7C3AED;padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">🤖 ИИ</span>{% endif %}
+          {% if test.source == 'ai' %}<span style="background:#EDE9FE;color:#7C3AED;padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:700;display:inline-flex;align-items:center;gap:.3rem;"><i data-lucide="bot" style="width:11px;height:11px;"></i> ИИ</span>{% endif %}
           <span style="font-size:.8rem;color:var(--text-3);">{{ test.get_topic_display }} · {{ test.question_count }} {% if lang == 'kz' %}сұрақ{% else %}вопросов{% endif %}</span>
         </div>
       </div>
@@ -81,7 +78,7 @@
         {% if test.target_class %}
         <div class="card" style="margin-bottom:1rem;background:var(--sage-pale);border:1px solid #C8DFD0;">
           <div style="display:flex;align-items:center;gap:.75rem;">
-            <div style="font-size:1.5rem;">🏫</div>
+            <div><i data-lucide="building-2" style="width:26px;height:26px;color:var(--sage);stroke-width:1.5;"></i></div>
             <div>
               <div style="font-weight:700;color:var(--sage);">{{ test.target_class.name }}</div>
               <div style="font-size:.8rem;color:var(--text-2);">{% if lang == 'kz' %}Тест жіберілді{% else %}Тест назначен классу{% endif %}</div>
@@ -122,6 +119,4 @@
       </div>
     </div>
 
-  </main>
-</div>
 {% endblock %}

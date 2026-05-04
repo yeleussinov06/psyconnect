@@ -272,6 +272,12 @@ class Notification(models.Model):
         ('appointment_confirmed', 'Запись подтверждена'),
         ('appointment_rejected',  'Запись отклонена'),
         ('anonymous_new',         'Новый анонимный запрос'),
+        # Цикл жалоб
+        ('request_new',           'Новая жалоба ученика'),
+        ('request_ai_ready',      'ИИ-анализ готов'),
+        ('request_concluded',     'Психолог вынес заключение'),
+        ('observation_new',       'Новый сигнал от учителя'),
+        ('parent_conclusion',     'Заключение для родителя'),
     ]
     user      = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     notif_type = models.CharField(max_length=30, choices=TYPE_CHOICES)
@@ -404,3 +410,264 @@ class PsychTestResult(models.Model):
     def percent(self):
         if self.max_score == 0: return 0
         return round(self.score / self.max_score * 100)
+
+
+# ══════════════════════════════════════════════════════════════
+# ЦИКЛ ОБРАБОТКИ ЖАЛОБ
+# ══════════════════════════════════════════════════════════════
+
+class StudentRequest(models.Model):
+    """
+    Жалоба / запрос от авторизованного ученика.
+    Центральная сущность цикла: ученик → ИИ → психолог → родитель.
+    """
+
+    # ── Категория обращения ──────────────────────────────────
+    CATEGORY_CHOICES = [
+        ('anxiety',  'Тревога / Стресс'),
+        ('bullying', 'Буллинг'),
+        ('family',   'Семейные проблемы'),
+        ('study',    'Проблемы с учёбой'),
+        ('behavior', 'Поведение'),
+        ('relations','Отношения в классе'),
+        ('other',    'Другое'),
+    ]
+
+    # ── Статус жизненного цикла ───────────────────────────────
+    STATUS_CHOICES = [
+        ('new',          'Новая'),          # только что отправлена
+        ('ai_analyzed',  'ИИ проанализировал'),  # ai_summary заполнен
+        ('in_review',    'На рассмотрении'), # психолог открыл кейс
+        ('concluded',    'Заключение готово'),   # psy_conclusion заполнен
+        ('archived',     'Архив'),           # закрыта / не требует действий
+    ]
+
+    # ── Уровень риска (заполняет ИИ, психолог может изменить) ──
+    RISK_CHOICES = [
+        ('low',    'Низкий'),
+        ('medium', 'Средний'),
+        ('high',   'Высокий'),
+        ('critical', 'Критический'),
+    ]
+
+    # ── Тональность (заполняет ИИ) ────────────────────────────
+    TONE_CHOICES = [
+        ('neutral',    'Нейтральная'),
+        ('anxiety',    'Тревожность'),
+        ('depression', 'Подавленность'),
+        ('aggression', 'Агрессия'),
+        ('fear',       'Страх'),
+        ('confusion',  'Растерянность'),
+    ]
+
+    # ── Основные поля ─────────────────────────────────────────
+    student     = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='student_requests',
+        verbose_name='Ученик'
+    )
+    category    = models.CharField(
+        max_length=20, choices=CATEGORY_CHOICES,
+        default='other', verbose_name='Категория'
+    )
+    text        = models.TextField(verbose_name='Текст жалобы')
+    is_anonymous = models.BooleanField(
+        default=False,
+        verbose_name='Скрыть имя от психолога',
+        help_text='Психолог видит класс и возраст, но не имя'
+    )
+    status      = models.CharField(
+        max_length=20, choices=STATUS_CHOICES,
+        default='new', verbose_name='Статус'
+    )
+    lang        = models.CharField(
+        max_length=5, default='ru',
+        verbose_name='Язык обращения'
+    )
+
+    # ── ИИ-слой (заполняется автоматически) ──────────────────
+    ai_tone       = models.CharField(
+        max_length=20, choices=TONE_CHOICES,
+        blank=True, default='', verbose_name='Тональность (ИИ)'
+    )
+    ai_risk_level = models.CharField(
+        max_length=10, choices=RISK_CHOICES,
+        blank=True, default='', verbose_name='Уровень риска (ИИ)'
+    )
+    ai_summary    = models.TextField(
+        blank=True, verbose_name='Резюме для психолога (ИИ)'
+    )
+    ai_tags       = models.JSONField(
+        default=list, blank=True,
+        verbose_name='Теги ИИ',
+        help_text='Список ключевых сигналов, например ["буллинг","изоляция"]'
+    )
+    ai_analyzed_at = models.DateTimeField(
+        null=True, blank=True, verbose_name='Время анализа ИИ'
+    )
+
+    # ── Слой психолога ────────────────────────────────────────
+    assigned_to   = models.ForeignKey(
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='assigned_requests',
+        verbose_name='Назначен психолог'
+    )
+    psy_risk_override = models.CharField(
+        max_length=10, choices=RISK_CHOICES,
+        blank=True, default='',
+        verbose_name='Уровень риска (психолог)',
+        help_text='Если пусто — используется оценка ИИ'
+    )
+    psy_conclusion = models.TextField(
+        blank=True, verbose_name='Заключение психолога'
+    )
+    psy_recommendations = models.TextField(
+        blank=True, verbose_name='Рекомендации психолога'
+    )
+    is_approved    = models.BooleanField(
+        default=False, verbose_name='Заключение утверждено'
+    )
+    approved_at    = models.DateTimeField(
+        null=True, blank=True, verbose_name='Время утверждения'
+    )
+
+    # ── Слой родителя ─────────────────────────────────────────
+    parent_message = models.TextField(
+        blank=True,
+        verbose_name='Сообщение для родителя',
+        help_text='Эмпатичная версия заключения, сформированная ИИ или психологом'
+    )
+    parent_notified = models.BooleanField(
+        default=False, verbose_name='Родитель уведомлён'
+    )
+    parent_notified_at = models.DateTimeField(
+        null=True, blank=True, verbose_name='Время уведомления родителя'
+    )
+
+    # ── Служебные ─────────────────────────────────────────────
+    created_at  = models.DateTimeField(auto_now_add=True)
+    updated_at  = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Жалоба ученика'
+        verbose_name_plural = 'Жалобы учеников'
+
+    def __str__(self):
+        name = '***' if self.is_anonymous else self.student.get_full_name() or self.student.username
+        return f"[{self.get_status_display()}] {name} — {self.get_category_display()}"
+
+    @property
+    def effective_risk(self):
+        """Финальный уровень риска: психолог имеет приоритет над ИИ."""
+        return self.psy_risk_override or self.ai_risk_level or 'low'
+
+    @property
+    def is_high_risk(self):
+        return self.effective_risk in ('high', 'critical')
+
+
+class TeacherObservation(models.Model):
+    """
+    Поведенческий сигнал от учителя об ученике.
+    Не привязан к жалобе — учитель может отправить независимо.
+    Психолог видит эти сигналы как дополнительный контекст к кейсу.
+    """
+
+    # ── Тип наблюдения ────────────────────────────────────────
+    CATEGORY_CHOICES = [
+        ('withdrawal',       'Замкнутость / изоляция'),
+        ('aggression',       'Агрессивное поведение'),
+        ('mood_drop',        'Резкая смена настроения'),
+        ('academic_decline', 'Резкое снижение успеваемости'),
+        ('absence',          'Частые пропуски'),
+        ('anxiety_signs',    'Признаки тревоги / страха'),
+        ('peer_conflict',    'Конфликт с одноклассниками'),
+        ('self_harm_risk',   'Признаки самоповреждения'),
+        ('other',            'Другое'),
+    ]
+
+    # ── Срочность ─────────────────────────────────────────────
+    URGENCY_CHOICES = [
+        ('low',      'Низкая — для наблюдения'),
+        ('medium',   'Средняя — требует внимания'),
+        ('high',     'Высокая — нужна реакция'),
+        ('critical', 'Критическая — немедленно'),
+    ]
+
+    # ── Основные поля ─────────────────────────────────────────
+    teacher   = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='teacher_observations',
+        verbose_name='Учитель'
+    )
+    student   = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='observations',
+        verbose_name='Ученик'
+    )
+    category  = models.CharField(
+        max_length=25, choices=CATEGORY_CHOICES,
+        default='other', verbose_name='Тип наблюдения'
+    )
+    urgency   = models.CharField(
+        max_length=10, choices=URGENCY_CHOICES,
+        default='low', verbose_name='Срочность'
+    )
+    description = models.TextField(
+        verbose_name='Описание наблюдения',
+        help_text='Что именно изменилось в поведении, когда началось, контекст'
+    )
+    duration_days = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        verbose_name='Продолжительность (дней)',
+        help_text='Сколько дней наблюдается изменение поведения'
+    )
+
+    # ── Связь с жалобой (опциональная) ───────────────────────
+    linked_request = models.ForeignKey(
+        StudentRequest, on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='teacher_observations',
+        verbose_name='Связанная жалоба'
+    )
+
+    # ── Слой психолога ────────────────────────────────────────
+    is_reviewed  = models.BooleanField(
+        default=False, verbose_name='Просмотрено психологом'
+    )
+    reviewed_by  = models.ForeignKey(
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='reviewed_observations',
+        verbose_name='Просмотрел психолог'
+    )
+    reviewed_at  = models.DateTimeField(
+        null=True, blank=True, verbose_name='Время просмотра'
+    )
+    psy_note     = models.TextField(
+        blank=True,
+        verbose_name='Заметка психолога по сигналу'
+    )
+
+    # ── Служебные ─────────────────────────────────────────────
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Наблюдение учителя'
+        verbose_name_plural = 'Наблюдения учителей'
+
+    def __str__(self):
+        return (
+            f"[{self.get_urgency_display()}] "
+            f"{self.teacher.get_full_name()} → "
+            f"{self.student.get_full_name()} — "
+            f"{self.get_category_display()}"
+        )
+
+    @property
+    def is_critical(self):
+        return self.urgency == 'critical'

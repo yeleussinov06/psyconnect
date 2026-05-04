@@ -1,0 +1,183 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "PsyConnect" [ref=e3] [cursor=pointer]:
+      - /url: /landing/
+      - img [ref=e5]
+      - generic [ref=e8]: PsyConnect
+    - generic [ref=e9]:
+      - list
+      - generic [ref=e10]:
+        - link [ref=e11] [cursor=pointer]:
+          - /url: /notifications/
+          - img [ref=e12]
+        - generic [ref=e14]:
+          - link "RU" [ref=e15] [cursor=pointer]:
+            - /url: /lang/ru/
+          - link "KZ" [ref=e16] [cursor=pointer]:
+            - /url: /lang/kz/
+    - generic [ref=e18]:
+      - button "А Арман Арманов" [ref=e19] [cursor=pointer]:
+        - generic [ref=e20]: А
+        - generic [ref=e21]: Арман Арманов
+        - img [ref=e22]
+      - generic:
+        - link "Профиль":
+          - /url: /profile/
+          - img
+          - text: Профиль
+        - link "Анонимно":
+          - /url: /anonymous/
+          - img
+          - text: Анонимно
+        - link "Выйти":
+          - /url: /logout/
+          - img
+          - text: Выйти
+  - generic [ref=e24]:
+    - complementary [ref=e25]:
+      - img "Logo" [ref=e27]
+      - navigation [ref=e28]:
+        - link "Дашборд" [ref=e29] [cursor=pointer]:
+          - /url: /student/
+          - img [ref=e30]
+        - link "Дневник эмоций" [ref=e35] [cursor=pointer]:
+          - /url: /emotions/
+          - img [ref=e36]
+        - link "Тест центр" [ref=e38] [cursor=pointer]:
+          - /url: /tests/
+          - img [ref=e39]
+        - link "Псих. тесты" [ref=e43] [cursor=pointer]:
+          - /url: /student/psych-tests/
+          - img [ref=e44]
+        - link "AI-чат" [ref=e47] [cursor=pointer]:
+          - /url: /chat/
+          - img [ref=e48]
+        - link "К психологу" [ref=e50] [cursor=pointer]:
+          - /url: /book/
+          - img [ref=e51]
+        - link "Анонимно" [ref=e53] [cursor=pointer]:
+          - /url: /anonymous/
+          - img [ref=e54]
+    - complementary [ref=e56]:
+      - generic [ref=e57]:
+        - generic [ref=e58]: А
+        - paragraph [ref=e59]: Привет
+        - heading "Арман" [level=2] [ref=e60]
+        - paragraph [ref=e61]: Как твои дела сегодня?
+      - link "Как ты сейчас? Отметь своё настроение" [ref=e62] [cursor=pointer]:
+        - /url: /emotions/
+        - img [ref=e64]
+        - generic [ref=e67]:
+          - paragraph [ref=e68]: Как ты сейчас?
+          - paragraph [ref=e69]: Отметь своё настроение
+        - img [ref=e70]
+      - generic [ref=e73]:
+        - img [ref=e75]
+        - generic [ref=e77]:
+          - paragraph [ref=e78]: 0 дн.
+          - paragraph [ref=e79]: Стрик дневника
+      - link "SOS — Помощь рядом" [ref=e80] [cursor=pointer]:
+        - /url: /anonymous/
+        - img [ref=e81]
+        - generic [ref=e85]:
+          - strong [ref=e86]: SOS
+          - text: — Помощь рядом
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - generic [ref=e90]: "10"
+          - generic [ref=e91]: Эмоций
+        - generic [ref=e93]:
+          - generic [ref=e94]: "1"
+          - generic [ref=e95]: Тестов
+        - generic [ref=e97]:
+          - generic [ref=e98]: "10"
+          - generic [ref=e99]: Чат
+    - main [ref=e100]:
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - img [ref=e104]
+          - generic [ref=e106]:
+            - generic [ref=e107]: "10"
+            - generic [ref=e108]: Записей эмоций
+        - generic [ref=e109]:
+          - img [ref=e111]
+          - generic [ref=e115]:
+            - generic [ref=e116]: "1"
+            - generic [ref=e117]: Результатов тестов
+        - generic [ref=e118]:
+          - img [ref=e120]
+          - generic [ref=e122]:
+            - generic [ref=e123]: "10"
+            - generic [ref=e124]: Сообщений в чате
+      - generic [ref=e125]:
+        - generic [ref=e126]:
+          - generic [ref=e128]: Быстрые действия
+          - generic [ref=e129]:
+            - link "Записать эмоцию" [ref=e130] [cursor=pointer]:
+              - /url: /emotions/
+              - img [ref=e132]
+              - generic [ref=e134]: Записать эмоцию
+            - link "Пройти тест" [ref=e135] [cursor=pointer]:
+              - /url: /tests/
+              - img [ref=e137]
+              - generic [ref=e139]: Пройти тест
+            - link "AI-чат" [ref=e140] [cursor=pointer]:
+              - /url: /chat/
+              - img [ref=e142]
+              - generic [ref=e144]: AI-чат
+            - link "Анонимно" [ref=e145] [cursor=pointer]:
+              - /url: /anonymous/
+              - img [ref=e147]
+              - generic [ref=e149]: Анонимно
+        - generic [ref=e150]:
+          - generic [ref=e151]:
+            - generic [ref=e152]: Последние результаты
+            - link "Все →" [ref=e153] [cursor=pointer]:
+              - /url: /tests/
+          - generic [ref=e154]:
+            - generic [ref=e155]:
+              - generic [ref=e156]: social
+              - generic [ref=e157]: 02.04.2026
+            - generic [ref=e159]: 11/20
+      - generic [ref=e162]:
+        - generic [ref=e163]:
+          - generic [ref=e164]: Последние эмоции
+          - link "Все →" [ref=e165] [cursor=pointer]:
+            - /url: /emotions/
+        - generic [ref=e166]:
+          - img [ref=e168]
+          - generic [ref=e173]:
+            - generic [ref=e174]: Жақсы / Хорошо
+            - generic [ref=e175]: 20 Апрель 2026, 16:04
+        - generic [ref=e176]:
+          - img [ref=e178]
+          - generic [ref=e182]:
+            - generic [ref=e183]: Тыныш / Спокойно
+            - generic [ref=e184]: 17 Апрель 2026, 09:33
+        - generic [ref=e185]:
+          - img [ref=e187]
+          - generic [ref=e192]:
+            - generic [ref=e193]: Жақсы / Хорошо
+            - generic [ref=e194]: 17 Апрель 2026, 09:33
+        - generic [ref=e195]:
+          - img [ref=e197]
+          - generic [ref=e203]:
+            - generic [ref=e204]: Қайғылы / Грустно
+            - generic [ref=e205]: 17 Апрель 2026, 09:33
+        - generic [ref=e206]:
+          - img [ref=e208]
+          - generic [ref=e214]:
+            - generic [ref=e215]: Қайғылы / Грустно
+            - generic [ref=e216]: одиноч
+            - generic [ref=e217]: 09 Апрель 2026, 17:29
+        - generic [ref=e218]:
+          - img [ref=e220]
+          - generic [ref=e223]:
+            - generic [ref=e224]: Алаңдаулы / Тревожно
+            - generic [ref=e225]: 03 Апрель 2026, 18:27
+        - generic [ref=e226]:
+          - img [ref=e228]
+          - generic [ref=e234]:
+            - generic [ref=e235]: Шаршаулы / Устал
+            - generic [ref=e236]: 03 Апрель 2026, 18:27
+  - contentinfo [ref=e237]: PsyConnect · Платформа для школьного сообщества © 2025

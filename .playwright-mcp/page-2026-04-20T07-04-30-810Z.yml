@@ -1,0 +1,92 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "PsyConnect" [ref=e3] [cursor=pointer]:
+      - /url: /landing/
+      - img [ref=e5]
+      - generic [ref=e8]: PsyConnect
+    - generic [ref=e9]:
+      - list [ref=e10]:
+        - listitem [ref=e11]:
+          - link "Дашборд" [ref=e12] [cursor=pointer]:
+            - /url: /student/
+        - listitem [ref=e13]:
+          - link "Дневник" [ref=e14] [cursor=pointer]:
+            - /url: /emotions/
+        - listitem [ref=e15]:
+          - link "Тесты" [ref=e16] [cursor=pointer]:
+            - /url: /tests/
+        - listitem [ref=e17]:
+          - link "AI-чат" [ref=e18] [cursor=pointer]:
+            - /url: /chat/
+        - listitem [ref=e19]:
+          - link [ref=e20] [cursor=pointer]:
+            - /url: /notifications/
+            - img [ref=e21]
+      - generic [ref=e24]:
+        - link "RU" [ref=e25] [cursor=pointer]:
+          - /url: /lang/ru/
+        - link "KZ" [ref=e26] [cursor=pointer]:
+          - /url: /lang/kz/
+    - generic [ref=e28]:
+      - button "А Арман Арманов" [ref=e29] [cursor=pointer]:
+        - generic [ref=e30]: А
+        - generic [ref=e31]: Арман Арманов
+        - img [ref=e32]
+      - generic:
+        - link "Профиль":
+          - /url: /profile/
+          - img
+          - text: Профиль
+        - link "Анонимно":
+          - /url: /anonymous/
+          - img
+          - text: Анонимно
+        - link "Выйти":
+          - /url: /logout/
+          - img
+          - text: Выйти
+  - generic [ref=e34]:
+    - complementary [ref=e35]:
+      - button "Свернуть/развернуть" [ref=e36] [cursor=pointer]:
+        - img [ref=e37]
+      - generic [ref=e39]: УЧЕНИК
+      - link "Дашборд" [ref=e40] [cursor=pointer]:
+        - /url: /student/
+        - img [ref=e42]
+        - generic [ref=e44]: Дашборд
+      - link "Дневник эмоций" [ref=e45] [cursor=pointer]:
+        - /url: /emotions/
+        - img [ref=e47]
+        - generic [ref=e49]: Дневник эмоций
+      - link "Тест центр" [ref=e50] [cursor=pointer]:
+        - /url: /tests/
+        - img [ref=e52]
+        - generic [ref=e54]: Тест центр
+      - link "AI-чат" [ref=e55] [cursor=pointer]:
+        - /url: /chat/
+        - img [ref=e57]
+        - generic [ref=e59]: AI-чат
+      - button "Психолог" [ref=e60] [cursor=pointer]:
+        - img [ref=e62]
+        - generic [ref=e64]: Психолог
+        - img [ref=e65]
+      - generic:
+        - link "Мои записи" [ref=e67] [cursor=pointer]:
+          - /url: /student/psych-tests/
+          - img [ref=e68]
+          - text: Мои записи
+        - link "Записаться" [ref=e70] [cursor=pointer]:
+          - /url: /book/
+        - link "Анонимно" [ref=e71] [cursor=pointer]:
+          - /url: /anonymous/
+          - img [ref=e72]
+          - text: Анонимно
+    - main [ref=e74]:
+      - generic [ref=e75]:
+        - heading "Психологические тесты" [level=1] [ref=e76]
+        - paragraph [ref=e77]: Тесты назначенные психологом
+      - generic [ref=e78]:
+        - generic [ref=e79]: 📋
+        - heading "Нет доступных тестов" [level=3] [ref=e80]
+        - paragraph [ref=e81]: Когда психолог назначит тест вашему классу, он появится здесь
+  - contentinfo [ref=e82]: PsyConnect · Платформа для школьного сообщества © 2025

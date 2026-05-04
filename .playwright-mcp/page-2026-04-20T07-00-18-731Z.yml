@@ -1,0 +1,269 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "PsyConnect" [ref=e3] [cursor=pointer]:
+      - /url: /landing/
+      - img [ref=e5]
+      - generic [ref=e8]: PsyConnect
+    - generic [ref=e9]:
+      - list [ref=e10]:
+        - listitem [ref=e11]:
+          - link "Панель" [ref=e12] [cursor=pointer]:
+            - /url: /psychologist/
+        - listitem [ref=e13]:
+          - link [ref=e14] [cursor=pointer]:
+            - /url: /notifications/
+            - img [ref=e15]
+      - generic [ref=e18]:
+        - link "RU" [ref=e19] [cursor=pointer]:
+          - /url: /lang/ru/
+        - link "KZ" [ref=e20] [cursor=pointer]:
+          - /url: /lang/kz/
+    - generic [ref=e22]:
+      - button "С Сара Мара" [ref=e23] [cursor=pointer]:
+        - generic [ref=e24]: С
+        - generic [ref=e25]: Сара Мара
+        - img [ref=e26]
+      - generic:
+        - link "Профиль":
+          - /url: /profile/
+          - img
+          - text: Профиль
+        - link "Анонимно":
+          - /url: /anonymous/
+          - img
+          - text: Анонимно
+        - link "Выйти":
+          - /url: /logout/
+          - img
+          - text: Выйти
+  - generic [ref=e28]:
+    - complementary [ref=e29]:
+      - img "Logo" [ref=e31]
+      - navigation [ref=e32]:
+        - link "Обзор" [ref=e33] [cursor=pointer]:
+          - /url: /psychologist/
+          - img [ref=e34]
+        - link "Заявки" [ref=e39] [cursor=pointer]:
+          - /url: /psychologist/appointments/
+          - img [ref=e40]
+        - link "Тесты" [ref=e42] [cursor=pointer]:
+          - /url: /psychologist/tests/
+          - img [ref=e43]
+        - link "Ученики" [ref=e47] [cursor=pointer]:
+          - /url: /psychologist/?panel=students
+          - img [ref=e48]
+        - link "Расписание" [ref=e53] [cursor=pointer]:
+          - /url: /psychologist/schedule/
+          - img [ref=e54]
+        - link "Запросы" [ref=e57] [cursor=pointer]:
+          - /url: /psychologist/?panel=requests
+          - img [ref=e58]
+        - link "Эмоции" [ref=e60] [cursor=pointer]:
+          - /url: /psychologist/?panel=emotions
+          - img [ref=e61]
+      - generic [ref=e63]:
+        - link "Профиль" [ref=e64] [cursor=pointer]:
+          - /url: /profile/
+          - img [ref=e65]
+        - link "Выйти" [ref=e68] [cursor=pointer]:
+          - /url: /logout/
+          - img [ref=e69]
+    - complementary [ref=e72]:
+      - generic [ref=e73]:
+        - generic [ref=e74]: С
+        - paragraph [ref=e75]: Добрый день 👋
+        - heading "Сара Мара" [level=2] [ref=e76]
+        - paragraph [ref=e77]: Ваш рабочий день ждёт вас
+      - generic [ref=e79]:
+        - generic [ref=e80]:
+          - img [ref=e81]
+          - textbox "Поиск ученика, класса..." [ref=e84]
+        - generic [ref=e85]:
+          - combobox [ref=e86] [cursor=pointer]:
+            - option "Все классы" [selected]
+            - option "9А"
+            - option "11Б"
+          - button "Найти" [ref=e87] [cursor=pointer]
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - generic [ref=e90]: "11"
+          - generic [ref=e91]: Учеников
+        - generic [ref=e93]:
+          - generic [ref=e94]: "1"
+          - generic [ref=e95]: Запросов
+        - generic [ref=e97]:
+          - generic [ref=e98]: "2"
+          - generic [ref=e99]: Классов
+    - main [ref=e100]:
+      - generic [ref=e101]:
+        - heading "Заявки на приём" [level=1] [ref=e102]
+        - paragraph [ref=e103]: Все входящие записи
+      - generic [ref=e104]:
+        - generic [ref=e105]:
+          - img [ref=e106]
+          - generic [ref=e109]: Ожидают подтверждения
+        - generic [ref=e110]: Нет заявок в ожидании
+      - generic [ref=e111]:
+        - generic [ref=e112]:
+          - img [ref=e113]
+          - generic [ref=e116]: Подтверждённые
+        - generic [ref=e117]: Нет подтверждённых записей
+      - generic [ref=e118]:
+        - generic [ref=e119]:
+          - img [ref=e120]
+          - generic [ref=e123]: Архив записей
+          - generic [ref=e124]: "15"
+        - generic [ref=e125]:
+          - generic [ref=e126]:
+            - generic [ref=e127]: А
+            - generic [ref=e128]:
+              - generic [ref=e129]: Арман Арманов
+              - generic [ref=e130]: 14.04.2026 · 09:00–10:00
+              - generic [ref=e131]: manual
+              - generic [ref=e132]: 💬 ok
+          - generic [ref=e133]:
+            - generic [ref=e134]: ✓ Состоялась
+            - generic [ref=e135]: 13.04.2026
+        - generic [ref=e136]:
+          - generic [ref=e137]:
+            - generic [ref=e138]: А
+            - generic [ref=e139]:
+              - generic [ref=e140]: Арман Арманов
+              - generic [ref=e141]: 13.04.2026 · 16:00–17:00
+          - generic [ref=e142]:
+            - generic [ref=e143]: ✕ Отклонена
+            - generic [ref=e144]: 13.04.2026
+        - generic [ref=e145]:
+          - generic [ref=e146]:
+            - generic [ref=e147]: А
+            - generic [ref=e148]:
+              - generic [ref=e149]: Арман Арманов
+              - generic [ref=e150]: 13.04.2026 · 15:00–16:00
+          - generic [ref=e151]:
+            - generic [ref=e152]: ✕ Отклонена
+            - generic [ref=e153]: 13.04.2026
+        - generic [ref=e154]:
+          - generic [ref=e155]:
+            - generic [ref=e156]: А
+            - generic [ref=e157]:
+              - generic [ref=e158]: Арман Арманов
+              - generic [ref=e159]: 13.04.2026 · 12:00–13:00
+          - generic [ref=e160]:
+            - generic [ref=e161]: ✕ Отклонена
+            - generic [ref=e162]: 13.04.2026
+        - generic [ref=e163]:
+          - generic [ref=e164]:
+            - generic [ref=e165]: А
+            - generic [ref=e166]:
+              - generic [ref=e167]: Арман Арманов
+              - generic [ref=e168]: 13.04.2026 · 11:00–12:00
+              - generic [ref=e169]: Поведение
+              - generic [ref=e170]: 💬 +
+          - generic [ref=e171]:
+            - generic [ref=e172]: ✓ Состоялась
+            - generic [ref=e173]: 13.04.2026
+        - generic [ref=e174]:
+          - generic [ref=e175]:
+            - generic [ref=e176]: А
+            - generic [ref=e177]:
+              - generic [ref=e178]: Арман Арманов
+              - generic [ref=e179]: 13.04.2026 · 10:00–11:00
+          - generic [ref=e180]:
+            - generic [ref=e181]: ✕ Отклонена
+            - generic [ref=e182]: 13.04.2026
+        - generic [ref=e183]:
+          - generic [ref=e184]:
+            - generic [ref=e185]: А
+            - generic [ref=e186]:
+              - generic [ref=e187]: Арман Арманов
+              - generic [ref=e188]: 13.04.2026 · 09:00–10:00
+              - generic [ref=e189]: manual
+          - generic [ref=e190]:
+            - generic [ref=e191]: ✕ Отклонена
+            - generic [ref=e192]: 13.04.2026
+        - generic [ref=e193]:
+          - generic [ref=e194]:
+            - generic [ref=e195]: А
+            - generic [ref=e196]:
+              - generic [ref=e197]: Арман Арманов
+              - generic [ref=e198]: 10.04.2026 · 17:00–18:00
+              - generic [ref=e199]: chat
+              - generic [ref=e200]: 💬 ok
+          - generic [ref=e201]:
+            - generic [ref=e202]: ✓ Состоялась
+            - generic [ref=e203]: 09.04.2026
+        - generic [ref=e204]:
+          - generic [ref=e205]:
+            - generic [ref=e206]: А
+            - generic [ref=e207]:
+              - generic [ref=e208]: Арман Арманов
+              - generic [ref=e209]: 10.04.2026 · 12:00–13:00
+              - generic [ref=e210]: manual
+              - generic [ref=e211]: 💬 хорошоо
+          - generic [ref=e212]:
+            - generic [ref=e213]: ✓ Состоялась
+            - generic [ref=e214]: 09.04.2026
+        - generic [ref=e215]:
+          - generic [ref=e216]:
+            - generic [ref=e217]: M
+            - generic [ref=e218]:
+              - generic [ref=e219]: maksat maksat
+              - generic [ref=e220]: 10.04.2026 · 09:00–10:00 · 11Б
+              - generic [ref=e221]: Буллинг
+              - generic [ref=e222]: 💬 aa
+          - generic [ref=e223]:
+            - generic [ref=e224]: ✕ Отклонена
+            - generic [ref=e225]: 09.04.2026
+        - generic [ref=e226]:
+          - generic [ref=e227]:
+            - generic [ref=e228]: А
+            - generic [ref=e229]:
+              - generic [ref=e230]: Арман Арманов
+              - generic [ref=e231]: 09.04.2026 · 09:00–10:00
+              - generic [ref=e232]: manual
+          - generic [ref=e233]:
+            - generic [ref=e234]: ✓ Состоялась
+            - generic [ref=e235]: 08.04.2026
+        - generic [ref=e236]:
+          - generic [ref=e237]:
+            - generic [ref=e238]: А
+            - generic [ref=e239]:
+              - generic [ref=e240]: Арман Арманов
+              - generic [ref=e241]: 07.04.2026 · 14:00–15:00
+              - generic [ref=e242]: manual
+          - generic [ref=e243]:
+            - generic [ref=e244]: ✓ Состоялась
+            - generic [ref=e245]: 06.04.2026
+        - generic [ref=e246]:
+          - generic [ref=e247]:
+            - generic [ref=e248]: А
+            - generic [ref=e249]:
+              - generic [ref=e250]: Арман Арманов
+              - generic [ref=e251]: 07.04.2026 · 13:00–14:00
+              - generic [ref=e252]: manual
+              - generic [ref=e253]: 💬 нет
+          - generic [ref=e254]:
+            - generic [ref=e255]: ✕ Отклонена
+            - generic [ref=e256]: 06.04.2026
+        - generic [ref=e257]:
+          - generic [ref=e258]:
+            - generic [ref=e259]: А
+            - generic [ref=e260]:
+              - generic [ref=e261]: Арман Арманов
+              - generic [ref=e262]: 07.04.2026 · 12:00–13:00
+              - generic [ref=e263]: manual
+          - generic [ref=e264]:
+            - generic [ref=e265]: ✓ Состоялась
+            - generic [ref=e266]: 06.04.2026
+        - generic [ref=e267]:
+          - generic [ref=e268]:
+            - generic [ref=e269]: А
+            - generic [ref=e270]:
+              - generic [ref=e271]: Арман Арманов
+              - generic [ref=e272]: 07.04.2026 · 09:00–10:00
+              - generic [ref=e273]: manual
+              - generic [ref=e274]: 💬 не свободна
+          - generic [ref=e275]:
+            - generic [ref=e276]: ✓ Состоялась
+            - generic [ref=e277]: 06.04.2026
+  - contentinfo [ref=e278]: PsyConnect · Платформа для школьного сообщества © 2025

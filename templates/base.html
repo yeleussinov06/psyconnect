@@ -8,7 +8,7 @@
   <title>{% block title %}PsyConnect{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=8">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=24">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -27,29 +27,19 @@
 
   <!-- Collapsible area (nav links + lang switcher only) -->
   <div class="navbar-collapse" id="navbarCollapse">
-    <!-- Centre links -->
+    <!-- Mobile-only nav items (profile & logout in hamburger) -->
     <ul class="navbar-nav">
       {% if user.is_authenticated %}
-        {% with role=user.profile.role %}
-          {% if role == 'student' %}
-            <li><a href="{% url 'student_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</a></li>
-            <li><a href="{% url 'emotion_diary' %}" class="nav-link">{% if lang == 'kz' %}Күнделік{% else %}Дневник{% endif %}</a></li>
-            <li><a href="{% url 'test_center' %}" class="nav-link">{% if lang == 'kz' %}Тесттер{% else %}Тесты{% endif %}</a></li>
-            <li><a href="{% url 'ai_chat' %}" class="nav-link">AI-чат</a></li>
-          {% elif role == 'teacher' %}
-            <li><a href="{% url 'teacher_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</a></li>
-            <li><a href="{% url 'articles' %}" class="nav-link">{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}</a></li>
-          {% elif role == 'parent' %}
-            <li><a href="{% url 'parent_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %}</a></li>
-            <li><a href="{% url 'articles' %}" class="nav-link">{% if lang == 'kz' %}Мақалалар{% else %}Статьи{% endif %}</a></li>
-          {% elif role == 'psychologist' %}
-            <li><a href="{% url 'psychologist_dashboard' %}" class="nav-link">{% if lang == 'kz' %}Панель{% else %}Панель{% endif %}</a></li>
-          {% endif %}
-        {% endwith %}
-        <li>
-          <a href="{% url 'notifications' %}" class="nav-link" style="position:relative;display:flex;align-items:center;" id="notifBell">
-            {% icon 'bell' 'nav-icon' %}
-            <span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#E8A598;color:white;border-radius:50%;width:17px;height:17px;font-size:.62rem;font-weight:800;align-items:center;justify-content:center;"></span>
+        <li class="nav-mobile-only">
+          <a href="{% url 'profile' %}" class="nav-link" style="display:flex;align-items:center;gap:.5rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            {% if lang == 'kz' %}Профиль{% else %}Профиль{% endif %}
+          </a>
+        </li>
+        <li class="nav-mobile-only">
+          <a href="{% url 'logout' %}" class="nav-link" style="display:flex;align-items:center;gap:.5rem;color:var(--peach);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+            {% if lang == 'kz' %}Шығу{% else %}Выйти{% endif %}
           </a>
         </li>
       {% else %}
@@ -58,8 +48,14 @@
       {% endif %}
     </ul>
 
-    <!-- Lang switcher (inside collapse) -->
+    <!-- Right side: notifications + lang switcher -->
     <div class="navbar-right">
+      {% if user.is_authenticated %}
+      <a href="{% url 'notifications' %}" class="nav-link" style="position:relative;display:flex;align-items:center;" id="notifBell">
+        {% icon 'bell' 'nav-icon' %}
+        <span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#E8A598;color:white;border-radius:50%;width:17px;height:17px;font-size:.62rem;font-weight:800;align-items:center;justify-content:center;"></span>
+      </a>
+      {% endif %}
       <div class="lang-switcher">
         <a href="{% url 'set_language' 'ru' %}" class="lang-btn {% if lang == 'ru' or not lang %}active{% endif %}">RU</a>
         <a href="{% url 'set_language' 'kz' %}" class="lang-btn {% if lang == 'kz' %}active{% endif %}">KZ</a>
@@ -104,6 +100,8 @@
 </nav>
 <!-- Mobile menu backdrop -->
 <div class="mobile-menu-backdrop" id="mobileBackdrop" onclick="toggleMobileMenu()"></div>
+<!-- Mobile accordion bottom-sheet backdrop -->
+<div class="acc-sheet-backdrop" id="accSheetBackdrop" onclick="closeAllAccordions()"></div>
 
 {% block content %}{% endblock %}
 
@@ -187,18 +185,58 @@ function toggleSidebar() {
 }
 
 // Accordion
+function closeAllAccordions() {
+  document.querySelectorAll('.acc-sub.acc-open').forEach(el => {
+    el.classList.remove('acc-open');
+    const b = el.previousElementSibling;
+    if (b) b.classList.remove('acc-active');
+  });
+  const backdrop = document.getElementById('accSheetBackdrop');
+  if (backdrop) backdrop.classList.remove('active');
+  document.body.classList.remove('acc-sheet-open');
+}
+
 function toggleAccordion(id) {
   const sub = document.getElementById(id);
   if (!sub) return;
-  // On mobile — navigate directly to first sub-link instead of expanding
-  if (window.innerWidth <= 768) {
-    const firstLink = sub.querySelector('a');
-    if (firstLink) { window.location.href = firstLink.href; return; }
-  }
-  const open = sub.classList.toggle('acc-open');
+  const willOpen = !sub.classList.contains('acc-open');
+  // Close any other open accordions first
+  document.querySelectorAll('.acc-sub.acc-open').forEach(el => {
+    if (el !== sub) {
+      el.classList.remove('acc-open');
+      const b = el.previousElementSibling;
+      if (b) b.classList.remove('acc-active');
+    }
+  });
+  sub.classList.toggle('acc-open', willOpen);
   const btn = sub.previousElementSibling;
-  if (btn) btn.classList.toggle('acc-active', open);
+  if (btn) btn.classList.toggle('acc-active', willOpen);
+  // Inject section title into the sheet header (mobile only)
+  if (willOpen && btn) {
+    const labelEl = btn.querySelector('.sb-label');
+    if (labelEl) sub.setAttribute('data-title', labelEl.textContent.trim());
+  }
+  // Mobile: toggle bottom-sheet backdrop + body scroll lock
+  if (window.innerWidth <= 768) {
+    const backdrop = document.getElementById('accSheetBackdrop');
+    if (backdrop) backdrop.classList.toggle('active', willOpen);
+    document.body.classList.toggle('acc-sheet-open', willOpen);
+  }
 }
+
+// Close bottom-sheet when user taps a sub-link (navigation handles the rest)
+document.addEventListener('click', function(e) {
+  const link = e.target.closest('.acc-sub-link');
+  if (link && window.innerWidth <= 768) closeAllAccordions();
+});
+// Reset on resize to desktop
+window.addEventListener('resize', function() {
+  if (window.innerWidth > 768) {
+    const backdrop = document.getElementById('accSheetBackdrop');
+    if (backdrop) backdrop.classList.remove('active');
+    document.body.classList.remove('acc-sheet-open');
+  }
+});
 document.addEventListener('DOMContentLoaded', initSidebar);
 
 // Close mobile menu on window resize (if going to desktop)

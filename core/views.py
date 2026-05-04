@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.db import models
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -8,7 +9,190 @@ import json, random
 from datetime import timedelta
 from django.utils import timezone
 from collections import Counter
-from .models import UserProfile, EmotionEntry, TestResult, ChatMessage, AnonymousRequest, Article, PsychologistSchedule, Appointment, Notification
+from .models import UserProfile, EmotionEntry, TestResult, ChatMessage, AnonymousRequest, Article, PsychologistSchedule, Appointment, Notification, StudentRequest, TeacherObservation
+from .models import PsychTest, PsychTestResult
+
+
+_TONE_KEYWORDS = {
+    'fear': [
+        'угрожают', 'бьют', 'бьет', 'бьёт', 'буллинг', 'издеваются', 'обижают',
+        'запугивают', 'боюсь идти', 'не хочу в школу', 'унижают',
+        'смеются надо мной', 'дразнят', 'избивают', 'насилие', 'угрозы',
+    ],
+    'aggression': [
+        'ненавижу', 'бесит', 'достал', 'достала', 'хочу ударить', 'злюсь',
+        'бешусь', 'злость', 'ненависть', 'раздражает', 'злой', 'орёт',
+        'орет', 'кричит', 'кричат', 'взрываюсь',
+    ],
+    'depression': [
+        'нет смысла', 'не хочу жить', 'ничего не хочу', 'всё плохо',
+        'нет сил', 'не вижу смысла', 'подавлен', 'подавлена', 'апатия',
+        'безнадёжно', 'безнадежно', 'одиноко', 'никто не понимает',
+        'никому не нужен', 'никому не нужна', 'грустно', 'плачу',
+        'слёзы', 'слезы', 'устал от всего', 'устала от всего',
+    ],
+    'anxiety': [
+        'боюсь', 'страшно', 'тревога', 'беспокоит', 'не могу спать',
+        'переживаю', 'волнуюсь', 'нервничаю', 'стресс', 'паника',
+        'тревожно', 'беспокойство', 'не уверен', 'не уверена',
+        'пугает', 'сердце колотится', 'трясёт', 'трясет', 'страх',
+    ],
+    'confusion': [
+        'не понимаю', 'запутался', 'запуталась', 'не знаю что делать',
+        'растерян', 'растеряна', 'непонятно', 'что делать',
+        'потерялся', 'потерялась', 'не знаю как',
+    ],
+}
+
+_RISK_ORDER = ['low', 'medium', 'high', 'critical']
+
+def _analyze_complaint(req):
+    """
+    Шаг 2: keyword-анализ текста жалобы.
+    Заполняет ai_* поля StudentRequest и переводит статус в ai_analyzed.
+    Вызывается синхронно сразу после создания StudentRequest.
+    """
+    text_lower = req.text.lower()
+    student    = req.student
+    now        = timezone.now()
+
+    # ── 1. Классификация тональности ─────────────────────────
+    tone_scores = {tone: 0 for tone in _TONE_KEYWORDS}
+    matched_kw  = []
+    for tone, kws in _TONE_KEYWORDS.items():
+        for kw in kws:
+            if kw in text_lower:
+                tone_scores[tone] += 1
+                matched_kw.append(kw)
+
+    best_tone     = max(tone_scores, key=tone_scores.get)
+    detected_tone = best_tone if tone_scores[best_tone] > 0 else 'neutral'
+
+    # ── 2. Базовый риск по тону ───────────────────────────────
+    base_risk = {'fear': 'high', 'aggression': 'medium', 'depression': 'medium',
+                 'anxiety': 'low', 'confusion': 'low', 'neutral': 'low'}
+    risk_idx = _RISK_ORDER.index(base_risk[detected_tone])
+
+    # ── 3. Агрегация истории ──────────────────────────────────
+    ago30 = now - timedelta(days=30)
+    ago14 = now - timedelta(days=14)
+
+    past_qs    = StudentRequest.objects.filter(student=student).exclude(id=req.id)
+    past_total = past_qs.count()
+    past_30d   = past_qs.filter(created_at__gte=ago30).count()
+
+    obs_qs       = TeacherObservation.objects.filter(student=student)
+    obs_total    = obs_qs.count()
+    obs_30d      = obs_qs.filter(created_at__gte=ago30).count()
+    obs_critical = obs_qs.filter(urgency__in=['high', 'critical'], created_at__gte=ago30).count()
+
+    neg_emotions = EmotionEntry.objects.filter(
+        user=student, emotion__in=['anxious', 'sad', 'angry'],
+        created_at__gte=ago14
+    ).count()
+
+    last_psych = PsychTestResult.objects.filter(student=student).order_by('-completed_at').first()
+
+    # ── 4. Повышение риска ────────────────────────────────────
+    if req.category == 'bullying':
+        risk_idx = max(risk_idx, _RISK_ORDER.index('high'))
+    if past_30d >= 2:
+        risk_idx = min(risk_idx + 1, 3)
+    if obs_critical >= 1:
+        risk_idx = min(risk_idx + 1, 3)
+    if neg_emotions >= 5:
+        risk_idx = min(risk_idx + 1, 3)
+    if last_psych and last_psych.risk_level == 'high':
+        risk_idx = max(risk_idx, _RISK_ORDER.index('medium'))
+
+    final_risk = _RISK_ORDER[risk_idx]
+
+    # ── 5. Теги ───────────────────────────────────────────────
+    cat_tag_map = {
+        'anxiety': 'тревожность', 'bullying': 'буллинг', 'family': 'семья',
+        'study': 'учёба', 'behavior': 'поведение', 'relations': 'отношения',
+    }
+    tone_tag_map = {
+        'fear': 'угроза безопасности', 'aggression': 'агрессия',
+        'depression': 'подавленность',  'anxiety': 'тревога',
+        'confusion': 'растерянность',
+    }
+    tags = []
+    if cat_tag_map.get(req.category):
+        tags.append(cat_tag_map[req.category])
+    if tone_tag_map.get(detected_tone):
+        tags.append(tone_tag_map[detected_tone])
+    seen = set(tags)
+    for kw in matched_kw:
+        if kw not in seen and len(tags) < 7:
+            tags.append(kw)
+            seen.add(kw)
+
+    # ── 6. Рекомендации ───────────────────────────────────────
+    recs = []
+    if detected_tone == 'fear' or req.category == 'bullying':
+        recs.append('Провести конфиденциальную беседу о безопасности ученика в коллективе')
+        recs.append('Уточнить у классного руководителя наличие видимых конфликтов')
+    if detected_tone == 'depression':
+        recs.append('При очной встрече оценить глубину состояния, исключить суицидальные мысли')
+        recs.append('Рассмотреть регулярные поддерживающие сеансы (2–3 раза в месяц)')
+    if detected_tone == 'anxiety':
+        recs.append('Выяснить конкретные источники тревоги: учёба, дом, социальная среда')
+        recs.append('Предложить техники саморегуляции и работу с мышлением')
+    if detected_tone == 'aggression':
+        recs.append('Исследовать, не является ли ученик сам объектом давления или буллинга')
+        recs.append('Проверить семейный контекст — возможна хроническая стрессовая среда')
+    if past_30d >= 2:
+        recs.append(f'Повторное обращение за месяц ({past_30d} раза) — взять под регулярный мониторинг')
+    if obs_30d > 0:
+        recs.append(f'Учитель отправил {obs_30d} сигнал(ов) за 30 дней — запросить детали у педагога')
+    if not recs:
+        recs.append('Провести вводную беседу, уточнить детали ситуации')
+        recs.append('Оценить эмоциональное состояние при личной встрече')
+
+    # ── 7. Сборка текста резюме ───────────────────────────────
+    risk_label = {'low': 'Низкий', 'medium': 'Средний',
+                  'high': 'Высокий', 'critical': 'Критический'}
+    tone_label = {
+        'fear': 'Страх / угроза безопасности', 'aggression': 'Агрессия / раздражение',
+        'depression': 'Подавленность / депрессивные признаки', 'anxiety': 'Тревожность',
+        'confusion': 'Растерянность / дезориентация', 'neutral': 'Нейтральная',
+    }
+    lines = [
+        f'ТОНАЛЬНОСТЬ: {tone_label[detected_tone]}',
+        f'УРОВЕНЬ РИСКА: {risk_label[final_risk]}',
+        '',
+    ]
+    history = []
+    if past_total:
+        history.append(f'Всего предыдущих обращений: {past_total} (за 30 дней: {past_30d})')
+    if obs_total:
+        history.append(f'Сигналов учителей: {obs_total} (за 30 дней: {obs_30d}, высокой срочности: {obs_critical})')
+    if neg_emotions:
+        history.append(f'Негативных эмоций в дневнике за 14 дней: {neg_emotions}')
+    if last_psych:
+        lines_risk = risk_label.get(last_psych.risk_level, last_psych.risk_level)
+        history.append(f'Последний тест: группа риска — {lines_risk}')
+    if history:
+        lines.append('ИСТОРИЯ УЧЕНИКА:')
+        lines += [f'• {h}' for h in history]
+        lines.append('')
+
+    lines.append('РЕКОМЕНДАЦИИ:')
+    lines += [f'{i}. {r}' for i, r in enumerate(recs, 1)]
+
+    # ── 8. Сохраняем ─────────────────────────────────────────
+    req.ai_tone        = detected_tone
+    req.ai_risk_level  = final_risk
+    req.ai_summary     = '\n'.join(lines)
+    req.ai_tags        = tags
+    req.ai_analyzed_at = now
+    req.status         = 'ai_analyzed'
+    req.save(update_fields=[
+        'ai_tone', 'ai_risk_level', 'ai_summary',
+        'ai_tags', 'ai_analyzed_at', 'status',
+    ])
+    return req
 
 
 def create_notification(user, notif_type, text, link=''):
@@ -84,12 +268,24 @@ def student_dashboard(request):
     ).values_list('test_id', flat=True))
     new_psych_tests = [t for t in available_psych_tests if t.id not in completed_psych_ids]
 
+    # Diary streak: consecutive days with at least one emotion entry
+    today_date = timezone.now().date()
+    streak = 0
+    check_day = today_date
+    for _ in range(366):
+        if EmotionEntry.objects.filter(user=request.user, created_at__date=check_day).exists():
+            streak += 1
+            check_day -= timedelta(days=1)
+        else:
+            break
+
     return render(request, 'core/student/dashboard.html', {
         'lang': lang,
         'new_psych_tests': new_psych_tests, 'emotions': emotions, 'recent_results': recent_results,
         'emotion_count': EmotionEntry.objects.filter(user=request.user).count(),
         'test_count': TestResult.objects.filter(user=request.user).count(),
         'chat_count': ChatMessage.objects.filter(user=request.user).count(),
+        'diary_streak': streak,
     })
 
 @login_required
@@ -120,14 +316,24 @@ def emotion_diary(request):
 def test_center(request):
     lang = get_lang(request)
     cats = [
-        {'key':'anxiety','name_ru':'Тревожность','name_kz':'Мазасыздық','icon':'🧠','desc_ru':'Оцени уровень тревоги','desc_kz':'Мазасыздық деңгейін бағала'},
-        {'key':'stress','name_ru':'Стресс','name_kz':'Стресс','icon':'⚡','desc_ru':'Как справляешься со стрессом?','desc_kz':'Стресске қалай төтеп бересің?'},
-        {'key':'motivation','name_ru':'Мотивация','name_kz':'Мотивация','icon':'🚀','desc_ru':'Уровень мотивации к учёбе','desc_kz':'Оқуға деген мотивация деңгейің'},
-        {'key':'social','name_ru':'Социальный','name_kz':'Әлеуметтік','icon':'🤝','desc_ru':'Комфортно ли в коллективе?','desc_kz':'Ұжымда ыңғайлы ма?'},
+        {'key':'anxiety','name_ru':'Тревожность','name_kz':'Мазасыздық','icon':'brain','desc_ru':'Оцени уровень тревоги','desc_kz':'Мазасыздық деңгейін бағала'},
+        {'key':'stress','name_ru':'Стресс','name_kz':'Стресс','icon':'zap','desc_ru':'Как справляешься со стрессом?','desc_kz':'Стресске қалай төтеп бересің?'},
+        {'key':'motivation','name_ru':'Мотивация','name_kz':'Мотивация','icon':'rocket','desc_ru':'Уровень мотивации к учёбе','desc_kz':'Оқуға деген мотивация деңгейің'},
+        {'key':'social','name_ru':'Социальный','name_kz':'Әлеуметтік','icon':'users','desc_ru':'Комфортно ли в коллективе?','desc_kz':'Ұжымда ыңғайлы ма?'},
     ]
+    # Psych-assigned tests for this student's class
+    student_class = getattr(request.user.profile, 'school_class', None)
+    assigned_tests = PsychTest.objects.filter(
+        status='active', target_class=student_class
+    ) if student_class else PsychTest.objects.none()
+    completed_ids = list(
+        PsychTestResult.objects.filter(student=request.user).values_list('test_id', flat=True)
+    )
     return render(request, 'core/student/test_center.html', {
         'lang': lang, 'categories': cats,
         'recent_results': TestResult.objects.filter(user=request.user)[:5],
+        'assigned_tests': assigned_tests,
+        'completed_ids': completed_ids,
     })
 
 QS = {
@@ -264,6 +470,19 @@ def parent_dashboard(request):
     children_data = build_children_data(children)
     articles = Article.objects.filter(audience='parent')[:6]
 
+    # Заключения психолога по детям родителя
+    conclusions = StudentRequest.objects.filter(
+        student__in=children,
+        is_approved=True,
+    ).select_related('student', 'student__profile__school_class', 'assigned_to').order_by('-approved_at')[:10]
+
+    # Непрочитанные уведомления о заключениях
+    unread_conclusions = Notification.objects.filter(
+        user=request.user,
+        notif_type='parent_conclusion',
+        is_read=False,
+    ).count()
+
     link_error = link_success = None
 
     if request.method == 'POST':
@@ -296,6 +515,8 @@ def parent_dashboard(request):
         'link_error': link_error,
         'link_success': link_success,
         'has_children': bool(children_data),
+        'conclusions': conclusions,
+        'unread_conclusions': unread_conclusions,
         'notifications_count': Notification.objects.filter(user=request.user, is_read=False).count(),
     })
 
@@ -304,29 +525,29 @@ def articles_view(request):
     audience = request.GET.get('audience', 'parent')
 
     audience_tabs = [
-        ('parent',  'Родителям' if lang != 'kz' else 'Ата-аналарға',  '👨‍👩‍👧'),
-        ('student', 'Ученикам'  if lang != 'kz' else 'Оқушыларға',    '🎒'),
-        ('teacher', 'Учителям'  if lang != 'kz' else 'Мұғалімдерге',  '👩‍🏫'),
+        ('parent',  'Родителям' if lang != 'kz' else 'Ата-аналарға',  'users'),
+        ('student', 'Ученикам'  if lang != 'kz' else 'Оқушыларға',    'backpack'),
+        ('teacher', 'Учителям'  if lang != 'kz' else 'Мұғалімдерге',  'graduation-cap'),
     ]
 
     static_articles = {
         'parent': [
-            {'emoji':'🧠','bg':'linear-gradient(135deg,#FEF3C7,#FDE68A)','title':'Как распознать стресс у ребёнка?','time':5},
-            {'emoji':'💬','bg':'linear-gradient(135deg,#EDE9FE,#DDD6FE)','title':'Как говорить с ребёнком о чувствах','time':7},
-            {'emoji':'🛡️','bg':'linear-gradient(135deg,#FEE2E2,#FECACA)','title':'Буллинг — что делать родителям?','time':10},
-            {'emoji':'📚','bg':'linear-gradient(135deg,#DBEAFE,#BFDBFE)','title':'Как повысить мотивацию к учёбе?','time':6},
-            {'emoji':'🌱','bg':'linear-gradient(135deg,#D1FAE5,#A7F3D0)','title':'Техники дыхания — как научить ребёнка','time':4},
-            {'emoji':'❤️','bg':'linear-gradient(135deg,#FDF3E8,#FDE3BC)','title':'Как выстроить доверительные отношения','time':8},
+            {'icon':'brain','bg':'linear-gradient(135deg,#FEF3C7,#FDE68A)','title':'Как распознать стресс у ребёнка?','time':5},
+            {'icon':'message-circle','bg':'linear-gradient(135deg,#EDE9FE,#DDD6FE)','title':'Как говорить с ребёнком о чувствах','time':7},
+            {'icon':'shield','bg':'linear-gradient(135deg,#FEE2E2,#FECACA)','title':'Буллинг — что делать родителям?','time':10},
+            {'icon':'book-open','bg':'linear-gradient(135deg,#DBEAFE,#BFDBFE)','title':'Как повысить мотивацию к учёбе?','time':6},
+            {'icon':'leaf','bg':'linear-gradient(135deg,#D1FAE5,#A7F3D0)','title':'Техники дыхания — как научить ребёнка','time':4},
+            {'icon':'heart','bg':'linear-gradient(135deg,#FDF3E8,#FDE3BC)','title':'Как выстроить доверительные отношения','time':8},
         ],
         'student': [
-            {'emoji':'😌','bg':'linear-gradient(135deg,#EDE9FE,#DDD6FE)','title':'Как справляться с тревогой','time':5},
-            {'emoji':'🎯','bg':'linear-gradient(135deg,#DBEAFE,#BFDBFE)','title':'Тайм-менеджмент для школьника','time':6},
-            {'emoji':'💪','bg':'linear-gradient(135deg,#D1FAE5,#A7F3D0)','title':'Как поверить в себя','time':4},
+            {'icon':'wind','bg':'linear-gradient(135deg,#EDE9FE,#DDD6FE)','title':'Как справляться с тревогой','time':5},
+            {'icon':'target','bg':'linear-gradient(135deg,#DBEAFE,#BFDBFE)','title':'Тайм-менеджмент для школьника','time':6},
+            {'icon':'star','bg':'linear-gradient(135deg,#D1FAE5,#A7F3D0)','title':'Как поверить в себя','time':4},
         ],
         'teacher': [
-            {'emoji':'👁️','bg':'linear-gradient(135deg,#FEF3C7,#FDE68A)','title':'Как заметить тревогу у ученика','time':7},
-            {'emoji':'🤝','bg':'linear-gradient(135deg,#EDE9FE,#DDD6FE)','title':'Создание безопасной среды в классе','time':9},
-            {'emoji':'📊','bg':'linear-gradient(135deg,#DBEAFE,#BFDBFE)','title':'Работа с групповой динамикой','time':8},
+            {'icon':'eye','bg':'linear-gradient(135deg,#FEF3C7,#FDE68A)','title':'Как заметить тревогу у ученика','time':7},
+            {'icon':'shield-check','bg':'linear-gradient(135deg,#EDE9FE,#DDD6FE)','title':'Создание безопасной среды в классе','time':9},
+            {'icon':'bar-chart-2','bg':'linear-gradient(135deg,#DBEAFE,#BFDBFE)','title':'Работа с групповой динамикой','time':8},
         ],
     }
 
@@ -453,6 +674,11 @@ def psychologist_dashboard(request):
         'emotion_stats_obj': emotion_stats_obj,
         'total_emotion_week': total_emotion_week,
         'total_students': User.objects.filter(profile__role='student').count(),
+        'next_confirmed_apt': Appointment.objects.filter(
+            slot__psychologist=request.user,
+            status='confirmed',
+            slot__date__gte=tz.now().date()
+        ).select_related('slot').order_by('slot__date', 'slot__time_start').first(),
     })
 
 
@@ -547,6 +773,24 @@ def teacher_dashboard(request):
         created_at__date__gte=today - timedelta(days=7)
     ).count() for k in em_keys}
 
+    # Attention flags: top-3 students with most negative emotions in last 7 days
+    attention_flags = []
+    for student in list(students)[:50]:
+        bad_count = EmotionEntry.objects.filter(
+            user=student,
+            emotion__in=['anxious', 'sad', 'angry'],
+            created_at__date__gte=today - timedelta(days=7)
+        ).count()
+        if bad_count > 0:
+            attention_flags.append({'user': student, 'count': bad_count})
+    attention_flags.sort(key=lambda x: -x['count'])
+    attention_flags = attention_flags[:3]
+
+    # Class climate: % of positive emotions in last 7 days
+    total_em = sum(em_stats.values())
+    positive_em = em_stats.get('happy', 0) + em_stats.get('calm', 0)
+    class_climate = round(positive_em / total_em * 100) if total_em > 0 else 50
+
     return render(request, 'core/teacher/dashboard.html', {
         'lang': lang,
         'students': students,
@@ -562,6 +806,8 @@ def teacher_dashboard(request):
         'available_classes': available_classes,
         'search': search,
         'class_filter': class_filter,
+        'attention_flags': attention_flags,
+        'class_climate': class_climate,
     })
 
 # ── PUBLIC ANON ───────────────────────────────────────────────
@@ -578,17 +824,121 @@ def anonymous_support(request):
                 create_notification(
                     psych,
                     'anonymous_new',
-                    f'Новый анонимный запрос: "{msg[:60]}{"..." if len(msg)>60 else ""}" 🔒',
+                    f'Новый анонимный запрос: "{msg[:60]}{"..." if len(msg)>60 else ""}"',
                     '/psychologist/'
                 )
         return render(request, 'core/anon_success.html', {'lang':lang})
     return render(request, 'core/anonymous_support.html', {'lang':lang})
 
 # ── PROFILE ──────────────────────────────────────────────────
+
+def _get_info_panel_ctx(request, role, lang):
+    """Returns context variables required by the role-specific info panel."""
+    from .models import SchoolClass, ParentStudent
+    import json as _json
+    ctx = {}
+    today = timezone.now().date()
+
+    if role == 'psychologist':
+        ctx['student_count'] = User.objects.filter(profile__role='student').count()
+        ctx['class_count'] = SchoolClass.objects.count()
+        ctx['new_request_count'] = AnonymousRequest.objects.filter(status='new').count()
+        ctx['next_confirmed_apt'] = Appointment.objects.filter(
+            slot__psychologist=request.user,
+            status='confirmed',
+            slot__date__gte=today,
+        ).select_related('slot', 'student').order_by('slot__date', 'slot__time_start').first()
+        ctx['all_classes'] = sorted(SchoolClass.objects.all(), key=lambda c: _class_sort_key(c.name))
+        ctx['search'] = ''
+        ctx['class_filter'] = ''
+
+    elif role == 'parent':
+        children = [lnk.student for lnk in
+                    ParentStudent.objects.filter(parent=request.user).select_related('student')]
+        score_map = {'happy': 5, 'calm': 4, 'tired': 3, 'sad': 2, 'anxious': 1, 'angry': 1}
+        children_data = []
+        for child in children:
+            last_emotion = EmotionEntry.objects.filter(user=child).order_by('-created_at').first()
+            sparkline = []
+            for i in range(6, -1, -1):
+                day = today - timedelta(days=i)
+                e = EmotionEntry.objects.filter(user=child, created_at__date=day).order_by('-created_at').first()
+                sparkline.append(score_map.get(e.emotion, 3) if e else None)
+            children_data.append({
+                'user': child,
+                'last_emotion': last_emotion,
+                'last_emotions': EmotionEntry.objects.filter(user=child).order_by('-created_at')[:5],
+                'last_test': TestResult.objects.filter(user=child).order_by('-created_at').first(),
+                'sparkline': _json.dumps(sparkline),
+                'has_alert': bool(last_emotion and last_emotion.emotion in ['anxious', 'sad', 'angry']),
+            })
+        ctx['children_data'] = children_data
+        ctx['articles'] = Article.objects.filter(audience='parent')[:6]
+        ctx['notifications_count'] = Notification.objects.filter(user=request.user, is_read=False).count()
+
+    elif role == 'student':
+        streak = 0
+        check_day = today
+        for _ in range(366):
+            if EmotionEntry.objects.filter(user=request.user, created_at__date=check_day).exists():
+                streak += 1
+                check_day -= timedelta(days=1)
+            else:
+                break
+        ctx['emotion_count'] = EmotionEntry.objects.filter(user=request.user).count()
+        ctx['test_count'] = TestResult.objects.filter(user=request.user).count()
+        ctx['chat_count'] = ChatMessage.objects.filter(user=request.user).count()
+        ctx['diary_streak'] = streak
+
+    elif role == 'teacher':
+        from .models import SchoolClass
+        teacher_class = getattr(request.user.profile, 'school_class', None)
+        if teacher_class:
+            students = list(User.objects.filter(
+                profile__role='student', profile__school_class=teacher_class
+            ).select_related('profile__school_class')[:50])
+            available_classes = [teacher_class]
+        else:
+            students = list(User.objects.filter(profile__role='student').select_related('profile__school_class')[:50])
+            available_classes = sorted(SchoolClass.objects.all(), key=lambda c: _class_sort_key(c.name))
+
+        student_ids = [u.id for u in students]
+        em_keys = ['happy', 'calm', 'anxious', 'sad', 'angry', 'tired']
+        em_stats = {k: EmotionEntry.objects.filter(
+            emotion=k, user__id__in=student_ids,
+            created_at__date__gte=today - timedelta(days=7)
+        ).count() for k in em_keys}
+
+        attention_flags = []
+        for student in students:
+            bad = EmotionEntry.objects.filter(
+                user=student, emotion__in=['anxious', 'sad', 'angry'],
+                created_at__date__gte=today - timedelta(days=7)
+            ).count()
+            if bad > 0:
+                attention_flags.append({'user': student, 'count': bad})
+        attention_flags.sort(key=lambda x: -x['count'])
+
+        total_em = sum(em_stats.values())
+        positive_em = em_stats.get('happy', 0) + em_stats.get('calm', 0)
+
+        ctx['student_count'] = len(students)
+        ctx['emotion_count'] = EmotionEntry.objects.filter(user__id__in=student_ids).count()
+        ctx['test_count'] = TestResult.objects.filter(user__id__in=student_ids).count()
+        ctx['teacher_class'] = teacher_class
+        ctx['available_classes'] = available_classes
+        ctx['class_filter'] = ''
+        ctx['attention_flags'] = attention_flags[:3]
+        ctx['class_climate'] = round(positive_em / total_em * 100) if total_em > 0 else 50
+
+    return ctx
+
+
 @login_required
 def profile_view(request):
     lang = get_lang(request)
     profile = request.user.profile
+    role = profile.role
     success = None
     error = None
 
@@ -596,10 +946,10 @@ def profile_view(request):
         action = request.POST.get('action')
 
         if action == 'update_info':
-            first_name = request.POST.get('first_name', '').strip()
-            last_name  = request.POST.get('last_name', '').strip()
-            email      = request.POST.get('email', '').strip()
-            phone      = request.POST.get('phone', '').strip()
+            first_name   = request.POST.get('first_name', '').strip()
+            last_name    = request.POST.get('last_name', '').strip()
+            email        = request.POST.get('email', '').strip()
+            phone        = request.POST.get('phone', '').strip()
             new_username = request.POST.get('username', '').strip()
 
             if not new_username:
@@ -630,7 +980,6 @@ def profile_view(request):
             else:
                 request.user.set_password(new_pwd)
                 request.user.save()
-                # re-login after password change
                 from django.contrib.auth import update_session_auth_hash
                 update_session_auth_hash(request, request.user)
                 success = 'password'
@@ -735,7 +1084,7 @@ def book_appointment(request):
             create_notification(
                 psych,
                 'appointment_new',
-                f'Новая заявка на приём от {request.user.get_full_name() or request.user.username} на {slot_date.strftime("%d.%m.%Y")} в {time_start.strftime("%H:%M")} 📬',
+                f'Новая заявка на приём от {request.user.get_full_name() or request.user.username} на {slot_date.strftime("%d.%m.%Y")} в {time_start.strftime("%H:%M")}',
                 '/psychologist/appointments/'
             )
             return redirect('my_appointments')
@@ -824,7 +1173,7 @@ def psychologist_appointments(request):
                 create_notification(
                     apt.student,
                     'appointment_confirmed',
-                    f'Ваша запись к психологу {request.user.get_full_name()} на {apt.slot.date.strftime("%d.%m.%Y")} в {apt.slot.time_start.strftime("%H:%M")} подтверждена! ✅',
+                    f'Ваша запись к психологу {request.user.get_full_name()} на {apt.slot.date.strftime("%d.%m.%Y")} в {apt.slot.time_start.strftime("%H:%M")} подтверждена!',
                     '/my-appointments/'
                 )
             elif action == 'reject':
@@ -835,7 +1184,7 @@ def psychologist_appointments(request):
                 create_notification(
                     apt.student,
                     'appointment_rejected',
-                    f'К сожалению, ваша запись к психологу на {apt.slot.date.strftime("%d.%m.%Y")} в {apt.slot.time_start.strftime("%H:%M")} была отклонена. {("Причина: " + note) if note else "Попробуйте выбрать другое время."} ❌',
+                    f'К сожалению, ваша запись к психологу на {apt.slot.date.strftime("%d.%m.%Y")} в {apt.slot.time_start.strftime("%H:%M")} была отклонена. {("Причина: " + note) if note else "Попробуйте выбрать другое время."}',
                     '/my-appointments/'
                 )
             apt.psychologist_note = note
@@ -844,12 +1193,17 @@ def psychologist_appointments(request):
             pass
         return redirect('psychologist_appointments')
 
+    from .models import SchoolClass, UserProfile, AnonymousRequest
     return render(request, 'core/psychologist/appointments.html', {
         'lang': lang,
         'pending': pending,
         'confirmed': confirmed,
         'archive': archive,
         'today': today,
+        'student_count': UserProfile.objects.filter(role='student').count(),
+        'class_count': SchoolClass.objects.count(),
+        'new_request_count': AnonymousRequest.objects.filter(status='new').count(),
+        'all_classes': sorted(SchoolClass.objects.all(), key=lambda c: _class_sort_key(c.name)),
     })
 
 
@@ -970,6 +1324,7 @@ def manage_schedule(request):
     # Заголовки дней
     week_days = [{'date': d, 'is_today': d == today, 'is_past': d < today} for d in week_days_dates]
 
+    from .models import SchoolClass, UserProfile, AnonymousRequest
     return render(request, 'core/psychologist/schedule.html', {
         'lang': lang,
         'week_days': week_days,
@@ -982,6 +1337,10 @@ def manage_schedule(request):
         'error': error,
         'success': success,
         'today': today,
+        'student_count': UserProfile.objects.filter(role='student').count(),
+        'class_count': SchoolClass.objects.count(),
+        'new_request_count': AnonymousRequest.objects.filter(status='new').count(),
+        'all_classes': sorted(SchoolClass.objects.all(), key=lambda c: _class_sort_key(c.name)),
     })
 
 
@@ -1219,12 +1578,12 @@ def parent_book_appointment(request):
 
     # Причины обращения
     reason_choices = [
-        ('anxiety',  '😰 Тревога / Стресс'),
-        ('bullying', '🔴 Буллинг'),
-        ('family',   '👨‍👩‍👧 Семейные проблемы'),
-        ('study',    '📚 Проблемы с учёбой'),
-        ('behavior', '⚡ Поведение'),
-        ('other',    '✏️ Другое'),
+        ('anxiety',  'Тревога / Стресс'),
+        ('bullying', 'Буллинг'),
+        ('family',   'Семейные проблемы'),
+        ('study',    'Проблемы с учёбой'),
+        ('behavior', 'Поведение'),
+        ('other',    'Другое'),
     ]
 
     success = error = None
@@ -1298,13 +1657,13 @@ def parent_book_appointment(request):
                 # Уведомление психологу
                 create_notification(
                     psych, 'appointment_new',
-                    f'Новая заявка от родителя: {child_user.get_full_name() or child_user.username} на {slot_date.strftime("%d.%m.%Y")} в {time_start.strftime("%H:%M")} 📬',
+                    f'Новая заявка от родителя: {child_user.get_full_name() or child_user.username} на {slot_date.strftime("%d.%m.%Y")} в {time_start.strftime("%H:%M")}',
                     '/psychologist/appointments/'
                 )
                 # Уведомление ученику
                 create_notification(
                     child_user, 'appointment_new',
-                    f'Родитель записал тебя к психологу на {slot_date.strftime("%d.%m.%Y")} в {time_start.strftime("%H:%M")} 📅',
+                    f'Родитель записал тебя к психологу на {slot_date.strftime("%d.%m.%Y")} в {time_start.strftime("%H:%M")}',
                     '/my-appointments/'
                 )
                 success = f'{"Бала жазылды!" if lang == "kz" else "Ребёнок записан!"} {slot_date.strftime("%d.%m.%Y")} {"сағат" if lang == "kz" else "в"} {time_start.strftime("%H:%M")}'
@@ -1323,6 +1682,136 @@ def parent_book_appointment(request):
     })
 
 
+# ── TEACHER BOOK APPOINTMENT ───────────────────────────────────
+@login_required
+def teacher_book_appointment(request):
+    """Учитель записывает ученика своего класса к психологу"""
+    from datetime import date, timedelta, time as dtime
+    lang = get_lang(request)
+    if get_role(request.user) != 'teacher': return role_redirect(request.user)
+
+    teacher_class = getattr(request.user.profile, 'school_class', None)
+
+    # Ученики учителя: свой класс, либо все (если класс не задан)
+    if teacher_class:
+        students_qs = User.objects.filter(
+            profile__role='student',
+            profile__school_class=teacher_class,
+        ).select_related('profile__school_class')
+    else:
+        students_qs = User.objects.filter(
+            profile__role='student',
+        ).select_related('profile__school_class')
+    students = list(students_qs.order_by('last_name', 'first_name'))
+
+    selected_student_id = request.GET.get('child', str(students[0].id) if students else '')
+    selected_student = None
+    for s in students:
+        if str(s.id) == selected_student_id:
+            selected_student = s
+            break
+
+    reason_choices = [
+        ('anxiety',  'Тревога / Стресс'),
+        ('bullying', 'Буллинг'),
+        ('family',   'Семейные проблемы'),
+        ('study',    'Проблемы с учёбой'),
+        ('behavior', 'Поведение'),
+        ('other',    'Другое'),
+    ]
+
+    success = error = None
+    slots_by_date = {}
+
+    if selected_student:
+        today = tz.now().date()
+        psychologists = User.objects.filter(profile__role='psychologist')
+        free_slots = []
+        for offset in range(0, 15):
+            day = today + timedelta(days=offset)
+            if day.weekday() >= 5:
+                continue
+            for hour in range(9, 18):
+                time_start = dtime(hour, 0)
+                time_end   = dtime(hour + 1, 0)
+                for psych in psychologists:
+                    is_blocked = PsychologistSchedule.objects.filter(
+                        psychologist=psych, date=day,
+                        time_start=time_start, is_available=False
+                    ).exists()
+                    is_booked = Appointment.objects.filter(
+                        slot__psychologist=psych, slot__date=day,
+                        slot__time_start=time_start,
+                        status__in=['pending','confirmed']
+                    ).exists()
+                    if not is_blocked and not is_booked:
+                        free_slots.append({
+                            'psychologist': psych,
+                            'date': day,
+                            'time_start': time_start,
+                            'time_end': time_end,
+                            'slot_key': f"{psych.id}_{day}_{hour}",
+                        })
+        for slot in free_slots:
+            d = slot['date']
+            slots_by_date.setdefault(d, []).append(slot)
+
+    if request.method == 'POST':
+        child_id  = request.POST.get('child_id')
+        slot_key  = request.POST.get('slot_key', '')
+        note      = request.POST.get('note', '').strip()
+        reason    = request.POST.get('reason', 'other')
+
+        try:
+            student_user = User.objects.get(id=child_id, profile__role='student')
+            # Проверка: ученик должен быть в классе учителя (если задан)
+            if teacher_class and student_user.profile.school_class_id != teacher_class.id:
+                error = 'Ошибка доступа: ученик не из вашего класса'
+            else:
+                parts = slot_key.split('_')
+                psych_id   = int(parts[0])
+                slot_date  = date.fromisoformat(parts[1])
+                slot_hour  = int(parts[2])
+                time_start = dtime(slot_hour, 0)
+                time_end   = dtime(slot_hour + 1, 0)
+                psych = User.objects.get(id=psych_id, profile__role='psychologist')
+
+                slot_obj, _ = PsychologistSchedule.objects.get_or_create(
+                    psychologist=psych, date=slot_date, time_start=time_start,
+                    defaults={'time_end': time_end, 'is_available': True}
+                )
+                Appointment.objects.create(
+                    student=student_user, slot=slot_obj,
+                    reason=reason, student_note=note,
+                )
+                teacher_name = request.user.get_full_name() or request.user.username
+                create_notification(
+                    psych, 'appointment_new',
+                    f'Новая заявка от учителя {teacher_name}: {student_user.get_full_name() or student_user.username} на {slot_date.strftime("%d.%m.%Y")} в {time_start.strftime("%H:%M")}',
+                    '/psychologist/appointments/'
+                )
+                create_notification(
+                    student_user, 'appointment_new',
+                    f'Учитель записал тебя к психологу на {slot_date.strftime("%d.%m.%Y")} в {time_start.strftime("%H:%M")}',
+                    '/my-appointments/'
+                )
+                success = f'{"Оқушы жазылды!" if lang == "kz" else "Ученик записан!"} {slot_date.strftime("%d.%m.%Y")} {"сағат" if lang == "kz" else "в"} {time_start.strftime("%H:%M")}'
+        except Exception as e:
+            error = str(e)
+
+    return render(request, 'core/teacher/book_appointment.html', {
+        'lang': lang,
+        'students': students,
+        'selected_student': selected_student,
+        'selected_student_id': selected_student_id,
+        'slots_by_date': slots_by_date,
+        'reason_choices': reason_choices,
+        'success': success,
+        'error': error,
+        'teacher_class': teacher_class,
+    })
+
+
 # ══════════════════════════════════════════════════════════════
 # ПСИХОЛОГИЧЕСКИЙ ТЕСТ-ЦЕНТР
 # ══════════════════════════════════════════════════════════════
@@ -1335,8 +1824,12 @@ def psych_test_list(request):
     from .models import PsychTest, SchoolClass
     tests = PsychTest.objects.filter(psychologist=request.user).prefetch_related('questions','results')
     all_classes = sorted(SchoolClass.objects.all(), key=lambda c: _class_sort_key(c.name))
+    from .models import UserProfile, AnonymousRequest
     return render(request, 'core/psychologist/test_list.html', {
         'lang': lang, 'tests': tests, 'all_classes': all_classes,
+        'student_count': UserProfile.objects.filter(role='student').count(),
+        'class_count': all_classes.__len__(),
+        'new_request_count': AnonymousRequest.objects.filter(status='new').count(),
     })
 
 
@@ -1484,7 +1977,7 @@ def psych_test_detail(request, test_id):
                 for student in students:
                     create_notification(
                         student, 'appointment_new',
-                        f'Психолог назначил вам тест: «{test.title}». Пройдите его в Тест-центре! 📋',
+                        f'Психолог назначил вам тест: «{test.title}». Пройдите его в Тест-центре!',
                         '/student/psych-tests/'
                     )
         elif action == 'close':
@@ -1636,7 +2129,7 @@ def student_take_psych_test(request, test_id):
         # Уведомление психологу
         create_notification(
             test.psychologist, 'appointment_new',
-            f'{request.user.get_full_name() or request.user.username} прошёл тест «{test.title}» 📊',
+            f'{request.user.get_full_name() or request.user.username} прошёл тест «{test.title}»',
             f'/psychologist/tests/{test.id}/'
         )
 
@@ -1685,4 +2178,391 @@ def student_psych_test_done(request, test_id):
     result = get_object_or_404(PsychTestResult, test=test, student=request.user)
     return render(request, 'core/student/psych_test_done.html', {
         'lang': lang, 'test': test, 'result': result,
+    })
+
+
+# ══════════════════════════════════════════════════════════════
+# ЦИКЛ ОБРАЩЕНИЙ — Шаг 1: Подача жалобы (ученик)
+# ══════════════════════════════════════════════════════════════
+
+@login_required
+def student_new_request(request):
+    lang = get_lang(request)
+    if get_role(request.user) != 'student':
+        return role_redirect(request.user)
+
+    error = None
+
+    if request.method == 'POST':
+        text        = request.POST.get('text', '').strip()
+        category    = request.POST.get('category', 'other')
+        is_anon     = request.POST.get('is_anonymous') == 'on'
+
+        if not text:
+            error = ('Жағдайды сипаттаңыз' if lang == 'kz'
+                     else 'Опишите ситуацию — это поможет психологу быстрее понять вас')
+        else:
+            req = StudentRequest.objects.create(
+                student=request.user,
+                category=category,
+                text=text,
+                is_anonymous=is_anon,
+                status='new',
+                lang=lang,
+            )
+
+            # Шаг 2: сразу запускаем ИИ-анализ
+            _analyze_complaint(req)
+
+            display_name = ('***' if is_anon
+                            else (request.user.get_full_name() or request.user.username))
+            risk_label = {'low': '🟢', 'medium': '🟡', 'high': '🔴', 'critical': '🚨'}
+            risk_icon = risk_label.get(req.ai_risk_level, '')
+
+            psychologists = User.objects.filter(profile__role='psychologist')
+            for psy in psychologists:
+                create_notification(
+                    psy, 'request_ai_ready',
+                    f'{risk_icon} Новое обращение [{req.get_ai_risk_level_display()}]: '
+                    f'{display_name} — {req.get_category_display()}',
+                    f'/psychologist/requests/{req.id}/',
+                )
+
+            return redirect(f'{request.path}?sent=1')
+
+    sent = request.GET.get('sent') == '1'
+    past_requests = StudentRequest.objects.filter(
+        student=request.user
+    ).order_by('-created_at')[:5]
+
+    return render(request, 'core/student/new_request.html', {
+        'lang': lang,
+        'category_choices': StudentRequest.CATEGORY_CHOICES,
+        'error': error,
+        'sent': sent,
+        'past_requests': past_requests,
+        'active': 'requests',
+    })
+
+
+# ══════════════════════════════════════════════════════════════
+# ЦИКЛ ОБРАЩЕНИЙ — Шаг 1: Поведенческий сигнал (учитель)
+# ══════════════════════════════════════════════════════════════
+
+@login_required
+def teacher_new_observation(request):
+    lang = get_lang(request)
+    if get_role(request.user) != 'teacher':
+        return role_redirect(request.user)
+
+    teacher_class = getattr(request.user.profile, 'school_class', None)
+
+    if teacher_class:
+        students = User.objects.filter(
+            profile__role='student',
+            profile__school_class=teacher_class,
+        ).order_by('last_name', 'first_name')
+    else:
+        students = User.objects.filter(
+            profile__role='student',
+        ).order_by('last_name', 'first_name')
+
+    error = None
+
+    if request.method == 'POST':
+        student_id   = request.POST.get('student_id', '').strip()
+        category     = request.POST.get('category', 'other')
+        urgency      = request.POST.get('urgency', 'low')
+        description  = request.POST.get('description', '').strip()
+        duration_raw = request.POST.get('duration_days', '').strip()
+
+        if not student_id or not description:
+            error = ('Міндетті өрістерді толтырыңыз' if lang == 'kz'
+                     else 'Заполните обязательные поля: ученик и описание')
+        else:
+            try:
+                student = User.objects.get(id=student_id, profile__role='student')
+
+                duration = int(duration_raw) if duration_raw.isdigit() else None
+
+                obs = TeacherObservation.objects.create(
+                    teacher=request.user,
+                    student=student,
+                    category=category,
+                    urgency=urgency,
+                    description=description,
+                    duration_days=duration,
+                )
+
+                teacher_name = request.user.get_full_name() or request.user.username
+                student_name = student.get_full_name() or student.username
+                urgency_label = dict(TeacherObservation.URGENCY_CHOICES).get(urgency, urgency)
+
+                psychologists = User.objects.filter(profile__role='psychologist')
+                for psy in psychologists:
+                    create_notification(
+                        psy, 'observation_new',
+                        f'Сигнал от учителя {teacher_name}: {student_name} — '
+                        f'{obs.get_category_display()} [{urgency_label}]',
+                        f'/psychologist/observations/{obs.id}/',
+                    )
+
+                return redirect(f'{request.path}?sent=1')
+
+            except User.DoesNotExist:
+                error = ('Оқушы табылмады' if lang == 'kz' else 'Ученик не найден')
+
+    sent = request.GET.get('sent') == '1'
+    recent_obs = TeacherObservation.objects.filter(
+        teacher=request.user
+    ).select_related('student').order_by('-created_at')[:8]
+
+    return render(request, 'core/teacher/new_observation.html', {
+        'lang': lang,
+        'students': students,
+        'teacher_class': teacher_class,
+        'category_choices': TeacherObservation.CATEGORY_CHOICES,
+        'urgency_choices': TeacherObservation.URGENCY_CHOICES,
+        'error': error,
+        'sent': sent,
+        'recent_obs': recent_obs,
+        'active': 'observe',
+    })
+
+
+# ══════════════════════════════════════════════════════════════
+# ЦИКЛ ОБРАЩЕНИЙ — Шаг 3: Кейсы психолога
+# ══════════════════════════════════════════════════════════════
+
+_RISK_SORT = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3, '': 4}
+
+
+@login_required
+def psychologist_requests_list(request):
+    lang = get_lang(request)
+    if get_role(request.user) != 'psychologist':
+        return role_redirect(request.user)
+
+    status_f = request.GET.get('status', '')
+    risk_f   = request.GET.get('risk', '')
+
+    qs = StudentRequest.objects.select_related(
+        'student', 'student__profile__school_class', 'assigned_to'
+    ).exclude(status='archived')
+
+    if status_f:
+        qs = qs.filter(status=status_f)
+    if risk_f:
+        # effective_risk is a property — filter on both AI and override
+        qs = qs.filter(
+            models.Q(psy_risk_override=risk_f) |
+            models.Q(psy_risk_override='', ai_risk_level=risk_f)
+        )
+
+    requests_list = sorted(
+        qs,
+        key=lambda r: (_RISK_SORT.get(r.effective_risk, 4), -r.created_at.timestamp())
+    )
+
+    observations_list = TeacherObservation.objects.select_related(
+        'student', 'student__profile__school_class', 'teacher'
+    ).filter(is_reviewed=False).order_by(
+        models.Case(
+            models.When(urgency='critical', then=0),
+            models.When(urgency='high', then=1),
+            models.When(urgency='medium', then=2),
+            default=3,
+            output_field=models.IntegerField(),
+        ),
+        '-created_at'
+    )
+    new_obs_count = observations_list.count()
+
+    stats = {
+        'new':       StudentRequest.objects.filter(status__in=['new', 'ai_analyzed']).count(),
+        'in_review': StudentRequest.objects.filter(status='in_review').count(),
+        'high_risk': StudentRequest.objects.filter(
+            ai_risk_level__in=['high', 'critical']
+        ).exclude(status__in=['concluded', 'archived']).count(),
+        'total':     StudentRequest.objects.exclude(status='archived').count(),
+    }
+
+    return render(request, 'core/psychologist/requests_list.html', {
+        'lang': lang,
+        'requests_list': requests_list,
+        'status_f': status_f,
+        'risk_f': risk_f,
+        'new_obs_count': new_obs_count,
+        'observations_list': observations_list,
+        'stats': stats,
+        'status_choices': StudentRequest.STATUS_CHOICES,
+        'risk_choices': StudentRequest.RISK_CHOICES,
+        'active': 'cases',
+    })
+
+
+@login_required
+def psychologist_request_detail(request, req_id):
+    lang = get_lang(request)
+    if get_role(request.user) != 'psychologist':
+        return role_redirect(request.user)
+
+    from .models import ParentStudent
+    req = get_object_or_404(StudentRequest, id=req_id)
+    student = req.student
+
+    # Переводим в in_review при первом открытии
+    if req.status in ('new', 'ai_analyzed'):
+        req.status = 'in_review'
+        if not req.assigned_to:
+            req.assigned_to = request.user
+        req.save(update_fields=['status', 'assigned_to'])
+
+    # Помечаем наблюдения учителя просмотренными
+    TeacherObservation.objects.filter(
+        student=student, is_reviewed=False
+    ).update(is_reviewed=True, reviewed_by=request.user, reviewed_at=timezone.now())
+
+    # Контекст ученика
+    observations  = TeacherObservation.objects.filter(
+        student=student
+    ).select_related('teacher').order_by('-created_at')[:10]
+
+    recent_emotions = EmotionEntry.objects.filter(
+        user=student
+    ).order_by('-created_at')[:7]
+
+    past_requests = StudentRequest.objects.filter(
+        student=student
+    ).exclude(id=req.id).order_by('-created_at')[:5]
+
+    last_psych = PsychTestResult.objects.filter(
+        student=student
+    ).order_by('-completed_at').first()
+
+    if request.method == 'POST':
+        conclusion   = request.POST.get('psy_conclusion', '').strip()
+        recs         = request.POST.get('psy_recommendations', '').strip()
+        risk_override = request.POST.get('psy_risk_override', '').strip()
+        parent_msg   = request.POST.get('parent_message', '').strip()
+        do_approve   = request.POST.get('approve') == '1'
+
+        req.psy_conclusion      = conclusion
+        req.psy_recommendations = recs
+        req.psy_risk_override   = risk_override
+        req.parent_message      = parent_msg
+
+        if do_approve and conclusion:
+            req.is_approved  = True
+            req.approved_at  = timezone.now()
+            req.status       = 'concluded'
+
+            parent_links = ParentStudent.objects.filter(
+                student=student
+            ).select_related('parent')
+            for link in parent_links:
+                create_notification(
+                    link.parent, 'parent_conclusion',
+                    f'Психолог подготовил заключение по обращению вашего ребёнка',
+                    f'/parent/conclusions/{req.id}/',
+                )
+            req.parent_notified = bool(parent_links)
+            if req.parent_notified:
+                req.parent_notified_at = timezone.now()
+
+        req.save()
+        return redirect('psychologist_request_detail', req_id=req.id)
+
+    return render(request, 'core/psychologist/request_detail.html', {
+        'lang': lang,
+        'req': req,
+        'student': student,
+        'observations': observations,
+        'recent_emotions': recent_emotions,
+        'past_requests': past_requests,
+        'last_psych': last_psych,
+        'ai_lines': req.ai_summary.split('\n') if req.ai_summary else [],
+        'risk_choices': StudentRequest.RISK_CHOICES,
+        'active': 'cases',
+    })
+
+
+@login_required
+def psychologist_observation_detail(request, obs_id):
+    lang = get_lang(request)
+    if get_role(request.user) != 'psychologist':
+        return role_redirect(request.user)
+
+    obs = get_object_or_404(TeacherObservation, id=obs_id)
+
+    if not obs.is_reviewed:
+        obs.is_reviewed  = True
+        obs.reviewed_by  = request.user
+        obs.reviewed_at  = timezone.now()
+        obs.save(update_fields=['is_reviewed', 'reviewed_by', 'reviewed_at'])
+
+    if request.method == 'POST':
+        obs.psy_note = request.POST.get('psy_note', '').strip()
+        link_id = request.POST.get('linked_request_id', '').strip()
+        if link_id:
+            try:
+                obs.linked_request = StudentRequest.objects.get(
+                    id=link_id, student=obs.student
+                )
+            except StudentRequest.DoesNotExist:
+                pass
+        obs.save()
+        return redirect('psychologist_observation_detail', obs_id=obs.id)
+
+    student_requests = StudentRequest.objects.filter(
+        student=obs.student
+    ).order_by('-created_at')[:10]
+
+    return render(request, 'core/psychologist/observation_detail.html', {
+        'lang': lang,
+        'obs': obs,
+        'student_requests': student_requests,
+        'active': 'cases',
+    })
+
+
+# ══════════════════════════════════════════════════════════════
+# ЦИКЛ ОБРАЩЕНИЙ — Шаг 4: Заключение для родителя
+# ══════════════════════════════════════════════════════════════
+
+@login_required
+def parent_conclusion_view(request, req_id):
+    lang = get_lang(request)
+    if get_role(request.user) != 'parent':
+        return role_redirect(request.user)
+
+    from .models import ParentStudent
+
+    # Доступ только если ребёнок привязан к этому родителю
+    req = get_object_or_404(
+        StudentRequest,
+        id=req_id,
+        is_approved=True,
+        student__parent_links__parent=request.user,
+    )
+
+    # Помечаем уведомления о заключении как прочитанные
+    Notification.objects.filter(
+        user=request.user,
+        notif_type='parent_conclusion',
+        link__contains=f'/parent/conclusions/{req.id}/',
+        is_read=False,
+    ).update(is_read=True)
+
+    # Другие заключения по этому же ребёнку
+    other_conclusions = StudentRequest.objects.filter(
+        student=req.student,
+        is_approved=True,
+    ).exclude(id=req.id).order_by('-approved_at')[:4]
+
+    return render(request, 'core/parent/conclusion_detail.html', {
+        'lang': lang,
+        'req': req,
+        'other_conclusions': other_conclusions,
+        'active': 'conclusions',
     })

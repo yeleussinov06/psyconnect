@@ -1,0 +1,34 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "PsyConnect" [ref=e3] [cursor=pointer]:
+      - /url: /landing/
+      - img [ref=e5]
+      - generic [ref=e8]: PsyConnect
+    - generic [ref=e9]:
+      - list [ref=e10]:
+        - listitem [ref=e11]:
+          - link "Войти" [ref=e12] [cursor=pointer]:
+            - /url: /login/
+        - listitem [ref=e13]:
+          - link "Регистрация" [ref=e14] [cursor=pointer]:
+            - /url: /register/
+      - generic [ref=e16]:
+        - link "RU" [ref=e17] [cursor=pointer]:
+          - /url: /lang/ru/
+        - link "KZ" [ref=e18] [cursor=pointer]:
+          - /url: /lang/kz/
+  - generic [ref=e20]:
+    - heading "Войти" [level=1] [ref=e23]
+    - paragraph [ref=e24]: Добро пожаловать в PsyConnect
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - generic [ref=e27]: Логин
+        - textbox "Введите логин" [ref=e28]
+      - generic [ref=e29]:
+        - generic [ref=e30]: Пароль
+        - textbox "Введите пароль" [ref=e31]
+      - button "Войти →" [ref=e32] [cursor=pointer]
+    - generic [ref=e33]: или
+    - link "Создать новый аккаунт" [ref=e34] [cursor=pointer]:
+      - /url: /register/
+  - contentinfo [ref=e35]: PsyConnect · Платформа для школьного сообщества © 2025

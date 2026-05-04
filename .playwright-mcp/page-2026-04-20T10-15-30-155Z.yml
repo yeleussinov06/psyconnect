@@ -1,0 +1,134 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "PsyConnect" [ref=e3] [cursor=pointer]:
+      - /url: /landing/
+      - img [ref=e5]
+      - generic [ref=e8]: PsyConnect
+    - generic [ref=e9]:
+      - list [ref=e10]:
+        - listitem [ref=e11]:
+          - link "Панель" [ref=e12] [cursor=pointer]:
+            - /url: /psychologist/
+        - listitem [ref=e13]:
+          - link "1" [ref=e14] [cursor=pointer]:
+            - /url: /notifications/
+            - img [ref=e15]
+            - generic [ref=e17]: "1"
+      - generic [ref=e19]:
+        - link "RU" [ref=e20] [cursor=pointer]:
+          - /url: /lang/ru/
+        - link "KZ" [ref=e21] [cursor=pointer]:
+          - /url: /lang/kz/
+    - generic [ref=e23]:
+      - button "С Сара Мара" [ref=e24] [cursor=pointer]:
+        - generic [ref=e25]: С
+        - generic [ref=e26]: Сара Мара
+        - img [ref=e27]
+      - generic:
+        - link "Профиль":
+          - /url: /profile/
+          - img
+          - text: Профиль
+        - link "Анонимно":
+          - /url: /anonymous/
+          - img
+          - text: Анонимно
+        - link "Выйти":
+          - /url: /logout/
+          - img
+          - text: Выйти
+  - generic [ref=e30]:
+    - generic [ref=e31]:
+      - generic [ref=e32]: Для школьного сообщества
+      - heading "Психологическая поддержка — тёплая и безопасная" [level=1] [ref=e33]
+      - paragraph [ref=e34]: PsyConnect — платформа для учеников, родителей, учителей и психологов. AI-поддержка, дневник эмоций и связь с лицензированными специалистами.
+      - generic [ref=e35]:
+        - link "Начать" [ref=e36] [cursor=pointer]:
+          - /url: /register/
+        - link "Написать анонимно" [ref=e37] [cursor=pointer]:
+          - /url: /anonymous/
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - img [ref=e41]
+        - generic [ref=e44]: AI-поддержка
+        - generic [ref=e45]: 24/7
+      - generic [ref=e46]:
+        - img [ref=e48]
+        - generic [ref=e50]: Дневник
+        - generic [ref=e51]: Каждый день
+      - generic [ref=e52]:
+        - img [ref=e54]
+        - generic [ref=e58]: Тесты
+        - generic [ref=e59]: 4 категории
+      - generic [ref=e60]:
+        - img [ref=e62]
+        - generic [ref=e65]: Психолог
+        - generic [ref=e66]: Лицензированный
+  - generic [ref=e68]:
+    - generic [ref=e69]:
+      - generic [ref=e70]: ВОЗМОЖНОСТИ
+      - heading "Что даёт платформа?" [level=2] [ref=e71]
+      - paragraph [ref=e72]: Комплексное решение для всех участников школьного сообщества
+    - generic [ref=e73]:
+      - generic [ref=e74]:
+        - img [ref=e76]
+        - generic [ref=e79]: AI-чат поддержки
+        - paragraph [ref=e80]: Первичный скрининг и маршрутизация. Human-in-the-loop принцип.
+      - generic [ref=e81]:
+        - img [ref=e83]
+        - generic [ref=e85]: Дневник эмоций
+        - paragraph [ref=e86]: Ежедневное отслеживание настроения. График динамики за 14 дней.
+      - generic [ref=e87]:
+        - img [ref=e89]
+        - generic [ref=e93]: Центр тестирования
+        - paragraph [ref=e94]: Тесты на тревожность, стресс, мотивацию и социальную адаптацию.
+      - generic [ref=e95]:
+        - img [ref=e97]
+        - generic [ref=e99]: Анонимный канал
+        - paragraph [ref=e100]: Отправить личное сообщение без регистрации. Психолог ответит.
+      - generic [ref=e101]:
+        - img [ref=e103]
+        - generic [ref=e107]: Для родителей
+        - paragraph [ref=e108]: Мониторинг состояния ребёнка, статьи и связь с психологом.
+      - generic [ref=e109]:
+        - img [ref=e111]
+        - generic [ref=e115]: Для учителей
+        - paragraph [ref=e116]: Статистика класса, эмоции и результаты тестов учеников.
+  - generic [ref=e118]:
+    - generic [ref=e119]:
+      - generic [ref=e120]: АУДИТОРИЯ
+      - heading "Для кого?" [level=2] [ref=e121]
+    - generic [ref=e122]:
+      - generic [ref=e123]:
+        - img [ref=e125]
+        - heading "Ученики" [level=3] [ref=e128]
+        - paragraph [ref=e129]: Дневник эмоций, тесты, AI-чат
+        - link "Войти" [ref=e130] [cursor=pointer]:
+          - /url: /register/
+      - generic [ref=e131]:
+        - img [ref=e133]
+        - heading "Родители" [level=3] [ref=e137]
+        - paragraph [ref=e138]: Мониторинг состояния ребёнка
+        - link "Войти" [ref=e139] [cursor=pointer]:
+          - /url: /register/
+      - generic [ref=e140]:
+        - img [ref=e142]
+        - heading "Учителя" [level=3] [ref=e146]
+        - paragraph [ref=e147]: Статистика класса
+        - link "Войти" [ref=e148] [cursor=pointer]:
+          - /url: /register/
+      - generic [ref=e149]:
+        - img [ref=e151]
+        - heading "Психологи" [level=3] [ref=e155]
+        - paragraph [ref=e156]: Запросы, мониторинг
+        - link "Войти" [ref=e157] [cursor=pointer]:
+          - /url: /register/
+  - generic [ref=e159]:
+    - heading "Начните сегодня" [level=2] [ref=e160]
+    - paragraph [ref=e161]: Регистрация бесплатна. Доступ к психологической поддержке — за несколько секунд.
+    - generic [ref=e162]:
+      - link "Зарегистрироваться" [ref=e163] [cursor=pointer]:
+        - /url: /register/
+      - link "Написать анонимно" [ref=e164] [cursor=pointer]:
+        - /url: /anonymous/
+  - contentinfo [ref=e165]: PsyConnect · Платформа для школьного сообщества © 2025

@@ -1,11 +1,11 @@
-{% extends 'base.html' %}
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
 {% load icons %}
 {% block title %}{% if lang == 'kz' %}Эмоция күнделігі{% else %}Дневник эмоций{% endif %} — PsyConnect{% endblock %}
-{% block extra_css %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
-{% block content %}
-<div class="dashboard">
-  {% include "core/student/sidebar.html" with active="emotions" %}
-  <main class="main-content">
+{% block dashboard_extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+{% block main_content %}
     <div class="page-header">
       <h1 class="page-title">{% if lang == 'kz' %}Эмоция күнделігі{% else %}Дневник эмоций{% endif %}</h1>
       <p class="page-subtitle">{% if lang == 'kz' %}Бүгін қалай сезінесің?{% else %}Как ты себя чувствуешь сегодня?{% endif %}</p>
@@ -56,19 +56,19 @@
               <input type="radio" name="event_type" value="" checked style="display:none;" onchange="updateEventStyle(this)"> — {% if lang == 'kz' %}Жоқ{% else %}Нет{% endif %}
             </label>
             <label style="cursor:pointer;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);font-size:.8rem;font-weight:500;transition:all .2s;">
-              <input type="radio" name="event_type" value="bullying" style="display:none;" onchange="updateEventStyle(this)"> 🔴 {% if lang == 'kz' %}Буллинг{% else %}Буллинг{% endif %}
+              <input type="radio" name="event_type" value="bullying" style="display:none;" onchange="updateEventStyle(this)"> <i data-lucide="alert-circle" style="width:12px;height:12px;vertical-align:middle;color:#EF4444;"></i> {% if lang == 'kz' %}Буллинг{% else %}Буллинг{% endif %}
             </label>
             <label style="cursor:pointer;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);font-size:.8rem;font-weight:500;transition:all .2s;">
-              <input type="radio" name="event_type" value="conflict" style="display:none;" onchange="updateEventStyle(this)"> 🟡 {% if lang == 'kz' %}Жанжал{% else %}Конфликт{% endif %}
+              <input type="radio" name="event_type" value="conflict" style="display:none;" onchange="updateEventStyle(this)"> <i data-lucide="alert-triangle" style="width:12px;height:12px;vertical-align:middle;color:#F59E0B;"></i> {% if lang == 'kz' %}Жанжал{% else %}Конфликт{% endif %}
             </label>
             <label style="cursor:pointer;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);font-size:.8rem;font-weight:500;transition:all .2s;">
-              <input type="radio" name="event_type" value="study" style="display:none;" onchange="updateEventStyle(this)"> 📚 {% if lang == 'kz' %}Оқу стрессі{% else %}Стресс от учёбы{% endif %}
+              <input type="radio" name="event_type" value="study" style="display:none;" onchange="updateEventStyle(this)"> <i data-lucide="book-open" style="width:12px;height:12px;vertical-align:middle;"></i> {% if lang == 'kz' %}Оқу стрессі{% else %}Стресс от учёбы{% endif %}
             </label>
             <label style="cursor:pointer;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);font-size:.8rem;font-weight:500;transition:all .2s;">
-              <input type="radio" name="event_type" value="loneliness" style="display:none;" onchange="updateEventStyle(this)"> 💙 {% if lang == 'kz' %}Жалғыздық{% else %}Одиночество{% endif %}
+              <input type="radio" name="event_type" value="loneliness" style="display:none;" onchange="updateEventStyle(this)"> <i data-lucide="heart" style="width:12px;height:12px;vertical-align:middle;color:#3B82F6;"></i> {% if lang == 'kz' %}Жалғыздық{% else %}Одиночество{% endif %}
             </label>
             <label style="cursor:pointer;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);font-size:.8rem;font-weight:500;transition:all .2s;">
-              <input type="radio" name="event_type" value="other" style="display:none;" onchange="updateEventStyle(this)"> ✏️ {% if lang == 'kz' %}Басқа{% else %}Другое{% endif %}
+              <input type="radio" name="event_type" value="other" style="display:none;" onchange="updateEventStyle(this)"> <i data-lucide="pencil" style="width:12px;height:12px;vertical-align:middle;"></i> {% if lang == 'kz' %}Басқа{% else %}Другое{% endif %}
             </label>
           </div>
         </div>
@@ -83,7 +83,7 @@
 
     <!-- CHART -->
     <div class="card" style="margin-bottom:2rem;">
-      <div class="card-header"><span class="card-title">📈 {% if lang == 'kz' %}14 күндік динамика{% else %}Динамика за 14 дней{% endif %}</span></div>
+      <div class="card-header"><span class="card-title"><i data-lucide="trending-up" style="width:16px;height:16px;vertical-align:middle;margin-right:.25rem;"></i> {% if lang == 'kz' %}14 күндік динамика{% else %}Динамика за 14 дней{% endif %}</span></div>
       <canvas id="emotionChart" height="100"></canvas>
     </div>
 
@@ -111,10 +111,8 @@
         </div>
       {% endif %}
     </div>
-  </main>
-</div>
 {% endblock %}
-{% block extra_js %}
+{% block dashboard_extra_js %}
 <script>
 function selectEmotion(val, el) {
   document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('selected'));

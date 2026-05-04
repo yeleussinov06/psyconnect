@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/psy-dashboard.css' %}?v=10">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+{% block dashboard_extra_css %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="psy-layout">
+
+  {# ── Role-specific Sidebar ── #}
+  {% with role=request.user.profile.role %}
+  {% if role == 'psychologist' %}
+    {% include "core/psychologist/sidebar.html" with active=active_section %}
+  {% elif role == 'parent' %}
+    {% include "core/parent/sidebar.html" with active=active_section %}
+  {% elif role == 'teacher' %}
+    {% include "core/teacher/sidebar.html" with active=active_section %}
+  {% else %}
+    {% include "core/student/sidebar.html" with active=active_section lang=lang %}
+  {% endif %}
+
+  {# ── Role-specific Info Panel ── #}
+  {% if role == 'psychologist' %}
+    {% include "core/psychologist/info_panel.html" %}
+  {% elif role == 'parent' %}
+    {% include "core/parent/info_panel.html" %}
+  {% elif role == 'teacher' %}
+    {% include "core/teacher/info_panel.html" %}
+  {% else %}
+    {% include "core/student/info_panel.html" %}
+  {% endif %}
+  {% endwith %}
+
+  <main class="psy-main">
+    {% block main_content %}{% endblock %}
+  </main>
+
+</div>
+{% block dashboard_extra_js %}{% endblock %}
+{% endblock %}

@@ -1,28 +1,36 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load icons %}
 {% block title %}{% if lang == 'kz' %}Анонимді арна{% else %}Анонимный канал{% endif %} — PsyConnect{% endblock %}
-
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/psy-dashboard.css' %}?v=8">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>document.addEventListener('DOMContentLoaded', function(){ if(window.lucide) lucide.createIcons(); });</script>
+{% endblock %}
 {% block content %}
-<div class="dashboard">
+<div class="psy-layout">
 
-  <!-- Sidebar — зависит от роли -->
+  <!-- Sidebar + Info panel — зависит от роли -->
   {% if user.is_authenticated %}
   {% with role=user.profile.role %}
 
   {% if role == 'parent' %}
   {% include "core/parent/sidebar.html" with active="anon" %}
+  {% include "core/parent/info_panel.html" %}
 
   {% elif role == 'student' %}
   {% include "core/student/sidebar.html" with active="anon" %}
+  {% include "core/student/info_panel.html" %}
 
   {% elif role == 'teacher' %}
   {% include "core/teacher/sidebar.html" with active="anon" %}
+  {% include "core/teacher/info_panel.html" %}
   {% endif %}
 
   {% endwith %}
   {% endif %}
 
-  <main class="main-content">
+  <main class="psy-main">
     <div class="page-header">
       <h1 class="page-title">{% if lang == 'kz' %}Анонимді арна{% else %}Анонимный канал{% endif %}</h1>
       <p class="page-subtitle">
@@ -65,7 +73,7 @@
         </form>
 
         <div style="margin-top:1.25rem;padding:1rem;background:var(--cream);border-radius:var(--r-md);font-size:.8rem;color:var(--text-2);line-height:1.6;">
-          ℹ️ {% if lang == 'kz' %}Жедел жәрдем қажет болса, 111 нөміріне хабарласыңыз (Ұлттық сенім телефоны){% else %}Если нужна срочная помощь, позвоните на номер 111 (Национальный телефон доверия){% endif %}
+          <i data-lucide="info" style="width:14px;height:14px;vertical-align:middle;margin-right:.3rem;"></i>{% if lang == 'kz' %}Жедел жәрдем қажет болса, 111 нөміріне хабарласыңыз (Ұлттық сенім телефоны){% else %}Если нужна срочная помощь, позвоните на номер 111 (Национальный телефон доверия){% endif %}
         </div>
       </div>
     </div>

@@ -1,11 +1,9 @@
-{% extends 'base.html' %}
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
 {% load icons %}
 {% block title %}AI-чат — PsyConnect{% endblock %}
-{% block content %}
-<div class="dashboard">
-  {% include "core/student/sidebar.html" with active="chat" %}
-
-  <main class="main-content" style="padding:1.5rem;display:flex;flex-direction:column;">
+{% block main_content %}
+<div style="display:flex;flex-direction:column;flex:1;min-height:0;">
     <!-- Demo notice -->
     <div style="background:var(--amber-pale);border:1px solid #F5D8BE;border-radius:var(--r-md);padding:.75rem 1rem;margin-bottom:1rem;font-size:.83rem;color:var(--amber);font-weight:600;">
       {% if lang == 'kz' %}Демо режим — AI жауаптары эмулятор{% else %}Демо-режим — ответы AI эмулируются{% endif %}
@@ -37,10 +35,10 @@
             {% if lang == 'kz' %}Стрестемін{% else %}Я в стрессе{% endif %}
           </button>
           <button onclick="sendQuick(this)" class="btn btn-sm btn-ghost" style="font-size:.78rem;">
-            {% if lang == 'kz' %}😔 Оқу қиын{% else %}😔 Учёба тяжело{% endif %}
+            {% if lang == 'kz' %}Оқу қиын{% else %}Учёба тяжело{% endif %}
           </button>
           <button onclick="sendQuick(this)" class="btn btn-sm btn-ghost" style="font-size:.78rem;">
-            {% if lang == 'kz' %}😟 Жалғыз сезінемін{% else %}😟 Чувствую себя одиноко{% endif %}
+            {% if lang == 'kz' %}Жалғыз сезінемін{% else %}Чувствую себя одиноко{% endif %}
           </button>
         </div>
       </div>
@@ -72,11 +70,10 @@
         </button>
       </div>
     </div>
-  </main>
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block dashboard_extra_js %}
 <script>
 const lang = '{{ lang }}';
 const csrfToken = '{{ csrf_token }}';

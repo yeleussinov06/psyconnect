@@ -28,6 +28,7 @@ urlpatterns = [
 
     # Teacher
     path('teacher/', views.teacher_dashboard, name='teacher_dashboard'),
+    path('teacher/book/', views.teacher_book_appointment, name='teacher_book_appointment'),
 
     # Appointments
     path('book/', views.book_appointment, name='book_appointment'),
@@ -59,4 +60,16 @@ urlpatterns = [
     path('student/psych-tests/', views.student_psych_tests, name='student_psych_tests'),
     path('student/psych-tests/<int:test_id>/', views.student_take_psych_test, name='student_take_psych_test'),
     path('student/psych-tests/<int:test_id>/done/', views.student_psych_test_done, name='student_psych_test_done'),
+
+    # Цикл обращений — Шаг 1
+    path('student/requests/new/', views.student_new_request, name='student_new_request'),
+    path('teacher/observe/', views.teacher_new_observation, name='teacher_new_observation'),
+
+    # Цикл обращений — Шаг 3: кейсы психолога
+    path('psychologist/requests/', views.psychologist_requests_list, name='psychologist_requests_list'),
+    path('psychologist/requests/<int:req_id>/', views.psychologist_request_detail, name='psychologist_request_detail'),
+    path('psychologist/observations/<int:obs_id>/', views.psychologist_observation_detail, name='psychologist_observation_detail'),
+
+    # Цикл обращений — Шаг 4: заключение для родителя
+    path('parent/conclusions/<int:req_id>/', views.parent_conclusion_view, name='parent_conclusion_view'),
 ]

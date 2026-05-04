@@ -1,0 +1,144 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - heading "Page not found (404)" [level=1] [ref=e3]
+    - table [ref=e4]:
+      - rowgroup [ref=e5]:
+        - 'row "Request Method: GET" [ref=e6]':
+          - rowheader "Request Method:" [ref=e7]
+          - cell "GET" [ref=e8]
+        - 'row "Request URL: http://127.0.0.1:8000/student/diary/" [ref=e9]':
+          - rowheader "Request URL:" [ref=e10]
+          - cell "http://127.0.0.1:8000/student/diary/" [ref=e11]
+  - main [ref=e12]:
+    - paragraph [ref=e13]:
+      - text: Using the URLconf defined in
+      - code [ref=e14]: psyconnect.urls
+      - text: ", Django tried these URL patterns, in this order:"
+    - list [ref=e15]:
+      - listitem [ref=e16]:
+        - code [ref=e17]: admin/
+      - listitem [ref=e18]:
+        - code
+        - code [ref=e19]: "[name='home']"
+      - listitem [ref=e20]:
+        - code
+        - code [ref=e21]: landing/ [name='landing']
+      - listitem [ref=e22]:
+        - code
+        - code [ref=e23]: login/ [name='login']
+      - listitem [ref=e24]:
+        - code
+        - code [ref=e25]: register/ [name='register']
+      - listitem [ref=e26]:
+        - code
+        - code [ref=e27]: logout/ [name='logout']
+      - listitem [ref=e28]:
+        - code
+        - code [ref=e29]: lang/<str:lang>/ [name='set_language']
+      - listitem [ref=e30]:
+        - code
+        - code [ref=e31]: student/ [name='student_dashboard']
+      - listitem [ref=e32]:
+        - code
+        - code [ref=e33]: emotions/ [name='emotion_diary']
+      - listitem [ref=e34]:
+        - code
+        - code [ref=e35]: tests/ [name='test_center']
+      - listitem [ref=e36]:
+        - code
+        - code [ref=e37]: tests/<str:category>/ [name='take_test']
+      - listitem [ref=e38]:
+        - code
+        - code [ref=e39]: chat/ [name='ai_chat']
+      - listitem [ref=e40]:
+        - code
+        - code [ref=e41]: api/chat/ [name='ai_chat_api']
+      - listitem [ref=e42]:
+        - code
+        - code [ref=e43]: parent/ [name='parent_dashboard']
+      - listitem [ref=e44]:
+        - code
+        - code [ref=e45]: parent/book/ [name='parent_book_appointment']
+      - listitem [ref=e46]:
+        - code
+        - code [ref=e47]: articles/ [name='articles']
+      - listitem [ref=e48]:
+        - code
+        - code [ref=e49]: psychologist/ [name='psychologist_dashboard']
+      - listitem [ref=e50]:
+        - code
+        - code [ref=e51]: psychologist/respond/<int:req_id>/ [name='respond_to_request']
+      - listitem [ref=e52]:
+        - code
+        - code [ref=e53]: teacher/ [name='teacher_dashboard']
+      - listitem [ref=e54]:
+        - code
+        - code [ref=e55]: teacher/book/ [name='teacher_book_appointment']
+      - listitem [ref=e56]:
+        - code
+        - code [ref=e57]: book/ [name='book_appointment']
+      - listitem [ref=e58]:
+        - code
+        - code [ref=e59]: my-appointments/ [name='my_appointments']
+      - listitem [ref=e60]:
+        - code
+        - code [ref=e61]: psychologist/appointments/ [name='psychologist_appointments']
+      - listitem [ref=e62]:
+        - code
+        - code [ref=e63]: psychologist/schedule/ [name='manage_schedule']
+      - listitem [ref=e64]:
+        - code
+        - code [ref=e65]: admin-tools/import/ [name='admin_import']
+      - listitem [ref=e66]:
+        - code
+        - code [ref=e67]: admin-tools/import/template/ [name='download_import_template']
+      - listitem [ref=e68]:
+        - code
+        - code [ref=e69]: admin-tools/import/result/ [name='download_import_result']
+      - listitem [ref=e70]:
+        - code
+        - code [ref=e71]: notifications/ [name='notifications']
+      - listitem [ref=e72]:
+        - code
+        - code [ref=e73]: api/notifications/count/ [name='notifications_count']
+      - listitem [ref=e74]:
+        - code
+        - code [ref=e75]: anonymous/ [name='anonymous_support']
+      - listitem [ref=e76]:
+        - code
+        - code [ref=e77]: profile/ [name='profile']
+      - listitem [ref=e78]:
+        - code
+        - code [ref=e79]: psychologist/tests/ [name='psych_test_list']
+      - listitem [ref=e80]:
+        - code
+        - code [ref=e81]: psychologist/tests/create/ [name='psych_test_create']
+      - listitem [ref=e82]:
+        - code
+        - code [ref=e83]: psychologist/tests/<int:test_id>/ [name='psych_test_detail']
+      - listitem [ref=e84]:
+        - code
+        - code [ref=e85]: psychologist/tests/<int:test_id>/delete/ [name='psych_test_delete']
+      - listitem [ref=e86]:
+        - code
+        - code [ref=e87]: psychologist/tests/results/<int:result_id>/ [name='psych_test_result_detail']
+      - listitem [ref=e88]:
+        - code
+        - code [ref=e89]: student/psych-tests/ [name='student_psych_tests']
+      - listitem [ref=e90]:
+        - code
+        - code [ref=e91]: student/psych-tests/<int:test_id>/ [name='student_take_psych_test']
+      - listitem [ref=e92]:
+        - code
+        - code [ref=e93]: student/psych-tests/<int:test_id>/done/ [name='student_psych_test_done']
+    - paragraph [ref=e94]:
+      - text: The current path,
+      - code [ref=e95]: student/diary/
+      - text: ", didn’t match any of these."
+  - contentinfo [ref=e96]:
+    - paragraph [ref=e97]:
+      - text: You’re seeing this error because you have
+      - code [ref=e98]: DEBUG = True
+      - text: in your Django settings file. Change that to
+      - code [ref=e99]: "False"
+      - text: ", and Django will display a standard 404 page."

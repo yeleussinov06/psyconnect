@@ -76,7 +76,7 @@
           {% for sign in "1234" %}
           <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:0.875rem 1rem; display:flex; gap:0.75rem; align-items:flex-start;">
             {% if forloop.counter == 1 %}
-              <span style="font-size:1.3rem;">😟</span>
+              <span style="font-size:1.3rem;"><i data-lucide="frown" style="width:22px;height:22px;color:var(--amber);"></i></span>
               <div>
                 <div style="color:var(--amber); font-weight:800; font-size:0.85rem;">{% if lang == 'kz' %}Белсенділіктің төмендеуі{% else %}Снижение активности{% endif %}</div>
                 <div style="color:rgba(255,255,255,0.5); font-size:0.75rem;">{% if lang == 'kz' %}Бала оқудан бас тартады{% else %}Ребёнок избегает учёбы{% endif %}</div>
@@ -88,13 +88,13 @@
                 <div style="color:rgba(255,255,255,0.5); font-size:0.75rem;">{% if lang == 'kz' %}Ұйықтамайды немесе тым көп ұйықтайды{% else %}Не спит или спит слишком много{% endif %}</div>
               </div>
             {% elif forloop.counter == 3 %}
-              <span style="font-size:1.3rem;">😔</span>
+              <span style="font-size:1.3rem;"><i data-lucide="meh" style="width:22px;height:22px;color:var(--amber);"></i></span>
               <div>
                 <div style="color:var(--amber); font-weight:800; font-size:0.85rem;">{% if lang == 'kz' %}Оқшаулану{% else %}Социальная изоляция{% endif %}</div>
                 <div style="color:rgba(255,255,255,0.5); font-size:0.75rem;">{% if lang == 'kz' %}Достарымен қарым-қатынас азайды{% else %}Уменьшение общения с друзьями{% endif %}</div>
               </div>
             {% elif forloop.counter == 4 %}
-              <span style="font-size:1.3rem;">📉</span>
+              <span style="font-size:1.3rem;"><i data-lucide="trending-down" style="width:22px;height:22px;color:var(--amber);"></i></span>
               <div>
                 <div style="color:var(--amber); font-weight:800; font-size:0.85rem;">{% if lang == 'kz' %}Үлгерімнің төмендеуі{% else %}Снижение успеваемости{% endif %}</div>
                 <div style="color:rgba(255,255,255,0.5); font-size:0.75rem;">{% if lang == 'kz' %}Бағалар кенеттен төмендеді{% else %}Оценки резко упали{% endif %}</div>

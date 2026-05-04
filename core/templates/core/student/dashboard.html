@@ -1,16 +1,16 @@
-{% extends 'base.html' %}
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
 {% load icons %}
 {% block title %}{% if lang == 'kz' %}Дашборд{% else %}Дашборд{% endif %} — PsyConnect{% endblock %}
 
-{% block content %}
-<div class="dashboard">
-  {% include "core/student/sidebar.html" with active="dashboard" %}
+{% block main_content %}
 
-  <main class="main-content">
     <!-- Виджет новых психологических тестов -->
     {% if new_psych_tests %}
     <div style="background:linear-gradient(135deg,var(--sage-pale),#E8F4F0);border:1px solid #C8DFD0;border-radius:var(--r-lg);padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-      <div style="width:44px;height:44px;background:var(--sage);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;">📋</div>
+      <div style="width:44px;height:44px;background:var(--sage);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+      </div>
       <div style="flex:1;">
         <div style="font-weight:700;color:var(--sage);font-size:.9rem;">
           {% if lang == 'kz' %}Сізге {{ new_psych_tests|length }} жаңа тест тапсырылды!{% else %}Вам назначено {{ new_psych_tests|length }} новых теста!{% endif %}
@@ -19,29 +19,40 @@
           {% for t in new_psych_tests|slice:":2" %}{{ t.title }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if new_psych_tests|length > 2 %}...{% endif %}
         </div>
       </div>
-      <a href="{% url 'student_psych_tests' %}" class="btn btn-primary btn-sm" style="flex-shrink:0;">
+      <a href="{% url 'test_center' %}" class="btn btn-primary btn-sm" style="flex-shrink:0;">
         {% if lang == 'kz' %}Өту{% else %}Пройти{% endif %} →
       </a>
     </div>
     {% endif %}
 
-    <div class="page-header">
-      <h1 class="page-title">{% if lang == 'kz' %}Сәлем, {{ user.first_name|default:user.username }}!{% else %}Привет, {{ user.first_name|default:user.username }}!{% endif %} </h1>
-      <p class="page-subtitle">{% if lang == 'kz' %}Бүгін қалайсың?{% else %}Как дела сегодня?{% endif %}</p>
-    </div>
-
-    <div class="stats-grid" style="margin-bottom:1.5rem;">
-      <div class="stat-card">
-        <div class="stat-icon peach" style="color:var(--peach);">{% icon 'heart' 'sidebar-icon' %}</div>
-        <div><div class="stat-value">{{ emotion_count }}</div><div class="stat-label">{% if lang == 'kz' %}Эмоция жазбасы{% else %}Записей эмоций{% endif %}</div></div>
+    <!-- Upper: stat cards -->
+    <div class="db-stats-grid" style="margin-bottom:1.5rem;">
+      <div class="db-stat-card">
+        <div class="db-stat-icon db-stat-icon--pink">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        </div>
+        <div class="db-stat-body">
+          <span class="db-stat-val">{{ emotion_count }}</span>
+          <span class="db-stat-lbl">{% if lang == 'kz' %}Эмоция жазбасы{% else %}Записей эмоций{% endif %}</span>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon sage" style="color:var(--sage);">{% icon 'clipboard-document-check' 'sidebar-icon' %}</div>
-        <div><div class="stat-value">{{ test_count }}</div><div class="stat-label">{% if lang == 'kz' %}Тест нәтижесі{% else %}Результатов тестов{% endif %}</div></div>
+      <div class="db-stat-card">
+        <div class="db-stat-icon db-stat-icon--green">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+        </div>
+        <div class="db-stat-body">
+          <span class="db-stat-val">{{ test_count }}</span>
+          <span class="db-stat-lbl">{% if lang == 'kz' %}Тест нәтижесі{% else %}Результатов тестов{% endif %}</span>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon sky" style="color:var(--sky);">{% icon 'chat-bubble-left-right' 'sidebar-icon' %}</div>
-        <div><div class="stat-value">{{ chat_count }}</div><div class="stat-label">{% if lang == 'kz' %}Чат хабарлама{% else %}Сообщений в чате{% endif %}</div></div>
+      <div class="db-stat-card">
+        <div class="db-stat-icon db-stat-icon--blue">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="db-stat-body">
+          <span class="db-stat-val">{{ chat_count }}</span>
+          <span class="db-stat-lbl">{% if lang == 'kz' %}Чат хабарлама{% else %}Сообщений в чате{% endif %}</span>
+        </div>
       </div>
     </div>
 
@@ -61,9 +72,9 @@
             <span style="color:#4A8DAE;">{% icon 'chat-bubble-left-right' 'sidebar-icon' %}</span>
             <span>AI-чат</span>
           </a>
-          <a href="{% url 'anonymous_support' %}" class="quick-action-btn" style="background:var(--lav-pale);border:1.5px solid #D5CEEE;color:var(--text);">
-            <span style="color:var(--lavender);">{% icon 'eye-slash' 'sidebar-icon' %}</span>
-            <span>{% if lang == 'kz' %}Анонимді{% else %}Анонимно{% endif %}</span>
+          <a href="{% url 'student_new_request' %}" class="quick-action-btn" style="background:var(--lav-pale);border:1.5px solid #D5CEEE;color:var(--text);">
+            <span style="color:var(--lavender);">{% icon 'shield-check' 'sidebar-icon' %}</span>
+            <span>{% if lang == 'kz' %}Өтініш{% else %}Обращение{% endif %}</span>
           </a>
         </div>
       </div>
@@ -81,7 +92,7 @@
               <div style="font-size:.72rem;color:var(--text-3);margin-top:2px;">{{ r.created_at|date:"d.m.Y" }}</div>
             </div>
             <div style="text-align:right;">
-              <div style="font-family:'Inter',sans-serif;font-weight:800;font-weight:700;font-size:1.1rem;color:var(--text);">{{ r.score }}<span style="font-size:.75rem;color:var(--text-3);">/{{ r.max_score }}</span></div>
+              <div style="font-weight:700;font-size:1.1rem;color:var(--text);">{{ r.score }}<span style="font-size:.75rem;color:var(--text-3);">/{{ r.max_score }}</span></div>
               <div class="progress-bar" style="width:72px;margin-top:4px;"><div class="progress-fill" style="width:{% widthratio r.score r.max_score 100 %}%;"></div></div>
             </div>
           </div>
@@ -115,12 +126,10 @@
         {% endfor %}
       {% else %}
         <div style="text-align:center;padding:2.5rem 0;">
-          <div style="font-size:2.5rem;margin-bottom:.75rem;"></div>
           <div style="font-weight:700;color:var(--text-2);margin-bottom:.4rem;">{% if lang == 'kz' %}Жазба жоқ{% else %}Нет записей{% endif %}</div>
           <a href="{% url 'emotion_diary' %}" class="btn btn-primary btn-sm" style="margin-top:.75rem;">{% if lang == 'kz' %}Жазу{% else %}Записать{% endif %}</a>
         </div>
       {% endif %}
     </div>
-  </main>
-</div>
+
 {% endblock %}

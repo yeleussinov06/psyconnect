@@ -1,11 +1,8 @@
-{% extends 'base.html' %}
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
 {% load icons %}
 {% block title %}{% if lang == 'kz' %}Жазылу{% else %}Запись к психологу{% endif %} — PsyConnect{% endblock %}
-{% block content %}
-<div class="dashboard">
-{% include "core/parent/sidebar.html" with active="book" %}
-
-  <main class="main-content">
+{% block main_content %}
     <div class="page-header">
       <h1 class="page-title">{% if lang == 'kz' %}Психологқа жазылу{% else %}Запись к психологу{% endif %}</h1>
       <p class="page-subtitle">{% if lang == 'kz' %}Баланы психологқа жазыңыз{% else %}Запишите ребёнка на консультацию{% endif %}</p>
@@ -13,25 +10,25 @@
 
     {% if success %}
     <div class="alert alert-success" style="margin-bottom:1.5rem;">
-      ✅ {{ success }}
+      <i data-lucide="check-circle" style="width:16px;height:16px;vertical-align:middle;margin-right:.35rem;"></i>{{ success }}
     </div>
     {% endif %}
     {% if error %}
     <div class="alert alert-error" style="margin-bottom:1.5rem;">
-      ⚠️ {{ error }}
+      <i data-lucide="alert-triangle" style="width:16px;height:16px;vertical-align:middle;margin-right:.35rem;"></i>{{ error }}
     </div>
     {% endif %}
 
     {% if not children %}
     <div class="card" style="text-align:center;padding:3rem;">
-      <div style="font-size:3rem;margin-bottom:1rem;">👨‍👩‍👧</div>
+      <div style="margin-bottom:1rem;"><i data-lucide="users" style="width:56px;height:56px;stroke-width:1;color:var(--text-3);"></i></div>
       <h3 style="font-weight:700;margin-bottom:.75rem;">{% if lang == 'kz' %}Бала қосылмаған{% else %}Нет привязанных детей{% endif %}</h3>
       <p style="color:var(--text-3);font-size:.875rem;margin-bottom:1.25rem;">{% if lang == 'kz' %}Алдымен дашбордта баланы қосыңыз{% else %}Сначала добавьте ребёнка на дашборде{% endif %}</p>
       <a href="{% url 'parent_dashboard' %}" class="btn btn-primary">{% if lang == 'kz' %}Дашборд{% else %}На дашборд{% endif %}</a>
     </div>
     {% else %}
 
-    <div style="display:grid;grid-template-columns:340px 1fr;gap:1.5rem;align-items:flex-start;">
+    <div class="book-grid" style="display:grid;grid-template-columns:340px 1fr;gap:1.5rem;align-items:flex-start;">
 
       <!-- Левая панель: выбор ребёнка и форма -->
       <div>
@@ -63,14 +60,12 @@
             <input type="hidden" name="slot_key" id="selectedSlot">
 
             <div class="form-group">
-              <div style="display:flex;flex-direction:column;gap:.4rem;">
+              <select name="reason" class="form-control" required>
+                <option value="" disabled selected>{% if lang == 'kz' %}Себебін таңдаңыз…{% else %}Выберите причину…{% endif %}</option>
                 {% for val, label in reason_choices %}
-                <label style="display:flex;align-items:center;gap:.75rem;padding:.6rem .875rem;border-radius:var(--r-sm);cursor:pointer;border:1.5px solid var(--border);font-size:.85rem;font-weight:500;transition:all .18s;" onclick="selectReason(this,'{{ val }}')">
-                  <input type="radio" name="reason" value="{{ val }}" style="display:none;">
-                  {{ label }}
-                </label>
+                <option value="{{ val }}">{{ label }}</option>
                 {% endfor %}
-              </div>
+              </select>
             </div>
 
             <div class="form-group">
@@ -127,11 +122,9 @@
       {% endif %}
     </div>
     {% endif %}
-  </main>
-</div>
 {% endblock %}
 
-{% block extra_js %}
+{% block dashboard_extra_js %}
 <script>
 function selectSlot(key, time, date) {
   // Снимаем выделение со всех
@@ -151,21 +144,11 @@ function selectSlot(key, time, date) {
   }
   // Обновляем форму
   document.getElementById('selectedSlot').value = key;
-  document.getElementById('slotHint').textContent = '✅ ' + date + ' в ' + time;
+  document.getElementById('slotHint').textContent = '✓ ' + date + ' в ' + time;
   const submitBtn = document.getElementById('submitBtn');
   submitBtn.style.opacity = '1';
   submitBtn.style.pointerEvents = 'auto';
   submitBtn.disabled = false;
-}
-
-function selectReason(label, val) {
-  document.querySelectorAll('[name="reason"]').forEach(r => {
-    r.parentElement.style.borderColor = 'var(--border)';
-    r.parentElement.style.background = 'var(--white)';
-  });
-  label.style.borderColor = 'var(--sage)';
-  label.style.background = 'var(--sage-pale)';
-  label.querySelector('input').checked = true;
 }
 
 // Клик по ребёнку

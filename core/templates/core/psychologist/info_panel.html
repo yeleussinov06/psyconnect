@@ -1,0 +1,104 @@
+{% load static %}
+<aside class="psy-info-panel">
+
+  <!-- Expert Card -->
+  <div class="psy-ip-top">
+    <div class="psy-ip-avatar-wrap">
+      <div class="psy-ip-avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+      <span class="psy-ip-online-dot"></span>
+    </div>
+    <span class="psy-ip-online-label">
+      <svg width="7" height="7" viewBox="0 0 7 7"><circle cx="3.5" cy="3.5" r="3.5" fill="#22c55e"/></svg>
+      {% if lang == 'kz' %}Желідемін{% else %}В сети{% endif %}
+    </span>
+    <h2 class="psy-ip-name">{{ user.get_full_name|default:user.username }}</h2>
+    <span class="psy-ip-role-pill">{% if lang == 'kz' %}Мектеп психологі{% else %}Школьный психолог{% endif %}</span>
+    {% if user.profile.bio %}
+    <p class="psy-ip-bio">{{ user.profile.bio|truncatechars:65 }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Day Summary Widget -->
+  <div class="psy-ip-widget">
+    <div class="psy-ip-widget-label">
+      <i data-lucide="calendar"></i>
+      {% if lang == 'kz' %}Күн қысқашасы{% else %}Сводка дня{% endif %}
+    </div>
+    {% if next_confirmed_apt %}
+    <div class="psy-ip-day-summary">
+      <div class="psy-ip-ds-icon">
+        <i data-lucide="calendar"></i>
+      </div>
+      <div class="psy-ip-ds-body">
+        <p class="psy-ip-ds-title">{% if lang == 'kz' %}Келесі қабылдау{% else %}Следующая запись{% endif %}</p>
+        <p class="psy-ip-ds-val">{{ next_confirmed_apt.slot.date|date:"d M" }} · {{ next_confirmed_apt.slot.time_start|time:"H:i" }}</p>
+      </div>
+    </div>
+    <p class="psy-ip-ds-client">
+      <i data-lucide="user"></i>
+      {{ next_confirmed_apt.student.get_full_name|default:next_confirmed_apt.student.username }}
+    </p>
+    {% else %}
+    <p class="psy-ip-ds-empty">
+      <i data-lucide="clock"></i>
+      {% if lang == 'kz' %}Жоспарланған жазба жоқ{% else %}Записей не запланировано{% endif %}
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- Quick Note -->
+  <button class="psy-ip-quick-note-btn" id="quickNoteToggle" type="button">
+    <i data-lucide="pencil"></i>
+    {% if lang == 'kz' %}Жылдам жазба{% else %}Быстрая заметка{% endif %}
+  </button>
+  <div class="psy-ip-note-area" id="quickNoteArea">
+    <textarea class="psy-ip-note-ta" placeholder="{% if lang == 'kz' %}Жазба жазыңыз...{% else %}Напишите заметку...{% endif %}" rows="3"></textarea>
+    <button class="psy-ip-note-save" type="button" onclick="saveQuickNote()">
+      <i data-lucide="check"></i>
+      {% if lang == 'kz' %}Сақтау{% else %}Сохранить{% endif %}
+    </button>
+  </div>
+
+  <div class="psy-ip-spacer"></div>
+
+  <!-- Mini Stats -->
+  <div class="psy-ip-mini-stats">
+    <div class="psy-ip-mini-stat">
+      <span class="psy-ip-mini-val">{{ student_count|default:"—" }}</span>
+      <span class="psy-ip-mini-lbl">{% if lang == 'kz' %}Оқушы{% else %}Учеников{% endif %}</span>
+    </div>
+    <div class="psy-ip-mini-sep"></div>
+    <div class="psy-ip-mini-stat">
+      <span class="psy-ip-mini-val">{{ new_request_count|default:"—" }}</span>
+      <span class="psy-ip-mini-lbl">{% if lang == 'kz' %}Жаңа{% else %}Запросов{% endif %}</span>
+    </div>
+    <div class="psy-ip-mini-sep"></div>
+    <div class="psy-ip-mini-stat">
+      <span class="psy-ip-mini-val">{{ class_count|default:"—" }}</span>
+      <span class="psy-ip-mini-lbl">{% if lang == 'kz' %}Сыныптар{% else %}Классов{% endif %}</span>
+    </div>
+  </div>
+
+</aside>
+
+<script>
+(function(){
+  var btn = document.getElementById('quickNoteToggle');
+  var area = document.getElementById('quickNoteArea');
+  if (btn && area) {
+    btn.addEventListener('click', function() {
+      var open = area.classList.toggle('psy-ip-note-open');
+      if (open) { var ta = area.querySelector('textarea'); if (ta) ta.focus(); }
+    });
+  }
+  window.saveQuickNote = function() {
+    var ta = document.querySelector('#quickNoteArea textarea');
+    if (ta && ta.value.trim()) {
+      localStorage.setItem('psynote_' + Date.now(), ta.value.trim());
+      ta.value = '';
+      if (area) area.classList.remove('psy-ip-note-open');
+    }
+  };
+  if (window.lucide) lucide.createIcons();
+})();
+</script>

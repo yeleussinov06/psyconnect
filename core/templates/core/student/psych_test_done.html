@@ -1,10 +1,8 @@
-{% extends 'base.html' %}
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
 {% load icons %}
 {% block title %}{% if lang == 'kz' %}Тест аяқталды{% else %}Тест завершён{% endif %} — PsyConnect{% endblock %}
-{% block content %}
-<div class="dashboard">
-  {% include "core/student/sidebar.html" with active="psych_tests" %}
-  <main class="main-content">
+{% block main_content %}
     <div style="max-width:500px;margin:3rem auto;text-align:center;">
       <div style="width:80px;height:80px;background:var(--sage-pale);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:2.5rem;">✓</div>
       <h1 style="font-weight:800;color:var(--text);margin-bottom:.75rem;">{% if lang == 'kz' %}Тест сәтті аяқталды!{% else %}Тест успешно завершён!{% endif %}</h1>
@@ -22,17 +20,15 @@
           <div class="progress-fill" style="width:{{ result.percent }}%;{% if result.risk_level == 'high' %}background:#EF4444;{% elif result.risk_level == 'medium' %}background:#F59E0B;{% endif %}"></div>
         </div>
         <div style="margin-top:.75rem;font-size:.82rem;color:var(--text-3);">
-          {% if result.risk_level == 'high' %}⚠️ {% if lang == 'kz' %}Психолог жақын арада хабарласады{% else %}Психолог свяжется с вами в ближайшее время{% endif %}
-          {% elif result.risk_level == 'medium' %}⚡ {% if lang == 'kz' %}Нәтижелер бақылауда{% else %}Результаты на контроле{% endif %}
+          {% if result.risk_level == 'high' %}<i data-lucide="alert-triangle" style="width:13px;height:13px;vertical-align:middle;stroke-width:2;"></i> {% if lang == 'kz' %}Психолог жақын арада хабарласады{% else %}Психолог свяжется с вами в ближайшее время{% endif %}
+          {% elif result.risk_level == 'medium' %}<i data-lucide="zap" style="width:13px;height:13px;vertical-align:middle;stroke-width:2;"></i> {% if lang == 'kz' %}Нәтижелер бақылауда{% else %}Результаты на контроле{% endif %}
           {% else %}✓ {% if lang == 'kz' %}Жағдайыңыз жақсы{% else %}Всё в порядке{% endif %}{% endif %}
         </div>
       </div>
 
       <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
         <a href="{% url 'student_dashboard' %}" class="btn btn-primary">{% if lang == 'kz' %}Дашборд{% else %}На главную{% endif %}</a>
-        <a href="{% url 'student_psych_tests' %}" class="btn btn-outline">{% if lang == 'kz' %}Тесттерге{% else %}Все тесты{% endif %}</a>
+        <a href="{% url 'test_center' %}" class="btn btn-outline">{% if lang == 'kz' %}Тесттерге{% else %}Все тесты{% endif %}</a>
       </div>
     </div>
-  </main>
-</div>
 {% endblock %}

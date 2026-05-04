@@ -1,0 +1,116 @@
+{% load static %}
+<aside class="psy-info-panel">
+
+  <!-- Avatar + Greeting -->
+  <div class="psy-ip-top">
+    <div class="psy-ip-avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+    <p class="psy-ip-greeting">{% if lang == 'kz' %}Қайырлы күн{% else %}Добрый день{% endif %}</p>
+    <h2 class="psy-ip-name">{{ user.get_full_name|default:user.username }}</h2>
+    <p class="psy-ip-sub">
+      {% if teacher_class %}
+        {% if lang == 'kz' %}{{ teacher_class.name }} сыныбының мұғалімі{% else %}Учитель класса {{ teacher_class.name }}{% endif %}
+      {% else %}
+        {% if lang == 'kz' %}Мұғалім панелі{% else %}Панель учителя{% endif %}
+      {% endif %}
+    </p>
+  </div>
+
+  <!-- Class Selector Widget -->
+  {% if available_classes %}
+  <div class="psy-ip-widget">
+    <div class="psy-ip-widget-label">
+      {% if lang == 'kz' %}Сынып таңдау{% else %}Выбор класса{% endif %}
+    </div>
+    <div class="psy-ip-class-sel-wrap">
+      <i data-lucide="book-open"></i>
+      <select class="psy-ip-class-sel" id="teacherClassFilter" onchange="applyTeacherClass(this.value)">
+        <option value="">{% if lang == 'kz' %}Барлық сыныптар{% else %}Все классы{% endif %}</option>
+        {% for cls in available_classes %}
+        <option value="{{ cls.name }}" {% if cls.name == class_filter %}selected{% endif %}>{{ cls.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Class Climate Widget -->
+  <div class="psy-ip-widget">
+    <div class="psy-ip-widget-label">
+      <i data-lucide="bar-chart-2"></i>
+      {% if lang == 'kz' %}Сынып климаты{% else %}Климат класса{% endif %}
+    </div>
+    <div class="psy-ip-climate-wrap">
+      <div class="psy-ip-climate-bar">
+        <div class="psy-ip-climate-fill" style="width: {{ class_climate|default:50 }}%;"></div>
+      </div>
+      <div class="psy-ip-climate-row">
+        <span class="psy-ip-climate-lbl">
+          {% if class_climate >= 70 %}
+            {% if lang == 'kz' %}Жақсы{% else %}Хороший{% endif %}
+            <i data-lucide="trending-up" style="color:#16a34a;width:13px;height:13px;"></i>
+          {% elif class_climate >= 40 %}
+            {% if lang == 'kz' %}Орташа{% else %}Умеренный{% endif %}
+            <i data-lucide="minus" style="color:#d97706;width:13px;height:13px;"></i>
+          {% else %}
+            {% if lang == 'kz' %}Назар аударыңыз{% else %}Требует внимания{% endif %}
+            <i data-lucide="trending-down" style="color:#dc2626;width:13px;height:13px;"></i>
+          {% endif %}
+        </span>
+        <span class="psy-ip-climate-pct">{{ class_climate|default:50 }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attention Flags Widget -->
+  <div class="psy-ip-widget">
+    <div class="psy-ip-widget-label">
+      <i data-lucide="flag" style="color:#ef4444"></i>
+      {% if lang == 'kz' %}Назар белгілері{% else %}Флаги внимания{% endif %}
+    </div>
+    {% if attention_flags %}
+    <ul class="psy-ip-flags-list">
+      {% for flag in attention_flags %}
+      <li class="psy-ip-flag-item">
+        <span class="psy-ip-flag-av">{{ flag.user.first_name|first|default:flag.user.username|first|upper }}</span>
+        <span class="psy-ip-flag-name">{{ flag.user.get_full_name|default:flag.user.username }}</span>
+        <span class="psy-ip-flag-count">×{{ flag.count }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="psy-ip-empty-hint">
+      {% if lang == 'kz' %}Белгілер жоқ — бәрі тыныш{% else %}Флагов нет — всё спокойно{% endif %}
+    </p>
+    {% endif %}
+  </div>
+
+  <div class="psy-ip-spacer"></div>
+
+  <!-- Mini Stats -->
+  <div class="psy-ip-mini-stats">
+    <div class="psy-ip-mini-stat">
+      <span class="psy-ip-mini-val">{{ student_count|default:"—" }}</span>
+      <span class="psy-ip-mini-lbl">{% if lang == 'kz' %}Оқушы{% else %}Учеников{% endif %}</span>
+    </div>
+    <div class="psy-ip-mini-sep"></div>
+    <div class="psy-ip-mini-stat">
+      <span class="psy-ip-mini-val">{{ emotion_count|default:"—" }}</span>
+      <span class="psy-ip-mini-lbl">{% if lang == 'kz' %}Эмоция{% else %}Эмоций{% endif %}</span>
+    </div>
+    <div class="psy-ip-mini-sep"></div>
+    <div class="psy-ip-mini-stat">
+      <span class="psy-ip-mini-val">{{ test_count|default:"—" }}</span>
+      <span class="psy-ip-mini-lbl">{% if lang == 'kz' %}Тест{% else %}Тестов{% endif %}</span>
+    </div>
+  </div>
+
+</aside>
+
+<script>
+function applyTeacherClass(val) {
+  var params = new URLSearchParams(window.location.search);
+  if (val) { params.set('class', val); } else { params.delete('class'); }
+  window.location.href = window.location.pathname + '?' + params.toString();
+}
+if (window.lucide) lucide.createIcons();
+</script>

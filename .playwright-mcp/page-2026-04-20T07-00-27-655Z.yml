@@ -1,0 +1,181 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "PsyConnect" [ref=e3] [cursor=pointer]:
+      - /url: /landing/
+      - img [ref=e5]
+      - generic [ref=e8]: PsyConnect
+    - generic [ref=e9]:
+      - list [ref=e10]:
+        - listitem [ref=e11]:
+          - link "Панель" [ref=e12] [cursor=pointer]:
+            - /url: /psychologist/
+        - listitem [ref=e13]:
+          - link [ref=e14] [cursor=pointer]:
+            - /url: /notifications/
+            - img [ref=e15]
+      - generic [ref=e18]:
+        - link "RU" [ref=e19] [cursor=pointer]:
+          - /url: /lang/ru/
+        - link "KZ" [ref=e20] [cursor=pointer]:
+          - /url: /lang/kz/
+    - generic [ref=e22]:
+      - button "С Сара Мара" [ref=e23] [cursor=pointer]:
+        - generic [ref=e24]: С
+        - generic [ref=e25]: Сара Мара
+        - img [ref=e26]
+      - generic:
+        - link "Профиль":
+          - /url: /profile/
+          - img
+          - text: Профиль
+        - link "Анонимно":
+          - /url: /anonymous/
+          - img
+          - text: Анонимно
+        - link "Выйти":
+          - /url: /logout/
+          - img
+          - text: Выйти
+  - generic [ref=e28]:
+    - complementary [ref=e29]:
+      - img "Logo" [ref=e31]
+      - navigation [ref=e32]:
+        - link "Обзор" [ref=e33] [cursor=pointer]:
+          - /url: /psychologist/
+          - img [ref=e34]
+        - link "Заявки" [ref=e39] [cursor=pointer]:
+          - /url: /psychologist/appointments/
+          - img [ref=e40]
+        - link "Тесты" [ref=e42] [cursor=pointer]:
+          - /url: /psychologist/tests/
+          - img [ref=e43]
+        - link "Ученики" [ref=e47] [cursor=pointer]:
+          - /url: /psychologist/?panel=students
+          - img [ref=e48]
+        - link "Расписание" [ref=e53] [cursor=pointer]:
+          - /url: /psychologist/schedule/
+          - img [ref=e54]
+        - link "Запросы" [ref=e57] [cursor=pointer]:
+          - /url: /psychologist/?panel=requests
+          - img [ref=e58]
+        - link "Эмоции" [ref=e60] [cursor=pointer]:
+          - /url: /psychologist/?panel=emotions
+          - img [ref=e61]
+      - generic [ref=e63]:
+        - link "Профиль" [ref=e64] [cursor=pointer]:
+          - /url: /profile/
+          - img [ref=e65]
+        - link "Выйти" [ref=e68] [cursor=pointer]:
+          - /url: /logout/
+          - img [ref=e69]
+    - complementary [ref=e72]:
+      - generic [ref=e73]:
+        - generic [ref=e74]: С
+        - paragraph [ref=e75]: Добрый день 👋
+        - heading "Сара Мара" [level=2] [ref=e76]
+        - paragraph [ref=e77]: Ваш рабочий день ждёт вас
+      - generic [ref=e79]:
+        - generic [ref=e80]:
+          - img [ref=e81]
+          - textbox "Поиск ученика, класса..." [ref=e84]
+        - generic [ref=e85]:
+          - combobox [ref=e86] [cursor=pointer]:
+            - option "Все классы" [selected]
+            - option "9А"
+            - option "11Б"
+          - button "Найти" [ref=e87] [cursor=pointer]
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - generic [ref=e90]: "11"
+          - generic [ref=e91]: Учеников
+        - generic [ref=e93]:
+          - generic [ref=e94]: "1"
+          - generic [ref=e95]: Запросов
+        - generic [ref=e97]:
+          - generic [ref=e98]: "2"
+          - generic [ref=e99]: Классов
+    - main [ref=e100]:
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - heading "Тест-центр" [level=1] [ref=e103]
+          - paragraph [ref=e104]: Управление психологическими тестами
+        - generic [ref=e105]:
+          - link "ИИ генерация" [ref=e106] [cursor=pointer]:
+            - /url: /psychologist/tests/create/?source=ai
+            - img [ref=e107]
+            - text: ИИ генерация
+          - link "Конструктор" [ref=e110] [cursor=pointer]:
+            - /url: /psychologist/tests/create/?source=manual
+            - img [ref=e111]
+            - text: Конструктор
+      - generic [ref=e113]:
+        - generic [ref=e114]:
+          - img [ref=e116]
+          - generic [ref=e120]:
+            - generic [ref=e121]: "2"
+            - generic [ref=e122]: Всего тестов
+        - generic [ref=e123]:
+          - img [ref=e125]
+          - generic [ref=e128]:
+            - generic [ref=e129]: "2"
+            - generic [ref=e130]: Активных
+        - generic [ref=e131]:
+          - img [ref=e133]
+          - generic [ref=e134]:
+            - generic [ref=e135]: —
+            - generic [ref=e136]: Результатов
+        - generic [ref=e137]:
+          - img [ref=e139]
+          - generic [ref=e142]:
+            - generic [ref=e143]: "2"
+            - generic [ref=e144]: Классов
+      - generic [ref=e145]:
+        - generic [ref=e147]:
+          - generic [ref=e148]:
+            - generic [ref=e149]:
+              - generic [ref=e150]: Тест для 11Б
+              - generic [ref=e151]: Активен
+              - generic [ref=e153]: Конструктор
+            - generic [ref=e154]:
+              - generic [ref=e155]:
+                - img [ref=e156]
+                - text: 5 вопросов
+              - generic [ref=e159]:
+                - img [ref=e160]
+                - text: 1 результатов
+              - generic [ref=e161]:
+                - img [ref=e162]
+                - text: 11Б
+              - generic [ref=e167]: Отношения
+              - generic [ref=e168]:
+                - img [ref=e169]
+                - text: 13.04.2026
+          - link "Открыть" [ref=e172] [cursor=pointer]:
+            - /url: /psychologist/tests/2/
+            - text: Открыть
+            - img [ref=e173]
+        - generic [ref=e176]:
+          - generic [ref=e177]:
+            - generic [ref=e178]:
+              - generic [ref=e179]: Тест для 9А
+              - generic [ref=e180]: Активен
+              - generic [ref=e182]: ИИ
+            - generic [ref=e183]:
+              - generic [ref=e184]:
+                - img [ref=e185]
+                - text: 6 вопросов
+              - generic [ref=e188]:
+                - img [ref=e189]
+                - text: 1 результатов
+              - generic [ref=e190]:
+                - img [ref=e191]
+                - text: 9А
+              - generic [ref=e196]: Депрессия
+              - generic [ref=e197]:
+                - img [ref=e198]
+                - text: 13.04.2026
+          - link "Открыть" [ref=e201] [cursor=pointer]:
+            - /url: /psychologist/tests/1/
+            - text: Открыть
+            - img [ref=e202]
+  - contentinfo [ref=e204]: PsyConnect · Платформа для школьного сообщества © 2025

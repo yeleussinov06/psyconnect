@@ -1,41 +1,42 @@
-{% extends 'base.html' %}
+{% extends 'core/base_dashboard.html' %}
+{% load static %}
 {% load icons %}
 {% block title %}{% if lang == 'kz' %}Мұғалім панелі{% else %}Панель учителя{% endif %} — PsyConnect{% endblock %}
-{% block extra_css %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+{% block dashboard_extra_css %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
 
-{% block content %}
-<div class="dashboard">
-  {% include "core/teacher/sidebar.html" with active="dashboard" %}
-
-  <main class="main-content">
+{% block main_content %}
+  <!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
 
     <!-- ───── OVERVIEW ───── -->
     <div id="panel-overview">
-      <div class="page-header">
-        <h1 class="page-title">{% if lang == 'kz' %}Сәлем, {{ user.first_name|default:user.username }}! {% else %}Привет, {{ user.first_name|default:user.username }}! {% endif %}</h1>
-        <p class="page-subtitle">
-          {% if teacher_class %}
-            {% if lang == 'kz' %}{{ teacher_class.name }} сыныбының мұғалімі{% else %}Учитель класса {{ teacher_class.name }}{% endif %}
-          {% else %}
-            <span style="color:var(--peach);">
-              {% if lang == 'kz' %}Сізге класс тағайындалмаған — /admin/ арқылы класс тағайындаңыз{% else %}Вам не назначен класс — назначьте через /admin/{% endif %}
-            </span>
-          {% endif %}
-        </p>
-      </div>
 
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon" style="background:rgba(108,99,255,0.12);"></div>
-          <div><div class="stat-value">{{ student_count }}</div><div class="stat-label">{% if lang == 'kz' %}Оқушы{% else %}Учеников{% endif %}</div></div>
+      <div class="db-stats-grid" style="margin-bottom:1.5rem;">
+        <div class="db-stat-card">
+          <div class="db-stat-icon db-stat-icon--blue">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="db-stat-body">
+            <span class="db-stat-val">{{ student_count }}</span>
+            <span class="db-stat-lbl">{% if lang == 'kz' %}Оқушы{% else %}Учеников{% endif %}</span>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon gold"></div>
-          <div><div class="stat-value">{{ emotion_count }}</div><div class="stat-label">{% if lang == 'kz' %}Эмоция жазбасы{% else %}Записей эмоций{% endif %}</div></div>
+        <div class="db-stat-card">
+          <div class="db-stat-icon db-stat-icon--pink">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+          </div>
+          <div class="db-stat-body">
+            <span class="db-stat-val">{{ emotion_count }}</span>
+            <span class="db-stat-lbl">{% if lang == 'kz' %}Эмоция жазбасы{% else %}Записей эмоций{% endif %}</span>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon teal"></div>
-          <div><div class="stat-value">{{ test_count }}</div><div class="stat-label">{% if lang == 'kz' %}Тест нәтижесі{% else %}Результатов тестов{% endif %}</div></div>
+        <div class="db-stat-card">
+          <div class="db-stat-icon db-stat-icon--green">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+          </div>
+          <div class="db-stat-body">
+            <span class="db-stat-val">{{ test_count }}</span>
+            <span class="db-stat-lbl">{% if lang == 'kz' %}Тест нәтижесі{% else %}Результатов тестов{% endif %}</span>
+          </div>
         </div>
       </div>
 
@@ -56,9 +57,7 @@
           </div>
           {% for e in all_emotions|slice:":6" %}
           <div class="emotion-entry" style="padding:.6rem 0;border-bottom:1px solid var(--border);">
-            <span style="font-size:1.5rem;">
-              {% emotion_icon e.emotion %}
-            </span>
+            <span style="font-size:1.5rem;">{% emotion_icon e.emotion %}</span>
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                 <strong style="color:var(--text);font-size:.85rem;">{{ e.user.get_full_name|default:e.user.username }}</strong>
@@ -138,7 +137,7 @@
                     {% if last_emotion.emotion == 'happy' %}<span class="badge badge-amber">{% if lang == 'kz' %}Жақсы{% else %}Хорошо{% endif %}</span>
                     {% elif last_emotion.emotion == 'calm' %}<span class="badge badge-sage">{% if lang == 'kz' %}Тыныш{% else %}Спокойно{% endif %}</span>
                     {% elif last_emotion.emotion == 'anxious' or last_emotion.emotion == 'sad' or last_emotion.emotion == 'angry' %}
-                      <span class="badge badge-peach">{{ last_emotion.get_emotion_display }} ⚠️</span>
+                      <span class="badge badge-peach">{{ last_emotion.get_emotion_display }} <i data-lucide="alert-triangle" style="width:11px;height:11px;vertical-align:middle;"></i></span>
                     {% else %}<span class="badge badge-lav">{% if lang == 'kz' %}Шаршаулы{% else %}Устал{% endif %}</span>
                     {% endif %}
                   {% else %}<span style="color:var(--text-3);font-size:.8rem;">—</span>{% endif %}
@@ -171,9 +170,7 @@
       <div class="card">
         {% for e in all_emotions %}
         <div class="emotion-entry">
-          <span style="font-size:2rem;">
-            {% emotion_icon e.emotion %}
-          </span>
+          <span style="font-size:2rem;">{% emotion_icon e.emotion %}</span>
           <div style="flex:1;">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <strong style="color:var(--text);">{{ e.user.get_full_name|default:e.user.username }}</strong>
@@ -188,7 +185,6 @@
         </div>
         {% empty %}
         <div style="text-align:center;padding:3rem;color:var(--text-2);">
-          <div style="font-size:3rem;margin-bottom:1rem;"></div>
           {% if lang == 'kz' %}Эмоция жазбасы жоқ{% else %}Нет записей эмоций{% endif %}
         </div>
         {% endfor %}
@@ -234,7 +230,6 @@
         </div>
         {% else %}
         <div style="text-align:center;padding:3rem;color:var(--text-2);">
-          <div style="font-size:3rem;margin-bottom:1rem;"></div>
           {% if lang == 'kz' %}Тест нәтижесі жоқ{% else %}Нет результатов тестов{% endif %}
         </div>
         {% endif %}
@@ -248,37 +243,40 @@
         <p class="page-subtitle">{% if lang == 'kz' %}Психоағарту мазмұны{% else %}Психообразовательный контент{% endif %}</p>
       </div>
       <div class="grid-3">
-        <div class="article-card"><span class="article-icon"></span><div class="article-title">{% if lang == 'kz' %}Оқушылардың стресін қалай тануға болады?{% else %}Как распознать стресс у учеников?{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Ерте белгілер мен практикалық кеңестер.{% else %}Ранние признаки и практические советы для учителей.{% endif %}</div></div>
-        <div class="article-card"><span class="article-icon"></span><div class="article-title">{% if lang == 'kz' %}Сыныпта қолайлы орта жасау{% else %}Создание комфортной среды в классе{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Оқушылардың эмоционалды қауіпсіздігі.{% else %}Эмоциональная безопасность учеников в классе.{% endif %}</div></div>
-        <div class="article-card"><span class="article-icon"></span><div class="article-title">{% if lang == 'kz' %}Булинг: мұғалімнің рөлі{% else %}Буллинг: роль учителя{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Булинг жағдайында мұғалім не істеуі керек?{% else %}Что делать учителю при буллинге в классе?{% endif %}</div></div>
-        <div class="article-card"><span class="article-icon"></span><div class="article-title">{% if lang == 'kz' %}Гаджет тәуелділігі және оқу{% else %}Гаджеты и обучение{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Технологияны оқуда дұрыс пайдалану.{% else %}Как правильно использовать технологии в обучении.{% endif %}</div></div>
-        <div class="article-card"><span class="article-icon"></span><div class="article-title">{% if lang == 'kz' %}Оқушыларды мотивациялау{% else %}Мотивация учеников{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Оқуға деген ынтаны арттыру тәсілдері.{% else %}Способы повысить интерес к обучению.{% endif %}</div></div>
-        <div class="article-card"><span class="article-icon"></span><div class="article-title">{% if lang == 'kz' %}Эмоционалды зияткерлік{% else %}Эмоциональный интеллект{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Оқушылардың эмоционалды зияткерлігін дамыту.{% else %}Развитие эмоционального интеллекта у школьников.{% endif %}</div></div>
-        {% for art in articles %}<div class="article-card"><span class="article-icon">{{ art.icon }}</span><div class="article-title">{% if lang == 'kz' %}{{ art.title_kz }}{% else %}{{ art.title_ru }}{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}{{ art.content_kz|truncatewords:20 }}{% else %}{{ art.content_ru|truncatewords:20 }}{% endif %}</div></div>{% endfor %}
+        <div class="article-card"><div class="article-title">{% if lang == 'kz' %}Оқушылардың стресін қалай тануға болады?{% else %}Как распознать стресс у учеников?{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Ерте белгілер мен практикалық кеңестер.{% else %}Ранние признаки и практические советы для учителей.{% endif %}</div></div>
+        <div class="article-card"><div class="article-title">{% if lang == 'kz' %}Сыныпта қолайлы орта жасау{% else %}Создание комфортной среды в классе{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Оқушылардың эмоционалды қауіпсіздігі.{% else %}Эмоциональная безопасность учеников в классе.{% endif %}</div></div>
+        <div class="article-card"><div class="article-title">{% if lang == 'kz' %}Булинг: мұғалімнің рөлі{% else %}Буллинг: роль учителя{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Булинг жағдайында мұғалім не істеуі керек?{% else %}Что делать учителю при буллинге в классе?{% endif %}</div></div>
+        <div class="article-card"><div class="article-title">{% if lang == 'kz' %}Гаджет тәуелділігі және оқу{% else %}Гаджеты и обучение{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Технологияны оқуда дұрыс пайдалану.{% else %}Как правильно использовать технологии в обучении.{% endif %}</div></div>
+        <div class="article-card"><div class="article-title">{% if lang == 'kz' %}Оқушыларды мотивациялау{% else %}Мотивация учеников{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Оқуға деген ынтаны арттыру тәсілдері.{% else %}Способы повысить интерес к обучению.{% endif %}</div></div>
+        <div class="article-card"><div class="article-title">{% if lang == 'kz' %}Эмоционалды зияткерлік{% else %}Эмоциональный интеллект{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}Оқушылардың эмоционалды зияткерлігін дамыту.{% else %}Развитие эмоционального интеллекта у школьников.{% endif %}</div></div>
+        {% for art in articles %}<div class="article-card"><div class="article-title">{% if lang == 'kz' %}{{ art.title_kz }}{% else %}{{ art.title_ru }}{% endif %}</div><div class="article-excerpt">{% if lang == 'kz' %}{{ art.content_kz|truncatewords:20 }}{% else %}{{ art.content_ru|truncatewords:20 }}{% endif %}</div></div>{% endfor %}
       </div>
     </div>
 
-  </main>
-</div>
 {% endblock %}
 
-{% block extra_js %}
+{% block dashboard_extra_js %}
 <script>
 function showPanel(name) {
   ['overview','students','emotions','tests','articles'].forEach(p => {
     const panel = document.getElementById('panel-'+p);
-    const btn = document.getElementById('tab-'+p+'-btn');
     if(panel) panel.style.display = (p===name) ? 'block' : 'none';
-    if(btn) btn.classList.toggle('active', p===name);
   });
 }
+
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const p = params.get('panel');
+  const valid = ['overview','students','emotions','tests','articles'];
+  if (p && valid.includes(p)) showPanel(p);
+})();
 
 const stats = {{ emotion_stats|safe }};
 const ctx = document.getElementById('emotionChart').getContext('2d');
 new Chart(ctx, {
   type: 'doughnut',
   data: {
-    labels: ['','','','','',''],
+    labels: ['{% if lang == "kz" %}Жақсы{% else %}Хорошо{% endif %}','{% if lang == "kz" %}Тыныш{% else %}Спокойно{% endif %}','{% if lang == "kz" %}Мазасыз{% else %}Тревожно{% endif %}','{% if lang == "kz" %}Қайғылы{% else %}Грустно{% endif %}','{% if lang == "kz" %}Ашулы{% else %}Злость{% endif %}','{% if lang == "kz" %}Шаршаулы{% else %}Устал{% endif %}'],
     datasets: [{
       data: [stats.happy||0, stats.calm||0, stats.anxious||0, stats.sad||0, stats.angry||0, stats.tired||0],
       backgroundColor: ['#F4B942','#2EC4B6','#FF6B6B','#C9B8FF','#FF8C69','#A0AEC0'],
@@ -287,7 +285,7 @@ new Chart(ctx, {
   },
   options: {
     responsive: true,
-    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Nunito', size: 12 } } } },
+    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 12 } } } },
     cutout: '60%'
   }
 });

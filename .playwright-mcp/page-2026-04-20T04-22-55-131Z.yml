@@ -1,0 +1,184 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "PsyConnect" [ref=e3] [cursor=pointer]:
+      - /url: /landing/
+      - img [ref=e5]
+      - generic [ref=e8]: PsyConnect
+    - generic [ref=e9]:
+      - list [ref=e10]:
+        - listitem [ref=e11]:
+          - link "Панель" [ref=e12] [cursor=pointer]:
+            - /url: /psychologist/
+        - listitem [ref=e13]:
+          - link [ref=e14] [cursor=pointer]:
+            - /url: /notifications/
+            - img [ref=e15]
+      - generic [ref=e18]:
+        - link "RU" [ref=e19] [cursor=pointer]:
+          - /url: /lang/ru/
+        - link "KZ" [ref=e20] [cursor=pointer]:
+          - /url: /lang/kz/
+    - generic [ref=e22]:
+      - button "С Сара Мара" [ref=e23] [cursor=pointer]:
+        - generic [ref=e24]: С
+        - generic [ref=e25]: Сара Мара
+        - img [ref=e26]
+      - generic:
+        - link "Профиль":
+          - /url: /profile/
+          - img
+          - text: Профиль
+        - link "Анонимно":
+          - /url: /anonymous/
+          - img
+          - text: Анонимно
+        - link "Выйти":
+          - /url: /logout/
+          - img
+          - text: Выйти
+  - generic [ref=e28]:
+    - complementary [ref=e29]:
+      - img "Logo" [ref=e31]
+      - navigation [ref=e32]:
+        - link "Обзор" [ref=e33] [cursor=pointer]:
+          - /url: /psychologist/
+          - img [ref=e34]
+        - link "Заявки" [ref=e39] [cursor=pointer]:
+          - /url: /psychologist/appointments/
+          - img [ref=e40]
+        - link "Тесты" [ref=e42] [cursor=pointer]:
+          - /url: /psychologist/tests/
+          - img [ref=e43]
+        - link "Ученики" [ref=e47] [cursor=pointer]:
+          - /url: /psychologist/?panel=students
+          - img [ref=e48]
+        - link "Расписание" [ref=e53] [cursor=pointer]:
+          - /url: /psychologist/schedule/
+          - img [ref=e54]
+        - link "Запросы" [ref=e57] [cursor=pointer]:
+          - /url: /psychologist/?panel=requests
+          - img [ref=e58]
+        - link "Эмоции" [ref=e60] [cursor=pointer]:
+          - /url: /psychologist/?panel=emotions
+          - img [ref=e61]
+      - generic [ref=e63]:
+        - link "Профиль" [ref=e64] [cursor=pointer]:
+          - /url: /profile/
+          - img [ref=e65]
+        - link "Выйти" [ref=e68] [cursor=pointer]:
+          - /url: /logout/
+          - img [ref=e69]
+    - main [ref=e72]:
+      - generic [ref=e73]:
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - img [ref=e78]
+            - generic [ref=e83]:
+              - generic [ref=e84]: "11"
+              - generic [ref=e85]: Учеников
+          - generic [ref=e86]:
+            - img [ref=e88]
+            - generic [ref=e91]:
+              - generic [ref=e92]: "2"
+              - generic [ref=e93]: Классов
+          - generic [ref=e94]:
+            - img [ref=e96]
+            - generic [ref=e98]:
+              - generic [ref=e99]: "19"
+              - generic [ref=e100]: Эмоций
+          - generic [ref=e101]:
+            - img [ref=e103]
+            - generic [ref=e106]:
+              - generic [ref=e107]: "1"
+              - generic [ref=e108]: Новых запросов
+        - generic [ref=e109]:
+          - generic [ref=e110]:
+            - generic [ref=e111]:
+              - generic [ref=e113]:
+                - img [ref=e114]
+                - generic [ref=e118]: Топ проблем
+              - generic [ref=e121]:
+                - generic [ref=e122]:
+                  - img [ref=e123]
+                  - generic [ref=e124]: Эмоции
+                - generic [ref=e127]:
+                  - generic [ref=e128]:
+                    - text: "Всего:"
+                    - strong [ref=e129]: "8"
+                  - generic [ref=e130]: 7 дней
+            - generic [ref=e131]:
+              - generic [ref=e132]:
+                - generic [ref=e133]:
+                  - img [ref=e134]
+                  - generic [ref=e136]: Требуют внимания
+                - generic [ref=e138]:
+                  - generic [ref=e139]: А
+                  - generic [ref=e140]:
+                    - generic [ref=e141]: Алиев1 Арман Сериков
+                    - text: 9А
+                  - generic [ref=e142]: Средний
+              - generic [ref=e144]:
+                - heading "Каждый ребёнок важен" [level=3] [ref=e145]
+                - paragraph [ref=e146]: Ваша работа меняет их будущее
+          - generic [ref=e147]:
+            - generic [ref=e148]:
+              - generic [ref=e149]:
+                - generic [ref=e150]: Апрель 2026
+                - generic [ref=e151]:
+                  - button [ref=e152] [cursor=pointer]:
+                    - img [ref=e153]
+                  - button [ref=e155] [cursor=pointer]:
+                    - img [ref=e156]
+              - generic [ref=e158]:
+                - generic [ref=e159]: Вс
+                - generic [ref=e160]: Пн
+                - generic [ref=e161]: Вт
+                - generic [ref=e162]: Ср
+                - generic [ref=e163]: Чт
+                - generic [ref=e164]: Пт
+                - generic [ref=e165]: Сб
+              - generic [ref=e166]:
+                - generic [ref=e170]: "1"
+                - generic [ref=e171]: "2"
+                - generic [ref=e172]: "3"
+                - generic [ref=e173]: "4"
+                - generic [ref=e174]: "5"
+                - generic [ref=e175]: "6"
+                - generic [ref=e176]: "7"
+                - generic [ref=e177]: "8"
+                - generic [ref=e178]: "9"
+                - generic [ref=e179]: "10"
+                - generic [ref=e180]: "11"
+                - generic [ref=e181]: "12"
+                - generic [ref=e182]: "13"
+                - generic [ref=e183]: "14"
+                - generic [ref=e184]: "15"
+                - generic [ref=e185]: "16"
+                - generic [ref=e186]: "17"
+                - generic [ref=e187]: "18"
+                - generic [ref=e188]: "19"
+                - generic [ref=e189]: "20"
+                - generic [ref=e190]: "21"
+                - generic [ref=e191]: "22"
+                - generic [ref=e192]: "23"
+                - generic [ref=e193]: "24"
+                - generic [ref=e194]: "25"
+                - generic [ref=e195]: "26"
+                - generic [ref=e196]: "27"
+                - generic [ref=e197]: "28"
+                - generic [ref=e198]: "29"
+                - generic [ref=e199]: "30"
+            - generic [ref=e200]:
+              - generic [ref=e201]:
+                - img [ref=e202]
+                - generic [ref=e204]: Последние запросы
+                - link "Все →" [ref=e205] [cursor=pointer]:
+                  - /url: "#"
+              - generic [ref=e206]:
+                - generic [ref=e209]:
+                  - paragraph [ref=e210]: fdsfds
+                  - text: 09.04 19:05 · Жаңа / Новый
+                - generic [ref=e213]:
+                  - paragraph [ref=e214]: Буллинг
+                  - text: 07.04 10:57 · Жабылды / Закрыт
+  - contentinfo [ref=e215]: PsyConnect · Платформа для школьного сообщества © 2025
